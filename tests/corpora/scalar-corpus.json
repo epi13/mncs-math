@@ -1,0 +1,3087 @@
+{
+ "schema_version": "0.1",
+ "name": "scalar-exact-kernels",
+ "cases": [
+  {
+   "id": "add-ok-small",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_add_ok"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "add-ok-max-plus-one",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_add_ok"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 9223372036854775807,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "add-ok-min-minus-one",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_add_ok"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -9223372036854775808,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "add-basic",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_checked_add"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 7,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "add-overflow",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_checked_add"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 9223372036854775807,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "add-min-underflow",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_checked_add"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -9223372036854775808,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "sub-basic",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_checked_sub"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 10,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 6,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "sub-min-underflow",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_checked_sub"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -9223372036854775808,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "sub-zero-minus-min",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_checked_sub"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -9223372036854775808,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-basic",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_checked_mul"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 6,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 42,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-max-square-fits",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_checked_mul"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 3037000499,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3037000499,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 9223372030926249001,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-square-overflows",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_checked_mul"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 3037000500,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3037000500,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-min-times-neg-one",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_checked_mul"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -9223372036854775808,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-min-times-zero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_checked_mul"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -9223372036854775808,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 0,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-neg-neg",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_checked_mul"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 6,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-basic",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_checked_div"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 3,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-truncates-toward-zero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_checked_div"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -7,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": -3,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-by-zero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_checked_div"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-min-by-neg-one",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_checked_div"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -9223372036854775808,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "mod-dividend-sign",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_checked_mod"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -7,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": -1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "mod-positive-dividend-neg-divisor",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_checked_mod"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "mod-min-by-neg-one-is-zero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_checked_mod"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -9223372036854775808,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 0,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "mod-by-zero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_checked_mod"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "abs-sat-neg",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_abs_sat"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 5,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "abs-sat-min-clamps",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_abs_sat"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -9223372036854775808,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 9223372036854775807,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "abs-checked-neg",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_abs_checked"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 5,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "abs-checked-min-overflows",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_abs_checked"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -9223372036854775808,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "abs-diff-extremes",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_abs_diff"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 9223372036854775807,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -9223372036854775808,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 18446744073709551615,
+      "type": {
+       "bits": 64,
+       "signed": false
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "abs-diff-equal",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_abs_diff"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 0,
+      "type": {
+       "bits": 64,
+       "signed": false
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "gcd-basic",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_gcd"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 12,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 18,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 6,
+      "type": {
+       "bits": 64,
+       "signed": false
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "gcd-zero-zero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_gcd"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 0,
+      "type": {
+       "bits": 64,
+       "signed": false
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "gcd-zero-n",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_gcd"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 7,
+      "type": {
+       "bits": 64,
+       "signed": false
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "gcd-negative",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_gcd"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -12,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 18,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 6,
+      "type": {
+       "bits": 64,
+       "signed": false
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "gcd-min-magnitude",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_gcd"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -9223372036854775808,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 9223372036854775808,
+      "type": {
+       "bits": 64,
+       "signed": false
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "gcd-fibonacci-stress",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_gcd_u64"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 7540113804746346429,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4660046610375530309,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 65536
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 1,
+      "type": {
+       "bits": 64,
+       "signed": false
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "lcm-basic",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_lcm"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 12,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 18,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 65536
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 36,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "lcm-zero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_lcm"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 9,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 0,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "lcm-overflow",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_lcm"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 9223372036854775807,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 65536
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "pow-basic",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_pow_checked"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 10,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 1024,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "pow-2-62",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_pow_checked"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 62,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 65536
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 4611686018427387904,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "pow-2-63-overflows",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_pow_checked"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 63,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 65536
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "pow-one-huge-exp",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_pow_checked"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 18446744073709551615,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 65536
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "pow-zero-exp",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_pow_checked"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "pow-wrap-2-63",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_pow_wrap"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 63,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": -9223372036854775808,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-mod-degenerate",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_mul_mod"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 18446744073709551615,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 18446744073709551615,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 18446744073709551615,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 0,
+      "type": {
+       "bits": 64,
+       "signed": false
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-mod-prime",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_mul_mod"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 123456789,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 987654321,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1000000007,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 65536
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 259106859,
+      "type": {
+       "bits": 64,
+       "signed": false
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "pow-mod-basic",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_pow_mod"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 63,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 9223372036854775807,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 65536
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 1,
+      "type": {
+       "bits": 64,
+       "signed": false
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "pow-mod-zero-exp",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_pow_mod"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 13,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 65536
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 1,
+      "type": {
+       "bits": 64,
+       "signed": false
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "pow-mod-one",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_pow_mod"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 65536
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 0,
+      "type": {
+       "bits": 64,
+       "signed": false
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "isqrt-basic",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_isqrt"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 17,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 4,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "isqrt-max",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_isqrt"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 9223372036854775807,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 65536
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 3037000499,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "isqrt-negative-domain",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_isqrt"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 13,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "isqrt-u64-max",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_isqrt_u64"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 18446744073709551615,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 65536
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 4294967295,
+      "type": {
+       "bits": 64,
+       "signed": false
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "factorial-20",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_factorial"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 20,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 65536
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 2432902008176640000,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "factorial-21-overflows",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_factorial"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 21,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "factorial-zero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_factorial"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "binom-basic",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_binom"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 10,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 120,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "binom-60-30",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_binom"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 60,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 30,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 65536
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 118264581564861424,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "binom-past-i64",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_binom"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 66,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 33,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 65536
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 7219428434016265740,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "binom-k-gt-n",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_binom"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 0,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "clamp-high",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_clamp"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 12,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 9,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 9,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "binom-67-33-overflows",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_binom"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 67,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 33,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 65536
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "abs-diff-cross-sign",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_abs_diff"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 8,
+      "type": {
+       "bits": 64,
+       "signed": false
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

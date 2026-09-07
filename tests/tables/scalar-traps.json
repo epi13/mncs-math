@@ -1,0 +1,42 @@
+{
+ "module": "mncs.math.scalar.v1",
+ "name": "scalar-exact-kernels-traps",
+ "cases": [
+  {
+   "args": [
+    {
+     "i64": 7
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "fn": "candidate_raw_div",
+   "id": "trap-div-zero"
+  },
+  {
+   "args": [
+    {
+     "i64": -9223372036854775808
+    },
+    {
+     "i64": -1
+    }
+   ],
+   "fn": "candidate_raw_div",
+   "id": "trap-div-min-by-neg-one"
+  },
+  {
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "fn": "candidate_raw_add",
+   "id": "trap-add-overflow"
+  }
+ ]
+}

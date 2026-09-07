@@ -1,0 +1,541 @@
+mncs 0.8;
+
+// mncs.math.scalar — exact integer scalar foundations.
+//
+// Three overflow disciplines, each explicit at the call site:
+//   checked    default ops (+ - * / %); traps on overflow, divide by zero,
+//              and MIN / -1. Guarded wrappers below return MathResult.
+//   wrapping   +% -% *% suffixed ops; total two's-complement semantics.
+//   saturating +| -| *| suffixed ops; total clamping semantics.
+//
+// Division truncates toward zero and the remainder takes the dividend's
+// sign (-7 / 2 == -3, -7 % 2 == -1, 7 % -2 == 1); MIN % -1 == 0 without
+// trapping (only MIN / -1 traps). Same-width `as` casts reinterpret bits.
+// All of these are pinned by trap-/edge-case corpus cases, not comments.
+//
+// Control-flow discipline: loop bodies use early `if { return }` guards
+// plus one tail `next`; `select` arms carry total operations only
+// (wrapping arithmetic, moves, pure calls). Conditionally-safe arithmetic
+// lives in small `if / return` helpers. This keeps meaning independent of
+// any arm-evaluation order.
+//
+// Profile 0.8: exact sequences, traversal, explicit conversions, select.
+module mncs.math.scalar.v1;
+
+use mncs.math.error.v1;
+use mncs.math.internal.v1;
+use mncs.core.ordering.v1;
+
+// ---- bounds ----
+
+fn i64_max() -> (result: i64) {
+    return 9223372036854775807;
+}
+
+fn i64_min() -> (result: i64) {
+    return 0 - 9223372036854775807 - 1;
+}
+
+fn u64_max() -> (result: u64) {
+    return 18446744073709551615;
+}
+
+// ---- checked arithmetic returning MathResult ----
+
+// True exactly when a + b fits in i64. The guard subtractions cannot
+// overflow: MAX - b with b > 0, MIN - b with b < 0.
+fn add_ok(a: i64, b: i64) -> (result: bool) {
+    if b > 0 {
+        return a <= i64_max() - b;
+    }
+    if b < 0 {
+        return a >= i64_min() - b;
+    }
+    return true;
+}
+
+fn checked_add(a: i64, b: i64) -> (result: MathResult) {
+    if add_ok(a, b) {
+        return MathResult.Ok { value: a + b };
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+fn sub_ok(a: i64, b: i64) -> (result: bool) {
+    if b > 0 {
+        return a >= i64_min() + b;
+    }
+    if b < 0 {
+        return a <= i64_max() + b;
+    }
+    return true;
+}
+
+fn checked_sub(a: i64, b: i64) -> (result: MathResult) {
+    if sub_ok(a, b) {
+        return MathResult.Ok { value: a - b };
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+// True exactly when a * b fits in i64. Zero always fits (0 * MIN == 0);
+// the guard divisions truncate, but every comparison is exact.
+fn mul_ok(a: i64, b: i64) -> (result: bool) {
+    if a == 0 {
+        return true;
+    }
+    if b == 0 {
+        return true;
+    }
+    if a > 0 {
+        if b > 0 {
+            return a <= i64_max() / b;
+        }
+        return b >= i64_min() / a;
+    }
+    if b > 0 {
+        return a >= i64_min() / b;
+    }
+    return a >= i64_max() / b;
+}
+
+fn checked_mul(a: i64, b: i64) -> (result: MathResult) {
+    if mul_ok(a, b) {
+        return MathResult.Ok { value: a * b };
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+fn checked_div(a: i64, b: i64) -> (result: MathResult) {
+    if b == 0 {
+        return MathResult.Err { reason: reason_div_by_zero() };
+    }
+    if a == i64_min() {
+        if b == 0 - 1 {
+            return MathResult.Err { reason: reason_overflow() };
+        }
+    }
+    return MathResult.Ok { value: a / b };
+}
+
+// Remainder with dividend sign. b == 0 fails; MIN % -1 == 0 succeeds
+// (verified backend behavior, pinned by corpus).
+fn checked_mod(a: i64, b: i64) -> (result: MathResult) {
+    if b == 0 {
+        return MathResult.Err { reason: reason_div_by_zero() };
+    }
+    return MathResult.Ok { value: a % b };
+}
+
+// ---- absolute value ----
+
+// Saturating: |MIN| is unrepresentable, so it clamps to MAX. Total.
+fn abs_sat(x: i64) -> (result: i64) {
+    if x < 0 {
+        return 0 -| x;
+    }
+    return x;
+}
+
+// Checked: MIN fails with overflow. Total via the enum.
+fn abs_checked(x: i64) -> (result: MathResult) {
+    if x == i64_min() {
+        return MathResult.Err { reason: reason_overflow() };
+    }
+    if x < 0 {
+        return MathResult.Ok { value: 0 - x };
+    }
+    return MathResult.Ok { value: x };
+}
+
+// Exact magnitude distance as u64. Order is decided on the SIGNED
+// operands: reinterpretation preserves order only within one sign, so
+// comparing ua >= ub first is wrong across signs (MAX vs MIN). With the
+// signed direction known, the wrapping u64 subtraction is exact: the true
+// difference lies in [0, 2^64 - 1], hence equals its residue.
+fn abs_diff(a: i64, b: i64) -> (result: u64) {
+    let ua: u64 = a as u64;
+    let ub: u64 = b as u64;
+    if a >= b {
+        return ua -% ub;
+    }
+    return ub -% ua;
+}
+
+// ---- gcd / lcm ----
+
+record GcdLoop { a: u64, b: u64, k: u64 }
+
+// Euclid GCD over u64. Fibonacci pairs need up to ~92 remainder steps
+// for 64-bit inputs, past one 64-traversal, so the loop escapes through
+// a helper call after 64 steps: two phases give 128 steps, past the
+// proven 93-step worst case. The phase-2 fallback is unreachable by that
+// bound (documented, not tested — no input reaches it).
+fn gcd_phase2(a: u64, b: u64) -> (result: u64) {
+    let table: [i64; 64] = steps64();
+    iterate i over table carrying state: GcdLoop = GcdLoop { a: a, b: b, k: 0 } {
+        if state.b == 0 {
+            return state.a;
+        }
+        next state = GcdLoop { a: state.b, b: state.a % state.b, k: state.k +% 1 };
+    }
+    return a;
+}
+
+fn gcd_u64(a: u64, b: u64) -> (result: u64) {
+    let table: [i64; 64] = steps64();
+    iterate i over table carrying state: GcdLoop = GcdLoop { a: a, b: b, k: 0 } {
+        if state.b == 0 {
+            return state.a;
+        }
+        if state.k == 63 {
+            return gcd_phase2(state.b, state.a % state.b);
+        }
+        next state = GcdLoop { a: state.b, b: state.a % state.b, k: state.k +% 1 };
+    }
+    return a;
+}
+
+// Magnitude of an i64 as u64, exact including MIN: -(x+1)+1 avoids ever
+// forming the unrepresentable -MIN.
+fn magnitude(x: i64) -> (result: u64) {
+    if x < 0 {
+        return ((0 - (x + 1)) as u64) + 1;
+    }
+    return x as u64;
+}
+
+fn gcd(a: i64, b: i64) -> (result: u64) {
+    return gcd_u64(magnitude(a), magnitude(b));
+}
+
+// lcm(a, b) = |a| / gcd * |b|, computed division-first so the product is
+// only formed when it fits. lcm(0, b) == 0. Overflow is a reason.
+fn lcm(a: i64, b: i64) -> (result: MathResult) {
+    let ma: u64 = magnitude(a);
+    let mb: u64 = magnitude(b);
+    if ma == 0 {
+        return MathResult.Ok { value: 0 };
+    }
+    if mb == 0 {
+        return MathResult.Ok { value: 0 };
+    }
+    let g: u64 = gcd_u64(ma, mb);
+    let reduced: u64 = ma / g;
+    if reduced > (i64_max() as u64) / mb {
+        return MathResult.Err { reason: reason_overflow() };
+    }
+    return MathResult.Ok { value: (reduced * mb) as i64 };
+}
+
+// ---- exponentiation ----
+
+record PowState { base: i64, exp: u64, acc: i64 }
+record PowAcc { base: i64, exp: u64, acc: i64, ok: bool }
+record U64Pow { base: u64, exp: u64, acc: u64 }
+
+// Square-and-multiply with an explicit validity flag. The exp == 1 arm
+// finishes with one guarded multiply because the loop observes state
+// before stepping: N iterations see N states, so the last live state
+// (exp 0 or 1) must decide, never step.
+fn pow_checked(a: i64, e: u64) -> (result: MathResult) {
+    let table: [i64; 64] = steps64();
+    iterate i over table carrying st: PowAcc = PowAcc { base: a, exp: e, acc: 1, ok: true } {
+        if st.exp == 0 {
+            if st.ok {
+                return MathResult.Ok { value: st.acc };
+            }
+            return MathResult.Err { reason: reason_overflow() };
+        }
+        if st.exp == 1 {
+            if st.ok && mul_ok(st.acc, st.base) {
+                return MathResult.Ok { value: st.acc * st.base };
+            }
+            return MathResult.Err { reason: reason_overflow() };
+        }
+        let use_base: bool = st.exp % 2 == 1;
+        let acc_fits: bool = select(use_base, mul_ok(st.acc, st.base), true);
+        let base_fits: bool = mul_ok(st.base, st.base);
+        next st = PowAcc { base: st.base *% st.base, exp: st.exp / 2, acc: select(use_base, st.acc *% st.base, st.acc), ok: st.ok && acc_fits && base_fits };
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+// Wrapping power: total, two's-complement bit pattern. 0^0 == 1.
+fn pow_wrap(a: i64, e: u64) -> (result: i64) {
+    let table: [i64; 64] = steps64();
+    iterate i over table carrying st: PowState = PowState { base: a, exp: e, acc: 1 } {
+        if st.exp == 0 {
+            return st.acc;
+        }
+        if st.exp == 1 {
+            return st.acc *% st.base;
+        }
+        let use_base: bool = st.exp % 2 == 1;
+        next st = PowState { base: st.base *% st.base, exp: st.exp / 2, acc: select(use_base, st.acc *% st.base, st.acc) };
+    }
+    return 1;
+}
+
+// (2a) % m for 0 <= a < m, m > 0: the subtract-before-add test keeps
+// 2a from ever materializing. m == 0 is a caller bug; guarded at the
+// mul_mod/pow_mod entries, documented here.
+fn dbl_mod(a: u64, m: u64) -> (result: u64) {
+    let room: u64 = m - a;
+    if a >= room {
+        return a - room;
+    }
+    return a + a;
+}
+
+// (x + y) % m for x, y < m, m > 0. Same overflow-free shape.
+fn add_mod(x: u64, y: u64, m: u64) -> (result: u64) {
+    let room: u64 = m - y;
+    if x >= room {
+        return x - room;
+    }
+    return x + y;
+}
+
+// (a * b) % m for m > 0 with no intermediate wider than u64:
+// double-and-add over the bits of b, reducing at every step.
+// m == 0 is a documented total extension returning 0 (mirrors the
+// partition.v1 convention for degenerate denominators).
+fn mul_mod(a: u64, b: u64, m: u64) -> (result: u64) {
+    if m == 0 {
+        return 0;
+    }
+    let table: [i64; 64] = steps64();
+    iterate i over table carrying st: U64Pow = U64Pow { base: a % m, exp: b, acc: 0 } {
+        if st.exp == 0 {
+            return st.acc;
+        }
+        if st.exp == 1 {
+            return add_mod(st.acc, st.base, m);
+        }
+        let use_base: bool = st.exp % 2 == 1;
+        next st = U64Pow { base: dbl_mod(st.base, m), exp: st.exp / 2, acc: select(use_base, add_mod(st.acc, st.base, m), st.acc) };
+    }
+    return 0;
+}
+
+// a^e % m for m > 1 (m == 1 folds to 0; m == 0 is the same documented
+// total extension as mul_mod). 0^0 % m == 1 % m.
+fn pow_mod(a: u64, e: u64, m: u64) -> (result: u64) {
+    if m == 0 {
+        return 0;
+    }
+    if m == 1 {
+        return 0;
+    }
+    let table: [i64; 64] = steps64();
+    iterate i over table carrying st: U64Pow = U64Pow { base: a % m, exp: e, acc: 1 } {
+        if st.exp == 0 {
+            return st.acc;
+        }
+        if st.exp == 1 {
+            return mul_mod(st.acc, st.base, m);
+        }
+        let use_base: bool = st.exp % 2 == 1;
+        next st = U64Pow { base: mul_mod(st.base, st.base, m), exp: st.exp / 2, acc: select(use_base, mul_mod(st.acc, st.base, m), st.acc) };
+    }
+    return 1;
+}
+
+// ---- integer square root ----
+
+record SqrtState { lo: u64, hi: u64 }
+
+// floor(sqrt(x)) by bisection over [0, 2^32]. Width halves every step,
+// so width 1 is first observed at the 33rd loop top: the 64-traversal
+// covers it with room. mid < hi <= 2^32 always, hence mid^2 is exact in
+// u64 and the comparisons are exact. Arms are pure moves.
+fn isqrt_u64(x: u64) -> (result: u64) {
+    let table: [i64; 64] = steps64();
+    iterate i over table carrying st: SqrtState = SqrtState { lo: 0, hi: 4294967296 } {
+        if st.hi - st.lo <= 1 {
+            return st.lo;
+        }
+        let mid: u64 = st.lo + (st.hi - st.lo) / 2;
+        let under: bool = mid *% mid <= x;
+        next st = SqrtState { lo: select(under, mid, st.lo), hi: select(under, st.hi, mid) };
+    }
+    return 0;
+}
+
+fn isqrt(a: i64) -> (result: MathResult) {
+    if a < 0 {
+        return MathResult.Err { reason: reason_domain() };
+    }
+    return MathResult.Ok { value: isqrt_u64(a as u64) as i64 };
+}
+
+// ---- combinatorics ----
+
+record FactorState { acc: i64, exp: u64, ok: bool }
+
+// n! for n <= 20 (21! overflows i64: guarded upfront). The validity flag
+// pattern keeps every select arm total; the answer is read only when the
+// countdown reaches zero.
+fn factorial(n: u64) -> (result: MathResult) {
+    if n > 20 {
+        return MathResult.Err { reason: reason_overflow() };
+    }
+    let table: [i64; 64] = steps64();
+    iterate i over table carrying st: FactorState = FactorState { acc: 1, exp: n, ok: true } {
+        if st.exp == 0 {
+            if st.ok {
+                return MathResult.Ok { value: st.acc };
+            }
+            return MathResult.Err { reason: reason_overflow() };
+        }
+        let factor: i64 = (n - st.exp + 1) as i64;
+        let fits: bool = mul_ok(st.acc, factor);
+        next st = FactorState { acc: st.acc *% factor, exp: st.exp - 1, ok: st.ok && fits };
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+record BinomState { result: u64, i: u64, ok: bool }
+
+// C(n,k) by result *= (n-k+i)/i with a gcd reduction before every
+// multiplication, so division is always exact and intermediates minimal.
+// k is reflected to min(k, n-k) and capped at 60 (single-traversal
+// budget); C(n,k) == 0 for k > n. Results past i64::MAX are overflow.
+fn binom(n: u64, k: u64) -> (result: MathResult) {
+    if k > n {
+        return MathResult.Ok { value: 0 };
+    }
+    let kk: u64 = select(k > n - k, n - k, k);
+    if kk > 60 {
+        return MathResult.Err { reason: reason_unsupported() };
+    }
+    let table: [i64; 64] = steps64();
+    iterate i over table carrying st: BinomState = BinomState { result: 1, i: 1, ok: true } {
+        if st.i > kk {
+            if st.ok && st.result <= i64_max() as u64 {
+                return MathResult.Ok { value: st.result as i64 };
+            }
+            return MathResult.Err { reason: reason_overflow() };
+        }
+        let numerator: u64 = n - kk + st.i;
+        let g1: u64 = gcd_u64(st.result, st.i);
+        let r1: u64 = st.result / g1;
+        let i1: u64 = st.i / g1;
+        let g2: u64 = gcd_u64(numerator, i1);
+        let n1: u64 = numerator / g2;
+        let i2: u64 = i1 / g2;
+        let fits: bool = r1 <= u64_max() / n1;
+        let prod: u64 = r1 *% n1;
+        next st = BinomState { result: select(fits, prod / i2, st.result), i: st.i +% 1, ok: st.ok && fits };
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+// ---- ordering helpers (ordering.v1 authority, math-level names) ----
+
+fn smin(a: i64, b: i64) -> (result: i64) {
+    return min_i64(a, b);
+}
+
+fn smax(a: i64, b: i64) -> (result: i64) {
+    return max_i64(a, b);
+}
+
+fn sclamp(value: i64, lo: i64, hi: i64) -> (result: i64) {
+    return clamp_i64(value, lo, hi);
+}
+
+// ---- corpus entry points (all scalar shaped) ----
+
+fn candidate_add_ok(a: i64, b: i64) -> (result: bool) {
+    return add_ok(a, b);
+}
+
+fn candidate_checked_add(a: i64, b: i64) -> (result: MathResult) {
+    return checked_add(a, b);
+}
+
+fn candidate_checked_sub(a: i64, b: i64) -> (result: MathResult) {
+    return checked_sub(a, b);
+}
+
+fn candidate_checked_mul(a: i64, b: i64) -> (result: MathResult) {
+    return checked_mul(a, b);
+}
+
+fn candidate_checked_div(a: i64, b: i64) -> (result: MathResult) {
+    return checked_div(a, b);
+}
+
+fn candidate_checked_mod(a: i64, b: i64) -> (result: MathResult) {
+    return checked_mod(a, b);
+}
+
+fn candidate_raw_div(a: i64, b: i64) -> (result: i64) {
+    return a / b;
+}
+
+fn candidate_raw_add(a: i64, b: i64) -> (result: i64) {
+    return a + b;
+}
+
+fn candidate_abs_sat(x: i64) -> (result: i64) {
+    return abs_sat(x);
+}
+
+fn candidate_abs_checked(x: i64) -> (result: MathResult) {
+    return abs_checked(x);
+}
+
+fn candidate_abs_diff(a: i64, b: i64) -> (result: u64) {
+    return abs_diff(a, b);
+}
+
+fn candidate_gcd(a: i64, b: i64) -> (result: u64) {
+    return gcd(a, b);
+}
+
+fn candidate_gcd_u64(a: u64, b: u64) -> (result: u64) {
+    return gcd_u64(a, b);
+}
+
+fn candidate_lcm(a: i64, b: i64) -> (result: MathResult) {
+    return lcm(a, b);
+}
+
+fn candidate_pow_checked(a: i64, e: u64) -> (result: MathResult) {
+    return pow_checked(a, e);
+}
+
+fn candidate_pow_wrap(a: i64, e: u64) -> (result: i64) {
+    return pow_wrap(a, e);
+}
+
+fn candidate_mul_mod(a: u64, b: u64, m: u64) -> (result: u64) {
+    return mul_mod(a, b, m);
+}
+
+fn candidate_pow_mod(a: u64, e: u64, m: u64) -> (result: u64) {
+    return pow_mod(a, e, m);
+}
+
+fn candidate_isqrt(a: i64) -> (result: MathResult) {
+    return isqrt(a);
+}
+
+fn candidate_isqrt_u64(x: u64) -> (result: u64) {
+    return isqrt_u64(x);
+}
+
+fn candidate_factorial(n: u64) -> (result: MathResult) {
+    return factorial(n);
+}
+
+fn candidate_binom(n: u64, k: u64) -> (result: MathResult) {
+    return binom(n, k);
+}
+
+fn candidate_clamp(value: i64, lo: i64, hi: i64) -> (result: i64) {
+    return sclamp(value, lo, hi);
+}

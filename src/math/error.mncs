@@ -1,0 +1,134 @@
+mncs 0.6;
+
+// mncs.math.error — the shared failure taxonomy for mncs-math.
+//
+// Every fallible mathematical operation reports through a payload enum
+// carrying a numeric reason code. Codes are stable across modules; each
+// module declares its own result enum shaped for its payload, but the
+// reason numbers below never change meaning. See docs/error-model.md.
+//
+// Reason 0 is reserved for "no error" (the Ok arm of reason_of-style
+// observers). All failure reasons are positive.
+module mncs.math.error.v1;
+
+// The canonical scalar fallible result. Modules whose payload is wider
+// than one i64 declare a same-shaped local enum with identical codes.
+enum MathResult { Ok { value: i64 }, Err { reason: i64 } }
+
+fn reason_ok() -> (result: i64) {
+    return 0;
+}
+
+fn reason_div_by_zero() -> (result: i64) {
+    return 1;
+}
+
+fn reason_overflow() -> (result: i64) {
+    return 2;
+}
+
+fn reason_invalid_interval() -> (result: i64) {
+    return 3;
+}
+
+fn reason_singular() -> (result: i64) {
+    return 4;
+}
+
+fn reason_shape_mismatch() -> (result: i64) {
+    return 5;
+}
+
+fn reason_no_convergence() -> (result: i64) {
+    return 6;
+}
+
+fn reason_invalid_tolerance() -> (result: i64) {
+    return 7;
+}
+
+fn reason_index_out_of_bounds() -> (result: i64) {
+    return 8;
+}
+
+fn reason_broadcast_incompatible() -> (result: i64) {
+    return 9;
+}
+
+fn reason_unsupported() -> (result: i64) {
+    return 10;
+}
+
+fn reason_precision_exhausted() -> (result: i64) {
+    return 11;
+}
+
+fn reason_invalid_dimensions() -> (result: i64) {
+    return 12;
+}
+
+fn reason_domain() -> (result: i64) {
+    return 13;
+}
+
+fn reason_empty() -> (result: i64) {
+    return 14;
+}
+
+// Observe 0 for Ok, the reason code for Err. Total.
+fn reason_of(result: MathResult) -> (result_code: i64) {
+    return match result {
+        MathResult.Err { reason } => reason,
+        Ok { .. } => 0,
+    };
+}
+
+// Extract the value or fall back. Total.
+fn value_or(result: MathResult, fallback: i64) -> (result: i64) {
+    return match result {
+        Ok { value } => value,
+        Err { .. } => fallback,
+    };
+}
+
+// True exactly for Ok. Total.
+fn is_ok(result: MathResult) -> (result: bool) {
+    return match result {
+        Ok { .. } => true,
+        Err { .. } => false,
+    };
+}
+
+// Corpus entry points (scalar shaped).
+
+fn entry_ok(value: i64) -> (result: MathResult) {
+    return MathResult.Ok { value: value };
+}
+
+fn entry_err(reason: i64) -> (result: MathResult) {
+    return MathResult.Err { reason: reason };
+}
+
+fn entry_reason_of_ok(value: i64) -> (result_code: i64) {
+    return reason_of(MathResult.Ok { value: value });
+}
+
+fn entry_reason_of_err(reason: i64) -> (result_code: i64) {
+    return reason_of(MathResult.Err { reason: reason });
+}
+
+fn entry_value_or_ok(value: i64, fallback: i64) -> (result: i64) {
+    return value_or(MathResult.Ok { value: value }, fallback);
+}
+
+fn entry_value_or_err(reason: i64, fallback: i64) -> (result: i64) {
+    return value_or(MathResult.Err { reason: reason }, fallback);
+}
+
+fn entry_is_ok_ok(value: i64) -> (result: bool) {
+    return is_ok(MathResult.Ok { value: value });
+}
+
+fn entry_is_ok_err(reason: i64) -> (result: bool) {
+    return is_ok(MathResult.Err { reason: reason });
+}

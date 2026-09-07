@@ -1,0 +1,1488 @@
+{
+ "cases": [
+  {
+   "args": [
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    }
+   ],
+   "expect": [
+    {
+     "bool": true
+    }
+   ],
+   "fn": "candidate_add_ok",
+   "id": "add-ok-small"
+  },
+  {
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "bool": false
+    }
+   ],
+   "fn": "candidate_add_ok",
+   "id": "add-ok-max-plus-one"
+  },
+  {
+   "args": [
+    {
+     "i64": -9223372036854775808
+    },
+    {
+     "i64": -1
+    }
+   ],
+   "expect": [
+    {
+     "bool": false
+    }
+   ],
+   "fn": "candidate_add_ok",
+   "id": "add-ok-min-minus-one"
+  },
+  {
+   "args": [
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 7
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_checked_add",
+   "id": "add-basic"
+  },
+  {
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 1,
+      "enum": "MathResult",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      },
+      "variant": "Err",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_checked_add",
+   "id": "add-overflow"
+  },
+  {
+   "args": [
+    {
+     "i64": -9223372036854775808
+    },
+    {
+     "i64": -1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 1,
+      "enum": "MathResult",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      },
+      "variant": "Err",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_checked_add",
+   "id": "add-min-underflow"
+  },
+  {
+   "args": [
+    {
+     "i64": 10
+    },
+    {
+     "i64": 4
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 6
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_checked_sub",
+   "id": "sub-basic"
+  },
+  {
+   "args": [
+    {
+     "i64": -9223372036854775808
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 1,
+      "enum": "MathResult",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      },
+      "variant": "Err",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_checked_sub",
+   "id": "sub-min-underflow"
+  },
+  {
+   "args": [
+    {
+     "i64": 0
+    },
+    {
+     "i64": -9223372036854775808
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 1,
+      "enum": "MathResult",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      },
+      "variant": "Err",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_checked_sub",
+   "id": "sub-zero-minus-min"
+  },
+  {
+   "args": [
+    {
+     "i64": 6
+    },
+    {
+     "i64": 7
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 42
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_checked_mul",
+   "id": "mul-basic"
+  },
+  {
+   "args": [
+    {
+     "i64": 3037000499
+    },
+    {
+     "i64": 3037000499
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 9223372030926249001
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_checked_mul",
+   "id": "mul-max-square-fits"
+  },
+  {
+   "args": [
+    {
+     "i64": 3037000500
+    },
+    {
+     "i64": 3037000500
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 1,
+      "enum": "MathResult",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      },
+      "variant": "Err",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_checked_mul",
+   "id": "mul-square-overflows"
+  },
+  {
+   "args": [
+    {
+     "i64": -9223372036854775808
+    },
+    {
+     "i64": -1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 1,
+      "enum": "MathResult",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      },
+      "variant": "Err",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_checked_mul",
+   "id": "mul-min-times-neg-one"
+  },
+  {
+   "args": [
+    {
+     "i64": -9223372036854775808
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 0
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_checked_mul",
+   "id": "mul-min-times-zero"
+  },
+  {
+   "args": [
+    {
+     "i64": -2
+    },
+    {
+     "i64": -3
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 6
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_checked_mul",
+   "id": "mul-neg-neg"
+  },
+  {
+   "args": [
+    {
+     "i64": 7
+    },
+    {
+     "i64": 2
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 3
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_checked_div",
+   "id": "div-basic"
+  },
+  {
+   "args": [
+    {
+     "i64": -7
+    },
+    {
+     "i64": 2
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": -3
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_checked_div",
+   "id": "div-truncates-toward-zero"
+  },
+  {
+   "args": [
+    {
+     "i64": 7
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 1,
+      "enum": "MathResult",
+      "payload": {
+       "reason": {
+        "i64": 1
+       }
+      },
+      "variant": "Err",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_checked_div",
+   "id": "div-by-zero"
+  },
+  {
+   "args": [
+    {
+     "i64": -9223372036854775808
+    },
+    {
+     "i64": -1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 1,
+      "enum": "MathResult",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      },
+      "variant": "Err",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_checked_div",
+   "id": "div-min-by-neg-one"
+  },
+  {
+   "args": [
+    {
+     "i64": -7
+    },
+    {
+     "i64": 2
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": -1
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_checked_mod",
+   "id": "mod-dividend-sign"
+  },
+  {
+   "args": [
+    {
+     "i64": 7
+    },
+    {
+     "i64": -2
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 1
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_checked_mod",
+   "id": "mod-positive-dividend-neg-divisor"
+  },
+  {
+   "args": [
+    {
+     "i64": -9223372036854775808
+    },
+    {
+     "i64": -1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 0
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_checked_mod",
+   "id": "mod-min-by-neg-one-is-zero"
+  },
+  {
+   "args": [
+    {
+     "i64": 7
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 1,
+      "enum": "MathResult",
+      "payload": {
+       "reason": {
+        "i64": 1
+       }
+      },
+      "variant": "Err",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_checked_mod",
+   "id": "mod-by-zero"
+  },
+  {
+   "args": [
+    {
+     "i64": -5
+    }
+   ],
+   "expect": [
+    {
+     "i64": 5
+    }
+   ],
+   "fn": "candidate_abs_sat",
+   "id": "abs-sat-neg"
+  },
+  {
+   "args": [
+    {
+     "i64": -9223372036854775808
+    }
+   ],
+   "expect": [
+    {
+     "i64": 9223372036854775807
+    }
+   ],
+   "fn": "candidate_abs_sat",
+   "id": "abs-sat-min-clamps"
+  },
+  {
+   "args": [
+    {
+     "i64": -5
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 5
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_abs_checked",
+   "id": "abs-checked-neg"
+  },
+  {
+   "args": [
+    {
+     "i64": -9223372036854775808
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 1,
+      "enum": "MathResult",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      },
+      "variant": "Err",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_abs_checked",
+   "id": "abs-checked-min-overflows"
+  },
+  {
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": -9223372036854775808
+    }
+   ],
+   "expect": [
+    {
+     "u64": 18446744073709551615
+    }
+   ],
+   "fn": "candidate_abs_diff",
+   "id": "abs-diff-extremes"
+  },
+  {
+   "args": [
+    {
+     "i64": 3
+    },
+    {
+     "i64": 3
+    }
+   ],
+   "expect": [
+    {
+     "u64": 0
+    }
+   ],
+   "fn": "candidate_abs_diff",
+   "id": "abs-diff-equal"
+  },
+  {
+   "args": [
+    {
+     "i64": 12
+    },
+    {
+     "i64": 18
+    }
+   ],
+   "expect": [
+    {
+     "u64": 6
+    }
+   ],
+   "fn": "candidate_gcd",
+   "id": "gcd-basic"
+  },
+  {
+   "args": [
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "u64": 0
+    }
+   ],
+   "fn": "candidate_gcd",
+   "id": "gcd-zero-zero"
+  },
+  {
+   "args": [
+    {
+     "i64": 0
+    },
+    {
+     "i64": 7
+    }
+   ],
+   "expect": [
+    {
+     "u64": 7
+    }
+   ],
+   "fn": "candidate_gcd",
+   "id": "gcd-zero-n"
+  },
+  {
+   "args": [
+    {
+     "i64": -12
+    },
+    {
+     "i64": 18
+    }
+   ],
+   "expect": [
+    {
+     "u64": 6
+    }
+   ],
+   "fn": "candidate_gcd",
+   "id": "gcd-negative"
+  },
+  {
+   "args": [
+    {
+     "i64": -9223372036854775808
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "u64": 9223372036854775808
+    }
+   ],
+   "fn": "candidate_gcd",
+   "id": "gcd-min-magnitude"
+  },
+  {
+   "args": [
+    {
+     "u64": 7540113804746346429
+    },
+    {
+     "u64": 4660046610375530309
+    }
+   ],
+   "expect": [
+    {
+     "u64": 1
+    }
+   ],
+   "fn": "candidate_gcd_u64",
+   "id": "gcd-fibonacci-stress",
+   "budget": 65536
+  },
+  {
+   "args": [
+    {
+     "i64": 12
+    },
+    {
+     "i64": 18
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 36
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_lcm",
+   "id": "lcm-basic",
+   "budget": 65536
+  },
+  {
+   "args": [
+    {
+     "i64": 0
+    },
+    {
+     "i64": 9
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 0
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_lcm",
+   "id": "lcm-zero"
+  },
+  {
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 2
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 1,
+      "enum": "MathResult",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      },
+      "variant": "Err",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_lcm",
+   "id": "lcm-overflow",
+   "budget": 65536
+  },
+  {
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "u64": 10
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 1024
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_pow_checked",
+   "id": "pow-basic"
+  },
+  {
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "u64": 62
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 4611686018427387904
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_pow_checked",
+   "id": "pow-2-62",
+   "budget": 65536
+  },
+  {
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "u64": 63
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 1,
+      "enum": "MathResult",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      },
+      "variant": "Err",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_pow_checked",
+   "id": "pow-2-63-overflows",
+   "budget": 65536
+  },
+  {
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "u64": 18446744073709551615
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 1
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_pow_checked",
+   "id": "pow-one-huge-exp",
+   "budget": 65536
+  },
+  {
+   "args": [
+    {
+     "i64": 5
+    },
+    {
+     "u64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 1
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_pow_checked",
+   "id": "pow-zero-exp"
+  },
+  {
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "u64": 63
+    }
+   ],
+   "expect": [
+    {
+     "i64": -9223372036854775808
+    }
+   ],
+   "fn": "candidate_pow_wrap",
+   "id": "pow-wrap-2-63"
+  },
+  {
+   "args": [
+    {
+     "u64": 18446744073709551615
+    },
+    {
+     "u64": 18446744073709551615
+    },
+    {
+     "u64": 18446744073709551615
+    }
+   ],
+   "expect": [
+    {
+     "u64": 0
+    }
+   ],
+   "fn": "candidate_mul_mod",
+   "id": "mul-mod-degenerate"
+  },
+  {
+   "args": [
+    {
+     "u64": 123456789
+    },
+    {
+     "u64": 987654321
+    },
+    {
+     "u64": 1000000007
+    }
+   ],
+   "expect": [
+    {
+     "u64": 259106859
+    }
+   ],
+   "fn": "candidate_mul_mod",
+   "id": "mul-mod-prime",
+   "budget": 65536
+  },
+  {
+   "args": [
+    {
+     "u64": 2
+    },
+    {
+     "u64": 63
+    },
+    {
+     "u64": 9223372036854775807
+    }
+   ],
+   "expect": [
+    {
+     "u64": 1
+    }
+   ],
+   "fn": "candidate_pow_mod",
+   "id": "pow-mod-basic",
+   "budget": 65536
+  },
+  {
+   "args": [
+    {
+     "u64": 7
+    },
+    {
+     "u64": 0
+    },
+    {
+     "u64": 13
+    }
+   ],
+   "expect": [
+    {
+     "u64": 1
+    }
+   ],
+   "fn": "candidate_pow_mod",
+   "id": "pow-mod-zero-exp",
+   "budget": 65536
+  },
+  {
+   "args": [
+    {
+     "u64": 5
+    },
+    {
+     "u64": 3
+    },
+    {
+     "u64": 1
+    }
+   ],
+   "expect": [
+    {
+     "u64": 0
+    }
+   ],
+   "fn": "candidate_pow_mod",
+   "id": "pow-mod-one",
+   "budget": 65536
+  },
+  {
+   "args": [
+    {
+     "i64": 17
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 4
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_isqrt",
+   "id": "isqrt-basic"
+  },
+  {
+   "args": [
+    {
+     "i64": 9223372036854775807
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 3037000499
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_isqrt",
+   "id": "isqrt-max",
+   "budget": 65536
+  },
+  {
+   "args": [
+    {
+     "i64": -4
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 1,
+      "enum": "MathResult",
+      "payload": {
+       "reason": {
+        "i64": 13
+       }
+      },
+      "variant": "Err",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_isqrt",
+   "id": "isqrt-negative-domain"
+  },
+  {
+   "args": [
+    {
+     "u64": 18446744073709551615
+    }
+   ],
+   "expect": [
+    {
+     "u64": 4294967295
+    }
+   ],
+   "fn": "candidate_isqrt_u64",
+   "id": "isqrt-u64-max",
+   "budget": 65536
+  },
+  {
+   "args": [
+    {
+     "u64": 20
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 2432902008176640000
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_factorial",
+   "id": "factorial-20",
+   "budget": 65536
+  },
+  {
+   "args": [
+    {
+     "u64": 21
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 1,
+      "enum": "MathResult",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      },
+      "variant": "Err",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_factorial",
+   "id": "factorial-21-overflows"
+  },
+  {
+   "args": [
+    {
+     "u64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 1
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_factorial",
+   "id": "factorial-zero"
+  },
+  {
+   "args": [
+    {
+     "u64": 10
+    },
+    {
+     "u64": 3
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 120
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_binom",
+   "id": "binom-basic"
+  },
+  {
+   "args": [
+    {
+     "u64": 60
+    },
+    {
+     "u64": 30
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 118264581564861424
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_binom",
+   "id": "binom-60-30",
+   "budget": 65536
+  },
+  {
+   "args": [
+    {
+     "u64": 66
+    },
+    {
+     "u64": 33
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 7219428434016265740
+       }
+      }
+     }
+    }
+   ],
+   "fn": "candidate_binom",
+   "id": "binom-past-i64",
+   "budget": 65536
+  },
+  {
+   "args": [
+    {
+     "u64": 5
+    },
+    {
+     "u64": 7
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "discriminant": 0,
+      "enum": "MathResult",
+      "payload": {
+       "value": {
+        "i64": 0
+       }
+      },
+      "variant": "Ok",
+      "home": "mncs.math.error.v1"
+     }
+    }
+   ],
+   "fn": "candidate_binom",
+   "id": "binom-k-gt-n"
+  },
+  {
+   "args": [
+    {
+     "i64": 12
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 9
+    }
+   ],
+   "expect": [
+    {
+     "i64": 9
+    }
+   ],
+   "fn": "candidate_clamp",
+   "id": "clamp-high"
+  },
+  {
+   "id": "binom-67-33-overflows",
+   "fn": "candidate_binom",
+   "args": [
+    {
+     "u64": 67
+    },
+    {
+     "u64": 33
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ],
+   "budget": 65536
+  },
+  {
+   "id": "abs-diff-cross-sign",
+   "fn": "candidate_abs_diff",
+   "args": [
+    {
+     "i64": -5
+    },
+    {
+     "i64": 3
+    }
+   ],
+   "expect": [
+    {
+     "u64": 8
+    }
+   ]
+  }
+ ],
+ "module": "mncs.math.scalar.v1",
+ "name": "scalar-exact-kernels"
+}

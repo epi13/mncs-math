@@ -1,0 +1,408 @@
+mncs 0.8;
+
+// mncs.math.rational — normalized exact rationals over i64.
+//
+// A Frac is (num, den) with den > 0 and gcd(|num|, den) == 1; (0, 1) is
+// zero. Every constructor normalizes through magnitude-domain (u64)
+// reduction, so -MIN magnitudes and sign flips are exact; unrepresentable
+// results (denominator 2^63, negated MIN numerator) are overflow reasons,
+// never wrapped values.
+//
+// Arithmetic reduces before multiplying (cross-gcd for mul, den-gcd for
+// add/sub) and threads scalar.checked_* guards, so intermediate overflow
+// is a reason, not a trap. Comparison is overflow-aware: a checked
+// cross-product fast path plus an exact quotient (continued-fraction)
+// slow loop for magnitudes past the u64 product range.
+//
+// Profile 0.8: records, payload enums, select, traversal, imports.
+module mncs.math.rational.v1;
+
+use mncs.math.error.v1;
+use mncs.math.internal.v1;
+use mncs.math.scalar.v1;
+use mncs.core.logic.v1;
+
+record Frac { num: i64, den: i64 }
+
+enum FracOutcome { Ok { num: i64, den: i64 }, Err { reason: i64 } }
+
+fn ok_frac(num: i64, den: i64) -> (result: FracOutcome) {
+    return FracOutcome.Ok { num: num, den: den };
+}
+
+fn err_frac(reason: i64) -> (result: FracOutcome) {
+    return FracOutcome.Err { reason: reason };
+}
+
+// Canonical construction with sign normalization and gcd reduction.
+// den == 0 fails; results needing |value| past i64 fail with overflow.
+fn make(num: i64, den: i64) -> (result: FracOutcome) {
+    if den == 0 {
+        return err_frac(reason_div_by_zero());
+    }
+    let neg: bool = bool_xor(num < 0, den < 0);
+    let man: u64 = magnitude(num);
+    let mad: u64 = magnitude(den);
+    let g: u64 = gcd_u64(man, mad);
+    let nn: u64 = man / g;
+    let dd: u64 = mad / g;
+    if dd > i64_max() as u64 {
+        return err_frac(reason_overflow());
+    }
+    if neg {
+        if nn > 9223372036854775808 {
+            return err_frac(reason_overflow());
+        }
+        if nn == 9223372036854775808 {
+            return ok_frac(i64_min(), dd as i64);
+        }
+        return ok_frac(0 - (nn as i64), dd as i64);
+    }
+    if nn > i64_max() as u64 {
+        return err_frac(reason_overflow());
+    }
+    return ok_frac(nn as i64, dd as i64);
+}
+
+// True exactly for den > 0 with coprime magnitude (zero only as (0, 1)).
+fn is_canonical(num: i64, den: i64) -> (result: bool) {
+    if den <= 0 {
+        return false;
+    }
+    if num == 0 {
+        return den == 1;
+    }
+    return gcd_u64(magnitude(num), den as u64) == 1;
+}
+
+fn sign_i64(x: i64) -> (result: i64) {
+    if x > 0 {
+        return 1;
+    }
+    if x < 0 {
+        return 0 - 1;
+    }
+    return 0;
+}
+
+// ---- arithmetic (reduce first, guard the rest) ----
+
+fn add(a: Frac, b: Frac) -> (result: FracOutcome) {
+    let g: u64 = gcd_u64(a.den as u64, b.den as u64);
+    let d2r: i64 = b.den / (g as i64);
+    let d1r: i64 = a.den / (g as i64);
+    let t1: MathResult = checked_mul(a.num, d2r);
+    return match t1 {
+        MathResult.Err { reason } => err_frac(reason),
+        Ok { value: x } => add_rhs(b, d1r, x),
+    };
+}
+
+fn add_rhs(b: Frac, d1r: i64, x: i64) -> (result: FracOutcome) {
+    let t2: MathResult = checked_mul(b.num, d1r);
+    return match t2 {
+        MathResult.Err { reason } => err_frac(reason),
+        Ok { value: y } => add_finish(b, d1r, x, y),
+    };
+}
+
+fn add_finish(b: Frac, d1r: i64, x: i64, y: i64) -> (result: FracOutcome) {
+    let s: MathResult = checked_add(x, y);
+    return match s {
+        MathResult.Err { reason } => err_frac(reason),
+        Ok { value: num } => add_den(b, d1r, num),
+    };
+}
+
+fn add_den(b: Frac, d1r: i64, num: i64) -> (result: FracOutcome) {
+    let d: MathResult = checked_mul(b.den, d1r);
+    return match d {
+        MathResult.Err { reason } => err_frac(reason),
+        Ok { value: den } => make(num, den),
+    };
+}
+
+fn sub(a: Frac, b: Frac) -> (result: FracOutcome) {
+    let g: u64 = gcd_u64(a.den as u64, b.den as u64);
+    let d2r: i64 = b.den / (g as i64);
+    let d1r: i64 = a.den / (g as i64);
+    let t1: MathResult = checked_mul(a.num, d2r);
+    return match t1 {
+        MathResult.Err { reason } => err_frac(reason),
+        Ok { value: x } => sub_rhs(b, d1r, x),
+    };
+}
+
+fn sub_rhs(b: Frac, d1r: i64, x: i64) -> (result: FracOutcome) {
+    let t2: MathResult = checked_mul(b.num, d1r);
+    return match t2 {
+        MathResult.Err { reason } => err_frac(reason),
+        Ok { value: y } => sub_finish(b, d1r, x, y),
+    };
+}
+
+fn sub_finish(b: Frac, d1r: i64, x: i64, y: i64) -> (result: FracOutcome) {
+    let s: MathResult = checked_sub(x, y);
+    return match s {
+        MathResult.Err { reason } => err_frac(reason),
+        Ok { value: num } => add_den(b, d1r, num),
+    };
+}
+
+// Cross-reduced multiplication: g1 removes a.num/b.den overlap, g2 the
+// c.num/a.den overlap, so the formed products are minimal.
+fn mul(a: Frac, b: Frac) -> (result: FracOutcome) {
+    let g1: u64 = gcd_u64(magnitude(a.num), b.den as u64);
+    let g2: u64 = gcd_u64(magnitude(b.num), a.den as u64);
+    let a1: i64 = a.num / (g1 as i64);
+    let b2: i64 = b.den / (g1 as i64);
+    let c1: i64 = b.num / (g2 as i64);
+    let d1: i64 = a.den / (g2 as i64);
+    let tn: MathResult = checked_mul(a1, c1);
+    return match tn {
+        MathResult.Err { reason } => err_frac(reason),
+        Ok { value: num } => mul_den(d1, b2, num),
+    };
+}
+
+fn mul_den(d1: i64, b2: i64, num: i64) -> (result: FracOutcome) {
+    let td: MathResult = checked_mul(d1, b2);
+    return match td {
+        MathResult.Err { reason } => err_frac(reason),
+        Ok { value: den } => make(num, den),
+    };
+}
+
+fn recip(b: Frac) -> (result: FracOutcome) {
+    if b.num == 0 {
+        return err_frac(reason_div_by_zero());
+    }
+    return make(b.den, b.num);
+}
+
+fn div(a: Frac, b: Frac) -> (result: FracOutcome) {
+    let r: FracOutcome = recip(b);
+    return match r {
+        FracOutcome.Err { reason } => err_frac(reason),
+        Ok { num, den } => mul(a, Frac { num: num, den: den }),
+    };
+}
+
+fn negate(a: Frac) -> (result: FracOutcome) {
+    if a.num == i64_min() {
+        return err_frac(reason_overflow());
+    }
+    return ok_frac(0 - a.num, a.den);
+}
+
+fn abs_frac(a: Frac) -> (result: FracOutcome) {
+    if a.num == i64_min() {
+        return err_frac(reason_overflow());
+    }
+    if a.num < 0 {
+        return ok_frac(0 - a.num, a.den);
+    }
+    return ok_frac(a.num, a.den);
+}
+
+// ---- comparison ----
+
+record CmpLoop { n1: u64, d1: u64, n2: u64, d2: u64, flip: bool, k: u64 }
+
+// Apply the inversion flag then the common nonzero sign (s is 1 or -1).
+fn signed_mag(v: i64, flip: bool, s: i64) -> (result: i64) {
+    return select(flip, 0 - v, v) * s;
+}
+
+// Exact quotient-loop comparison of positive fractions. Each iteration
+// consumes one continued-fraction term per side, so at most ~93 steps
+// for 64-bit magnitudes: two chained 64-phases cover it (same bound
+// argument as gcd_u64). flip inverts the sense after each inversion.
+fn cmp_slow2(n1: u64, d1: u64, n2: u64, d2: u64, flip: bool, s: i64) -> (result: i64) {
+    let table: [i64; 64] = steps64();
+    iterate i over table carrying st: CmpLoop = CmpLoop { n1: n1, d1: d1, n2: n2, d2: d2, flip: flip, k: 0 } {
+        let q1: u64 = st.n1 / st.d1;
+        let r1: u64 = st.n1 % st.d1;
+        let q2: u64 = st.n2 / st.d2;
+        let r2: u64 = st.n2 % st.d2;
+        if q1 > q2 {
+            return signed_mag(1, st.flip, s);
+        }
+        if q2 > q1 {
+            return signed_mag(0 - 1, st.flip, s);
+        }
+        if r1 == 0 {
+            if r2 == 0 {
+                return 0;
+            }
+            return signed_mag(0 - 1, st.flip, s);
+        }
+        if r2 == 0 {
+            return signed_mag(1, st.flip, s);
+        }
+        next st = CmpLoop { n1: st.d1, d1: r1, n2: st.d2, d2: r2, flip: select(st.flip, false, true), k: st.k +% 1 };
+    }
+    return 0;
+}
+
+fn cmp_slow1(n1: u64, d1: u64, n2: u64, d2: u64, flip: bool, s: i64) -> (result: i64) {
+    let table: [i64; 64] = steps64();
+    iterate i over table carrying st: CmpLoop = CmpLoop { n1: n1, d1: d1, n2: n2, d2: d2, flip: flip, k: 0 } {
+        let q1: u64 = st.n1 / st.d1;
+        let r1: u64 = st.n1 % st.d1;
+        let q2: u64 = st.n2 / st.d2;
+        let r2: u64 = st.n2 % st.d2;
+        if q1 > q2 {
+            return signed_mag(1, st.flip, s);
+        }
+        if q2 > q1 {
+            return signed_mag(0 - 1, st.flip, s);
+        }
+        if r1 == 0 {
+            if r2 == 0 {
+                return 0;
+            }
+            return signed_mag(0 - 1, st.flip, s);
+        }
+        if r2 == 0 {
+            return signed_mag(1, st.flip, s);
+        }
+        if st.k == 63 {
+            return cmp_slow2(st.d1, r1, st.d2, r2, select(st.flip, false, true), s);
+        }
+        next st = CmpLoop { n1: st.d1, d1: r1, n2: st.d2, d2: r2, flip: select(st.flip, false, true), k: st.k +% 1 };
+    }
+    return 0;
+}
+
+// True exactly when x * y fits in u64.
+fn u64_mul_ok(x: u64, y: u64) -> (result: bool) {
+    if x == 0 {
+        return true;
+    }
+    if y == 0 {
+        return true;
+    }
+    return x <= u64_max() / y;
+}
+
+// -1 / 0 / 1, exact for all canonical inputs.
+fn cmp(a: Frac, b: Frac) -> (result: i64) {
+    let sa: i64 = sign_i64(a.num);
+    let sb: i64 = sign_i64(b.num);
+    if sa > sb {
+        return 1;
+    }
+    if sb > sa {
+        return 0 - 1;
+    }
+    if sa == 0 {
+        return 0;
+    }
+    let m1: u64 = magnitude(a.num);
+    let m2: u64 = magnitude(b.num);
+    let d1: u64 = a.den as u64;
+    let d2: u64 = b.den as u64;
+    if u64_mul_ok(m1, d2) {
+        if u64_mul_ok(m2, d1) {
+            return cmp_cross(m1, d2, m2, d1, sa);
+        }
+    }
+    return cmp_slow1(m1, d1, m2, d2, false, sa);
+}
+
+fn cmp_cross(m1: u64, d2: u64, m2: u64, d1: u64, s: i64) -> (result: i64) {
+    let c1: u64 = m1 * d2;
+    let c2: u64 = m2 * d1;
+    if c1 > c2 {
+        return s;
+    }
+    if c2 > c1 {
+        return 0 - s;
+    }
+    return 0;
+}
+
+// ---- rounding to integers ----
+
+fn trunc(a: Frac) -> (result: i64) {
+    return a.num / a.den;
+}
+
+fn floor_frac(a: Frac) -> (result: i64) {
+    let q: i64 = a.num / a.den;
+    let r: i64 = a.num % a.den;
+    if r == 0 {
+        return q;
+    }
+    if a.num < 0 {
+        return q - 1;
+    }
+    return q;
+}
+
+fn ceil_frac(a: Frac) -> (result: i64) {
+    let q: i64 = a.num / a.den;
+    let r: i64 = a.num % a.den;
+    if r == 0 {
+        return q;
+    }
+    if a.num > 0 {
+        return q + 1;
+    }
+    return q;
+}
+
+fn to_i64_trunc(a: Frac) -> (result: i64) {
+    return trunc(a);
+}
+
+// ---- corpus entry points ----
+
+fn candidate_make(num: i64, den: i64) -> (result: FracOutcome) {
+    return make(num, den);
+}
+
+fn candidate_is_canonical(num: i64, den: i64) -> (result: bool) {
+    return is_canonical(num, den);
+}
+
+fn candidate_add(an: i64, ad: i64, bn: i64, bd: i64) -> (result: FracOutcome) {
+    return add(Frac { num: an, den: ad }, Frac { num: bn, den: bd });
+}
+
+fn candidate_sub(an: i64, ad: i64, bn: i64, bd: i64) -> (result: FracOutcome) {
+    return sub(Frac { num: an, den: ad }, Frac { num: bn, den: bd });
+}
+
+fn candidate_mul(an: i64, ad: i64, bn: i64, bd: i64) -> (result: FracOutcome) {
+    return mul(Frac { num: an, den: ad }, Frac { num: bn, den: bd });
+}
+
+fn candidate_div(an: i64, ad: i64, bn: i64, bd: i64) -> (result: FracOutcome) {
+    return div(Frac { num: an, den: ad }, Frac { num: bn, den: bd });
+}
+
+fn candidate_cmp(an: i64, ad: i64, bn: i64, bd: i64) -> (result: i64) {
+    return cmp(Frac { num: an, den: ad }, Frac { num: bn, den: bd });
+}
+
+fn candidate_floor(num: i64, den: i64) -> (result: i64) {
+    return floor_frac(Frac { num: num, den: den });
+}
+
+fn candidate_ceil(num: i64, den: i64) -> (result: i64) {
+    return ceil_frac(Frac { num: num, den: den });
+}
+
+fn candidate_trunc(num: i64, den: i64) -> (result: i64) {
+    return trunc(Frac { num: num, den: den });
+}
+
+fn candidate_negate(num: i64, den: i64) -> (result: FracOutcome) {
+    return negate(Frac { num: num, den: den });
+}
+
+fn candidate_abs(num: i64, den: i64) -> (result: FracOutcome) {
+    return abs_frac(Frac { num: num, den: den });
+}

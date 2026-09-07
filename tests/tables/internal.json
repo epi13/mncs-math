@@ -1,0 +1,36 @@
+{
+ "cases": [
+  {
+   "args": [],
+   "expect": [
+    {
+     "u64": 8
+    }
+   ],
+   "fn": "entry_steps8_len",
+   "id": "steps8-len"
+  },
+  {
+   "args": [],
+   "expect": [
+    {
+     "u64": 64
+    }
+   ],
+   "fn": "entry_steps64_len",
+   "id": "steps64-len"
+  },
+  {
+   "args": [],
+   "expect": [
+    {
+     "i64": 63
+    }
+   ],
+   "fn": "entry_steps64_last",
+   "id": "steps64-last"
+  }
+ ],
+ "module": "mncs.math.internal.v1",
+ "name": "internal-step-tables"
+}

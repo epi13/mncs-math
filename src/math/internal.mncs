@@ -1,0 +1,48 @@
+mncs 0.7;
+
+// mncs.math.internal — shared bounded-loop index tables and tiny folds.
+//
+// Bounded iteration needs a concrete sequence to traverse. These tables
+// give every module a canonical step supply without re-spelling 64
+// literals: `iterate i over steps64() carrying ...`. The traversal index
+// itself is unused; modules carry their own counters/state.
+//
+// Elements are i64, not u64: body validation refuses traversal over
+// u64-element sequences (MNB101), so index tables use the signed width.
+// Profile 0.7: exact sequences plus traversal, nothing else.
+module mncs.math.internal.v1;
+
+fn steps8() -> (result: [i64; 8]) {
+    return [0, 1, 2, 3, 4, 5, 6, 7];
+}
+
+fn steps16() -> (result: [i64; 16]) {
+    return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+}
+
+fn steps32() -> (result: [i64; 32]) {
+    return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31];
+}
+
+fn steps64() -> (result: [i64; 64]) {
+    return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63];
+}
+
+// Corpus entry points: observe table length and a sample element through
+// scalar shapes (sequences cross the boundary, but scalars keep every
+// corpus uniform).
+
+fn entry_steps8_len() -> (result: u64) {
+    let t: [i64; 8] = steps8();
+    return t.len;
+}
+
+fn entry_steps64_len() -> (result: u64) {
+    let t: [i64; 64] = steps64();
+    return t.len;
+}
+
+fn entry_steps64_last() -> (result: i64) {
+    let t: [i64; 64] = steps64();
+    return t[63];
+}

@@ -1,0 +1,7 @@
+# mncs-math build/test scratch (never commit evidence blobs)
+target/
+.forge-evidence/scratch/
+*.log
+__pycache__/
+*.pyc
+.DS_Store

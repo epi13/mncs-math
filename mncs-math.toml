@@ -1,0 +1,37 @@
+version = 1
+
+[project]
+name = "mncs-math"
+identity = "mncs-math-0.1-development"
+root = "."
+language_profile = "0.11"
+toolchain = "mncs-language (external, read-only)"
+
+[paths]
+sources = ["src/math"]
+tests = ["tests/corpora", "tests/tables"]
+examples = ["examples"]
+benchmarks = ["benchmarks"]
+docs = ["docs"]
+rfcs = ["rfcs"]
+reproducers = ["repro"]
+generated = ["target"]
+
+[backends]
+executable = [
+  "mncs-research-bytecode",
+  "mncs-portable-wasm-mvp",
+  "mncs-c11",
+  "mncs-llvm-ir",
+  "mncs-cranelift",
+]
+# Overall experiment status PASS or UNKNOWN both count as green:
+# UNKNOWN means compilation retained unresolved obligations (exact-cost,
+# range-validity), which is the honest steady state, not a failure.
+
+[limits]
+corpus_step_budget_min = 4096
+max_sequence_bound = 64
+max_vector_lanes = 64
+counted_bound_per_level = 32
+nesting_levels = 2

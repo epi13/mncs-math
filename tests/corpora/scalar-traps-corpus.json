@@ -1,0 +1,99 @@
+{
+ "schema_version": "0.1",
+ "name": "scalar-exact-kernels-traps",
+ "cases": [
+  {
+   "id": "trap-div-zero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_raw_div"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   }
+  },
+  {
+   "id": "trap-div-min-by-neg-one",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_raw_div"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -9223372036854775808,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   }
+  },
+  {
+   "id": "trap-add-overflow",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.scalar.v1",
+     "function": "candidate_raw_add"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 9223372036854775807,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   }
+  }
+ ]
+}

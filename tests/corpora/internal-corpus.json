@@ -1,0 +1,75 @@
+{
+ "schema_version": "0.1",
+ "name": "internal-step-tables",
+ "cases": [
+  {
+   "id": "steps8-len",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.internal.v1",
+     "function": "entry_steps8_len"
+    },
+    "arguments": [],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 8,
+      "type": {
+       "bits": 64,
+       "signed": false
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "steps64-len",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.internal.v1",
+     "function": "entry_steps64_len"
+    },
+    "arguments": [],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 64,
+      "type": {
+       "bits": 64,
+       "signed": false
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "steps64-last",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.internal.v1",
+     "function": "entry_steps64_last"
+    },
+    "arguments": [],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 63,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  }
+ ]
+}
