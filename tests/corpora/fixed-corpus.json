@@ -1,0 +1,2511 @@
+{
+ "schema_version": "0.1",
+ "name": "fixed-point-scales",
+ "cases": [
+  {
+   "id": "from-int",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_from_int_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 3000,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "from-int-max-ok",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_from_int_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 9223372036854774,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 9223372036854774000,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "from-int-overflow",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_from_int_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 9223372036854775,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 9223372036854775000,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "to-int-trunc-pos",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_to_int_trunc_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 3500,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 3,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "to-int-trunc-neg",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_to_int_trunc_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -3500,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": -3,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "to-int-floor-neg",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_to_int_floor_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -3500,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": -4,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "to-int-floor-pos",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_to_int_floor_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 3500,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 3,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "add-basic",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_add_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1500,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2300,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 3800,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "add-overflow",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_add_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 9223372036854775807,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "add-sat-clamps",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_add_sat_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 9223372036854775807,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 9223372036854775807,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-trunc-basic",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_mul_trunc_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1500,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 3000,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-trunc-neg",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_mul_trunc_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -1500,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": -3000,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-trunc-frac",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_mul_trunc_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1501,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1001,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 1502,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-nearest-frac",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_mul_nearest_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1501,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1001,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 1503,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-nearest-half",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_mul_nearest_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1500,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1001,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 1502,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-nearest-neg-half",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_mul_nearest_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -1500,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1001,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": -1502,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-overflow",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_mul_trunc_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1000000000000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1000000000000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-trunc-basic",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_div_trunc_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 3000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 1500,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-trunc-frac",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_div_trunc_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 333,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-nearest-frac",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_div_nearest_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 333,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-nearest-half",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_div_nearest_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 500,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-nearest-neg",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_div_nearest_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -1000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": -333,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-by-zero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_div_trunc_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-overflow",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_div_trunc_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 9223372036854775807,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "micro-mul",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_mul_trunc_micro"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2000000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3000000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 6000000,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "micro-div",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_div_trunc_micro"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1000000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2000000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 500000,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "micro-to-milli-half",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_micro_to_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1500,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 2,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "micro-to-milli-neg-half",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_micro_to_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -1500,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": -2,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "micro-to-milli-down",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_micro_to_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1499,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 1,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "milli-to-micro",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_milli_to_micro"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1500,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 1500000,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "milli-to-micro-overflow",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_milli_to_micro"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 9223372036854775807,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "sqrt-exact",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_sqrt_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 4000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 2000,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "sqrt-floor",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_sqrt_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 1414,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "sqrt-neg",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_sqrt_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 13,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "sqrt-zero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_sqrt_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 0,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "exp-zero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_exp_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 1000,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "exp-one",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_exp_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 2718,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "exp-neg-one",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_exp_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -1000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 368,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "exp-nine",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_exp_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 9000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 8102501,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "exp-neg-nine",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_exp_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -9000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 0,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "exp-two",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_exp_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 7388,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "exp-domain-hi",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_exp_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 9001,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 13,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "exp-domain-lo",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_exp_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -9001,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 13,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "sin-zero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_sin_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 0,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "sin-half-pi",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_sin_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1571,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 1000,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "sin-pi",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_sin_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 3142,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": -1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "sin-neg-half-pi",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_sin_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -1571,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": -1000,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "sin-two-pi",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_sin_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 6283,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 0,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "sin-large",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_sin_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 100000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": -506,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "ln1p-zero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_ln1p_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 0,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "ln1p-half",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_ln1p_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 500,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 405,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "ln1p-neg-half",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_ln1p_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -500,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": -692,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "ln1p-small",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_ln1p_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 100,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 95,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "ln1p-domain",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_ln1p_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 501,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 13,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,563 @@
+mncs 0.8;
+
+// mncs.math.fixed — deterministic fixed-point over i64.
+//
+// Two decimal scales, each with the factor frozen in the function (never
+// a parameter, so scales cannot mismatch):
+//   milli  factor 1000    (general scientific fixed-point)
+//   micro  factor 1000000 (high-resolution accumulators)
+//
+// Values are plain i64 counts; fallible ops return MathResult. Addition
+// and subtraction are exact with checked and saturating twins.
+// Multiplication and division round explicitly (trunc = toward zero,
+// nearest = half away from zero) and fail with overflow instead of
+// wrapping. Transcendentals (exp/sin/ln1p, milli only) are Horner Taylor
+// polynomials with documented domains; generation-time oracles pin both
+// their exact outputs and their accuracy bounds.
+//
+// This is the deterministic substitute for float workloads until the
+// language gains a float type (P001): no NaN, no rounding modes, no
+// fused operations — every rounding is an explicit, tested step.
+//
+// Profile 0.8: select, imports, payload enums.
+module mncs.math.fixed.v1;
+
+use mncs.math.error.v1;
+use mncs.math.scalar.v1;
+
+fn milli_factor() -> (result: i64) {
+    return 1000;
+}
+
+fn micro_factor() -> (result: i64) {
+    return 1000000;
+}
+
+// ---- scale conversion ----
+
+fn from_int_milli(x: i64) -> (result: MathResult) {
+    return checked_mul(x, 1000);
+}
+
+fn to_int_trunc_milli(x: i64) -> (result: i64) {
+    return x / 1000;
+}
+
+fn to_int_floor_milli(x: i64) -> (result: i64) {
+    let q: i64 = x / 1000;
+    let r: i64 = x % 1000;
+    if r == 0 {
+        return q;
+    }
+    if x < 0 {
+        return q - 1;
+    }
+    return q;
+}
+
+fn from_int_micro(x: i64) -> (result: MathResult) {
+    return checked_mul(x, 1000000);
+}
+
+fn to_int_trunc_micro(x: i64) -> (result: i64) {
+    return x / 1000000;
+}
+
+fn milli_to_micro(x: i64) -> (result: MathResult) {
+    return checked_mul(x, 1000);
+}
+
+// Round-half-away-from-zero to milli.
+fn micro_to_milli(x: i64) -> (result: i64) {
+    let q: i64 = x / 1000;
+    let r: i64 = x % 1000;
+    if r >= 500 {
+        return q + 1;
+    }
+    if r <= 0 - 500 {
+        return q - 1;
+    }
+    return q;
+}
+
+// ---- milli add/sub (exact) ----
+
+fn add_milli(a: i64, b: i64) -> (result: MathResult) {
+    return checked_add(a, b);
+}
+
+fn sub_milli(a: i64, b: i64) -> (result: MathResult) {
+    return checked_sub(a, b);
+}
+
+fn add_sat_milli(a: i64, b: i64) -> (result: i64) {
+    return a +| b;
+}
+
+fn sub_sat_milli(a: i64, b: i64) -> (result: i64) {
+    return a -| b;
+}
+
+// ---- milli mul/div with explicit rounding ----
+
+// Truncating multiply: (a * b) / 1000 toward zero. Fails on intermediate
+// overflow rather than wrapping.
+fn mul_trunc_milli(a: i64, b: i64) -> (result: MathResult) {
+    let p: MathResult = checked_mul(a, b);
+    return match p {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => MathResult.Ok { value: value / 1000 },
+    };
+}
+
+// Nearest multiply, halves away from zero. Divides first (exact, no
+// overflow), then adjusts the quotient: q can only move by one, which is
+// always in range.
+fn mul_nearest_milli(a: i64, b: i64) -> (result: MathResult) {
+    let p: MathResult = checked_mul(a, b);
+    return match p {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => mul_nearest_finish(value),
+    };
+}
+
+fn mul_nearest_finish(p: i64) -> (result: MathResult) {
+    let q: i64 = p / 1000;
+    let r: i64 = p % 1000;
+    if p >= 0 {
+        if r >= 500 {
+            return MathResult.Ok { value: q + 1 };
+        }
+        return MathResult.Ok { value: q };
+    }
+    if r <= 0 - 500 {
+        return MathResult.Ok { value: q - 1 };
+    }
+    return MathResult.Ok { value: q };
+}
+
+// Truncating divide: (a * 1000) / b toward zero. b == 0 fails; the
+// scaled numerator may overflow and fails rather than wrapping.
+fn div_trunc_milli(a: i64, b: i64) -> (result: MathResult) {
+    if b == 0 {
+        return MathResult.Err { reason: reason_div_by_zero() };
+    }
+    let s: MathResult = checked_mul(a, 1000);
+    return match s {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => div_trunc_finish(value, b),
+    };
+}
+
+fn div_trunc_finish(s: i64, b: i64) -> (result: MathResult) {
+    let q: MathResult = checked_div(s, b);
+    return match q {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => MathResult.Ok { value: value },
+    };
+}
+
+// Nearest divide with halves away from zero.
+fn div_nearest_milli(a: i64, b: i64) -> (result: MathResult) {
+    if b == 0 {
+        return MathResult.Err { reason: reason_div_by_zero() };
+    }
+    let s: MathResult = checked_mul(a, 1000);
+    return match s {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => div_nearest_finish(value, b),
+    };
+}
+
+fn div_nearest_finish(s: i64, b: i64) -> (result: MathResult) {
+    let neg: bool = select(s < 0, select(b < 0, false, true), b < 0);
+    let man: u64 = magnitude(s);
+    let mad: u64 = magnitude(b);
+    let q: u64 = man / mad;
+    let r: u64 = man % mad;
+    let rounded: u64 = q +% select(r *% 2 >= mad, 1, 0);
+    if neg {
+        if rounded > 9223372036854775808 {
+            return MathResult.Err { reason: reason_overflow() };
+        }
+        if rounded == 9223372036854775808 {
+            return MathResult.Ok { value: i64_min() };
+        }
+        return MathResult.Ok { value: 0 - (rounded as i64) };
+    }
+    if rounded > i64_max() as u64 {
+        return MathResult.Err { reason: reason_overflow() };
+    }
+    return MathResult.Ok { value: rounded as i64 };
+}
+
+// ---- micro add/sub/mul/div (truncating) ----
+
+fn add_micro(a: i64, b: i64) -> (result: MathResult) {
+    return checked_add(a, b);
+}
+
+fn sub_micro(a: i64, b: i64) -> (result: MathResult) {
+    return checked_sub(a, b);
+}
+
+fn mul_trunc_micro(a: i64, b: i64) -> (result: MathResult) {
+    let p: MathResult = checked_mul(a, b);
+    return match p {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => MathResult.Ok { value: value / 1000000 },
+    };
+}
+
+fn div_trunc_micro(a: i64, b: i64) -> (result: MathResult) {
+    if b == 0 {
+        return MathResult.Err { reason: reason_div_by_zero() };
+    }
+    let s: MathResult = checked_mul(a, 1000000);
+    return match s {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => div_trunc_finish(value, b),
+    };
+}
+
+// ---- milli sqrt / abs ----
+
+fn abs_milli(x: i64) -> (result: i64) {
+    return abs_sat(x);
+}
+
+fn sqrt_milli(x: i64) -> (result: MathResult) {
+    if x < 0 {
+        return MathResult.Err { reason: reason_domain() };
+    }
+    let s: MathResult = checked_mul(x, 1000);
+    return match s {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => sqrt_milli_finish(value),
+    };
+}
+
+fn sqrt_milli_finish(s: i64) -> (result: MathResult) {
+    let r: MathResult = isqrt(s);
+    return match r {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => MathResult.Ok { value: value },
+    };
+}
+
+// ---- milli transcendentals (Horner Taylor, documented domains) ----
+
+// Horner step with truncating fixed multiply threaded through MathResult:
+// once any step overflows, the error propagates unchanged.
+fn horner_step(acc: MathResult, coeff: i64, x: i64) -> (result: MathResult) {
+    return match acc {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => horner_mul(value, coeff, x),
+    };
+}
+
+fn horner_mul(value: i64, coeff: i64, x: i64) -> (result: MathResult) {
+    let t: MathResult = mul_trunc_milli(value, x);
+    return match t {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: prod } => add_milli(prod, coeff),
+    };
+}
+
+// Integer round-half-away-from-zero division for b > 0 (documented
+// precondition; callers pass literals or positive magnitudes). Overflow
+// free: |r| < b keeps every comparison in range, and q moves by at most
+// one from a non-extreme quotient.
+fn div_round_int(a: i64, b: i64) -> (result: i64) {
+    let q: i64 = a / b;
+    let r: i64 = a % b;
+    let mr: u64 = magnitude(r);
+    let mb: u64 = b as u64;
+    if mr >= mb - mr {
+        if a >= 0 {
+            return q + 1;
+        }
+        return q - 1;
+    }
+    return q;
+}
+
+// exp(x) for |x| <= 9000 milli, computed as exp(h)^128 * exp(r) with
+// h = round(x / 128) and r = x - 128 * h exact. Two facts force this
+// shape: (1) repeated squaring AMPLIFIES the Taylor value's relative
+// quantization error 128x, so Taylor and squaring run in MICRO precision
+// (1e-6 relative seeds stay sub-milli after amplification); (2) the
+// rounded halving must be compensated by the exact remainder, or the
+// wrong exponent is evaluated. Accuracy is a MIXED bound
+// max(2 milli, true/2048): absolute milli bounds do not scale for exp,
+// and the oracle asserts the mixed bound against real exp.
+fn exp_milli(x: i64) -> (result: MathResult) {
+    if x > 9000 {
+        return MathResult.Err { reason: reason_domain() };
+    }
+    if x < 0 - 9000 {
+        return MathResult.Err { reason: reason_domain() };
+    }
+    let h: i64 = div_round_int(x, 128);
+    let r: i64 = x - h * 128;
+    let t: MathResult = exp_taylor8_micro(h);
+    return match t {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => exp_remainder(value, r),
+    };
+}
+
+fn exp_remainder(p: i64, r: i64) -> (result: MathResult) {
+    let ps: MathResult = exp_squares(p);
+    return match ps {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => exp_rem_taylor(value, r),
+    };
+}
+
+fn exp_rem_taylor(psq: i64, r: i64) -> (result: MathResult) {
+    let e: MathResult = exp_taylor8_micro(r);
+    return match e {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => exp_combine(psq, value),
+    };
+}
+
+fn exp_combine(p: i64, e: i64) -> (result: MathResult) {
+    let t: MathResult = mul_trunc_micro(p, e);
+    return match t {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => MathResult.Ok { value: micro_to_milli(value) },
+    };
+}
+
+// 8-term Taylor in micro Horner form: coefficients round(1e6 / k!) for
+// k = 7 down to 0. The argument arrives in MILLI and is scaled once;
+// every Horner multiply stays micro.
+fn exp_taylor8_micro(h: i64) -> (result: MathResult) {
+    let s: MathResult = checked_mul(h, 1000);
+    return match s {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => exp_horner(value),
+    };
+}
+
+fn exp_horner(hm: i64) -> (result: MathResult) {
+    let c0: MathResult = MathResult.Ok { value: 198 };
+    let c1: MathResult = horner_step_micro(c0, 1389, hm);
+    let c2: MathResult = horner_step_micro(c1, 8333, hm);
+    let c3: MathResult = horner_step_micro(c2, 41667, hm);
+    let c4: MathResult = horner_step_micro(c3, 166667, hm);
+    let c5: MathResult = horner_step_micro(c4, 500000, hm);
+    let c6: MathResult = horner_step_micro(c5, 1000000, hm);
+    return horner_step_micro(c6, 1000000, hm);
+}
+
+fn exp_squares_step(c: MathResult) -> (result: MathResult) {
+    return match c {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => exp_squares(value),
+    };
+}
+
+fn exp_squares(m: i64) -> (result: MathResult) {
+    let s1: MathResult = square_micro(m);
+    let s2: MathResult = square_micro_step(s1);
+    let s3: MathResult = square_micro_step(s2);
+    let s4: MathResult = square_micro_step(s3);
+    let s5: MathResult = square_micro_step(s4);
+    let s6: MathResult = square_micro_step(s5);
+    let s7: MathResult = square_micro_step(s6);
+    return s7;
+}
+
+fn square_micro(m: i64) -> (result: MathResult) {
+    return mul_trunc_micro(m, m);
+}
+
+fn square_micro_step(s: MathResult) -> (result: MathResult) {
+    return match s {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => mul_trunc_micro(value, value),
+    };
+}
+
+// Range reduction modulo 2pi, computed in MICRO units:
+// r_micro = 1000 * x - k * 6283185 with k rounded turns. Wrapping
+// arithmetic never traps (the true difference always fits i64), and the
+// micro 2pi constant drifts only 0.0003 milli per turn instead of 0.185
+// milli for a milli constant. Full 2-milli sin accuracy holds for
+// |x| <= 2 * 10^7 milli; past that, reduction drift grows linearly with
+// the turn count (documented, deterministic, never a trap).
+fn reduce_angle(x: i64) -> (result: i64) {
+    let k: i64 = div_round_int(x, 6283);
+    return micro_to_milli(x *% 1000 -% (k *% 6283185));
+}
+
+// sin(x) for any milli x: reduce, fold into [-1600, 1600] with the
+// sin(pi - t) = sin(t) / sin(t - pi) = -sin(t) identities (the milli-pi
+// 3142 costs at most 0.4 milli), then t * P(t^2) with P a 9th-order
+// Taylor polynomial in MICRO precision. Folding matters: at |r| = pi the
+// 9th-order remainder (~7 milli) would dwarf sin itself; at |t| <= 1.6
+// it is ~0.004 milli. Accuracy: within 2 milli for |x| <= 2 * 10^7
+// milli (generation-time oracle asserts against real sin).
+fn sin_milli(x: i64) -> (result: MathResult) {
+    let r: i64 = reduce_angle(x);
+    return sin_taylor(r);
+}
+
+fn sin_taylor(r: i64) -> (result: MathResult) {
+    if r > 1600 {
+        return sin_small(3142 - r);
+    }
+    if r < 0 - 1600 {
+        return sin_small_neg(r + 3142);
+    }
+    return sin_small(r);
+}
+
+fn sin_small_neg(t: i64) -> (result: MathResult) {
+    let s: MathResult = sin_small(t);
+    return match s {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => MathResult.Ok { value: 0 - value },
+    };
+}
+
+fn sin_small(r: i64) -> (result: MathResult) {
+    let u: MathResult = mul_trunc_milli(r, r);
+    return match u {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => sin_outer(r, value),
+    };
+}
+
+fn sin_outer(r: i64, u: i64) -> (result: MathResult) {
+    let p: MathResult = sin_inner_micro(u);
+    return match p {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => mul_trunc_milli(r, micro_to_milli(value)),
+    };
+}
+
+fn sin_inner_micro(u: i64) -> (result: MathResult) {
+    let s: MathResult = checked_mul(u, 1000);
+    return match s {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => sin_horner(value),
+    };
+}
+
+fn sin_horner(um: i64) -> (result: MathResult) {
+    let c0: MathResult = MathResult.Ok { value: 3 };
+    let c1: MathResult = horner_step_micro(c0, 0 - 198, um);
+    let c2: MathResult = horner_step_micro(c1, 8333, um);
+    let c3: MathResult = horner_step_micro(c2, 0 - 166667, um);
+    return horner_step_micro(c3, 1000000, um);
+}
+
+fn horner_step_micro(acc: MathResult, coeff: i64, x: i64) -> (result: MathResult) {
+    return match acc {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => horner_mul_micro(value, coeff, x),
+    };
+}
+
+fn horner_mul_micro(value: i64, coeff: i64, x: i64) -> (result: MathResult) {
+    let t: MathResult = mul_trunc_micro(value, x);
+    return match t {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: prod } => add_micro(prod, coeff),
+    };
+}
+
+// ln(1+x) for |x| <= 500 milli: 8-term alternating Taylor (Horner) with
+// correctly signed milli coefficients 1, -1/2, 1/3, ..., -1/8.
+// Accuracy: within 1 milli (generation-time oracle asserts).
+fn ln1p_milli(x: i64) -> (result: MathResult) {
+    if x > 500 {
+        return MathResult.Err { reason: reason_domain() };
+    }
+    if x < 0 - 500 {
+        return MathResult.Err { reason: reason_domain() };
+    }
+    let c0: MathResult = MathResult.Ok { value: 0 - 125 };
+    let c1: MathResult = horner_step(c0, 143, x);
+    let c2: MathResult = horner_step(c1, 0 - 167, x);
+    let c3: MathResult = horner_step(c2, 200, x);
+    let c4: MathResult = horner_step(c3, 0 - 250, x);
+    let c5: MathResult = horner_step(c4, 333, x);
+    let c6: MathResult = horner_step(c5, 0 - 500, x);
+    let c7: MathResult = horner_step(c6, 1000, x);
+    return horner_step(c7, 0, x);
+}
+
+// ---- corpus entries ----
+
+fn entry_from_int_milli(x: i64) -> (result: MathResult) {
+    return from_int_milli(x);
+}
+
+fn entry_to_int_trunc_milli(x: i64) -> (result: i64) {
+    return to_int_trunc_milli(x);
+}
+
+fn entry_to_int_floor_milli(x: i64) -> (result: i64) {
+    return to_int_floor_milli(x);
+}
+
+fn entry_add_milli(a: i64, b: i64) -> (result: MathResult) {
+    return add_milli(a, b);
+}
+
+fn entry_add_sat_milli(a: i64, b: i64) -> (result: i64) {
+    return add_sat_milli(a, b);
+}
+
+fn entry_mul_trunc_milli(a: i64, b: i64) -> (result: MathResult) {
+    return mul_trunc_milli(a, b);
+}
+
+fn entry_mul_nearest_milli(a: i64, b: i64) -> (result: MathResult) {
+    return mul_nearest_milli(a, b);
+}
+
+fn entry_div_trunc_milli(a: i64, b: i64) -> (result: MathResult) {
+    return div_trunc_milli(a, b);
+}
+
+fn entry_div_nearest_milli(a: i64, b: i64) -> (result: MathResult) {
+    return div_nearest_milli(a, b);
+}
+
+fn entry_mul_trunc_micro(a: i64, b: i64) -> (result: MathResult) {
+    return mul_trunc_micro(a, b);
+}
+
+fn entry_div_trunc_micro(a: i64, b: i64) -> (result: MathResult) {
+    return div_trunc_micro(a, b);
+}
+
+fn entry_micro_to_milli(x: i64) -> (result: i64) {
+    return micro_to_milli(x);
+}
+
+fn entry_milli_to_micro(x: i64) -> (result: MathResult) {
+    return milli_to_micro(x);
+}
+
+fn entry_sqrt_milli(x: i64) -> (result: MathResult) {
+    return sqrt_milli(x);
+}
+
+fn entry_exp_milli(x: i64) -> (result: MathResult) {
+    return exp_milli(x);
+}
+
+fn entry_sin_milli(x: i64) -> (result: MathResult) {
+    return sin_milli(x);
+}
+
+fn entry_ln1p_milli(x: i64) -> (result: MathResult) {
+    return ln1p_milli(x);
+}

@@ -1,0 +1,738 @@
+mncs 0.8;
+
+// mncs.math.bigint — arbitrary-precision integers, limb-based.
+//
+// Representation: little-endian base-2^64 limbs stored as `[i64; N]`.
+// Limbs are i64 by STORAGE (body validation refuses traversal over u64
+// sequences, MNB101) and u64 by VALUE: every limb is reinterpreted with
+// `as` at the arithmetic site, so all limb math is exact unsigned
+// 64-bit. Signed integers use two's complement over the same limbs, so
+// every unsigned kernel is shared bit-exactly (see `sneg`/`scmp`).
+//
+// Widths are CONCRETE (N = 2 "u128", N = 8 "u512"): multi-value loop
+// state (result + carry, remainder + quotient) travels in records with
+// concrete sequence fields, which generic `[i64; N]` records cannot
+// express (no generic records in Profile 0.10 -- see P006). Division
+// chains fixed 64-step blocks (unrolled per width); nothing here needs
+// more than single-level traversal plus helper calls.
+//
+// Profile 0.8: sequences, traversal, replace, records, payload enums.
+module mncs.math.bigint.v1;
+
+use mncs.math.error.v1;
+use mncs.math.internal.v1;
+
+// ---- 64x64 -> 128 wide multiply (total, exact) ----
+
+record Wide { hi: u64, lo: u64 }
+
+// Schoolbook 32-bit split: every partial product fits u64 exactly, and
+// the high word is formed with wrapping adds that are exact because the
+// true high word always fits u64 (product < 2^128).
+fn mul_wide(x: u64, y: u64) -> (result: Wide) {
+    let x0: u64 = x % 4294967296;
+    let x1: u64 = x / 4294967296;
+    let y0: u64 = y % 4294967296;
+    let y1: u64 = y / 4294967296;
+    let z0: u64 = x0 * y0;
+    let z1: u64 = x0 * y1;
+    let z2: u64 = x1 * y0;
+    let z3: u64 = x1 * y1;
+    let mid_lo: u64 = z1 +% z2;
+    let mid_cy: u64 = select(mid_lo < z1, 1, 0);
+    let mid_hi: u64 = mid_lo / 4294967296 +% mid_cy *% 4294967296;
+    let t: u64 = mid_lo *% 4294967296;
+    let lo: u64 = z0 +% t;
+    let lo_cy: u64 = select(lo < z0, 1, 0);
+    let hi: u64 = z3 +% mid_hi +% lo_cy;
+    return Wide { hi: hi, lo: lo };
+}
+
+// ads/sbb-style carryіng ops via wrapping + comparison. cy/carry flag in,
+// (word, flag) out as two scalars through records.
+record CyOut { w: u64, cy: u64 }
+
+fn adc(x: u64, y: u64, c: u64) -> (result: CyOut) {
+    let m1: u64 = x +% y;
+    let c1: u64 = select(m1 < x, 1, 0);
+    let m2: u64 = m1 +% c;
+    let c2: u64 = select(m2 < m1, 1, 0);
+    return CyOut { w: m2, cy: c1 + c2 };
+}
+
+fn topbit_i64(x: i64) -> (result: u64) {
+    return (x as u64) / 9223372036854775808;
+}
+
+fn entry_mul_wide(x: u64, y: u64, which: u64) -> (result: u64) {
+    let w: Wide = mul_wide(x, y);
+    return select(which == 0, w.lo, w.hi);
+}
+
+// ============================ u128 (N = 2) ============================
+
+record AddOut2 { r: [i64; 2], cy: u64 }
+record SubOut2 { d: [i64; 2], bw: u64 }
+record DivMod2 { q: [i64; 2], r: [i64; 2] }
+record DivCheck2 { q0: i64, q1: i64, r0: i64, r1: i64 }
+
+fn zeros2() -> (result: [i64; 2]) {
+    return [0, 0];
+}
+
+fn from_u64_2(x: u64) -> (result: [i64; 2]) {
+    return [(x as i64), 0];
+}
+
+fn from_i64_2(x: i64) -> (result: [i64; 2]) {
+    return [x, x >> 63];
+}
+
+fn to_u64_lo2(a: [i64; 2]) -> (result: u64) {
+    return a[0] as u64;
+}
+
+fn fits_u64_2(a: [i64; 2]) -> (result: bool) {
+    return a[1] == 0;
+}
+
+fn to_i64_checked_2(a: [i64; 2]) -> (result: MathResult) {
+    if a[1] == a[0] >> 63 {
+        return MathResult.Ok { value: a[0] };
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+fn eq2(a: [i64; 2], b: [i64; 2]) -> (result: bool) {
+    return a[0] == b[0] && a[1] == b[1];
+}
+
+// Add with carry threading in one traversal: the carried record holds
+// the result array plus the scalar carry (concrete record, no pair
+// problem).
+fn add2rec(a: [i64; 2], b: [i64; 2]) -> (result: AddOut2) {
+    iterate i over a carrying st: AddOut2 = AddOut2 { r: zeros2(), cy: 0 } {
+        let s: CyOut = adc(a[i] as u64, b[i] as u64, st.cy);
+        next st = AddOut2 { r: replace(st.r, i, s.w as i64), cy: s.cy };
+    }
+    return st;
+}
+
+fn sub2rec(a: [i64; 2], b: [i64; 2]) -> (result: SubOut2) {
+    iterate i over a carrying st: SubOut2 = SubOut2 { d: zeros2(), bw: 0 } {
+        let m1: u64 = (a[i] as u64) -% (b[i] as u64);
+        let w1: u64 = select(m1 > (a[i] as u64), 1, 0);
+        let m2: u64 = m1 -% st.bw;
+        let w2: u64 = select(m2 > m1, 1, 0);
+        let bw: u64 = select(w1 == 1 || w2 == 1, 1, 0);
+        next st = SubOut2 { d: replace(st.d, i, m2 as i64), bw: bw };
+    }
+    return st;
+}
+
+record ShState2 { out: [i64; 2], cy: u64 }
+
+// Logical shift left by one across both limbs: cy flows LSB -> MSB.
+fn shl1_2(a: [i64; 2], carry_in: u64) -> (result: [i64; 2]) {
+    iterate i over a carrying st: ShState2 = ShState2 { out: zeros2(), cy: carry_in } {
+        let w: u64 = (a[i] as u64) *% 2 +% st.cy;
+        next st = ShState2 { out: replace(st.out, i, w as i64), cy: topbit_i64(a[i]) };
+    }
+    return st.out;
+}
+
+record ShrState2 { out: [i64; 2], k: u64, cy: u64 }
+
+// Logical shift right by one: processed MSB -> LSB with an explicit
+// down-counter, since the carry flows against traversal order. Indexing
+// by counter is runtime-checked (valid by the k < 2 invariant).
+fn shr1_2(a: [i64; 2], carry_in: u64) -> (result: [i64; 2]) {
+    iterate i over a carrying st: ShrState2 = ShrState2 { out: zeros2(), k: 1, cy: carry_in } {
+        let limb: u64 = a[st.k] as u64;
+        let w: u64 = limb / 2 +% st.cy *% 9223372036854775808;
+        let next_k: u64 = st.k -% 1;
+        next st = ShrState2 { out: replace(st.out, st.k, w as i64), k: next_k, cy: limb % 2 };
+    }
+    return st.out;
+}
+
+fn is_zero2(a: [i64; 2]) -> (result: bool) {
+    return a[0] == 0 && a[1] == 0;
+}
+
+// a >= b iff subtraction does not borrow.
+fn ge2(a: [i64; 2], b: [i64; 2]) -> (result: bool) {
+    let s: SubOut2 = sub2rec(a, b);
+    return s.bw == 0;
+}
+
+fn cmp2(a: [i64; 2], b: [i64; 2]) -> (result: i64) {
+    let s: SubOut2 = sub2rec(a, b);
+    if s.bw == 1 {
+        return 0 - 1;
+    }
+    if is_zero2(s.d) {
+        return 0;
+    }
+    return 1;
+}
+
+// ---- u128 multiply ----
+
+record RowState2 { lo: [i64; 2], hi: [i64; 2], carry: u64 }
+
+// One schoolbook row: ai * b[0..2] accumulated into columns (ictr + j).
+// Columns are addressed by computed index through col_get/col_set, so
+// every access is runtime-checked (valid: ictr + j < 4 by the guard).
+fn col_get2(lo: [i64; 2], hi: [i64; 2], k: u64) -> (result: u64) {
+    if k < 2 {
+        return lo[k] as u64;
+    }
+    return hi[k - 2] as u64;
+}
+
+record ColPair2 { lo: [i64; 2], hi: [i64; 2] }
+
+fn col_set2(lo: [i64; 2], hi: [i64; 2], k: u64, v: u64) -> (result: ColPair2) {
+    if k < 2 {
+        return ColPair2 { lo: replace(lo, k, v as i64), hi: hi };
+    }
+    return ColPair2 { lo: lo, hi: replace(hi, k - 2, v as i64) };
+}
+
+fn mul_row2(st: RowState2, ai: u64, ictr: u64, b: [i64; 2]) -> (result: RowState2) {
+    iterate j over b carrying rs: RowState2 = st {
+        let k: u64 = ictr + j;
+        let w: Wide = mul_wide(ai, b[j] as u64);
+        let col: u64 = col_get2(rs.lo, rs.hi, k);
+        let m1: u64 = col +% rs.carry;
+        let c1: u64 = select(m1 < col, 1, 0);
+        let m2: u64 = m1 +% w.lo;
+        let c2: u64 = select(m2 < m1, 1, 0);
+        let cp: ColPair2 = col_set2(rs.lo, rs.hi, k, m2);
+        next rs = RowState2 { lo: cp.lo, hi: cp.hi, carry: w.hi +% c1 +% c2 };
+    }
+    return rs;
+}
+
+record MulFull2 { lo: [i64; 2], hi: [i64; 2] }
+
+// Full 128x128 -> 256 product as (lo, hi) limb pairs. Rows accumulate
+// LSB -> MSB; per-column wrapping sums are exact mod 2^64 and every row
+// carry stays below 2^64 by the single-word schoolbook invariant, so the
+// final halves equal the true product.
+fn mul_full2(a: [i64; 2], b: [i64; 2]) -> (result: MulFull2) {
+    let r0: RowState2 = mul_row2(RowState2 { lo: zeros2(), hi: zeros2(), carry: 0 }, a[0] as u64, 0, b);
+    let h0: [i64; 2] = replace(r0.hi, 0, (r0.hi[0] as u64 +% r0.carry) as i64);
+    let r1: RowState2 = mul_row2(RowState2 { lo: r0.lo, hi: h0, carry: 0 }, a[1] as u64, 1, b);
+    let h1: [i64; 2] = replace(r1.hi, 1, (r1.hi[1] as u64 +% r1.carry) as i64);
+    return MulFull2 { lo: r1.lo, hi: h1 };
+}
+
+fn mul_lo2(a: [i64; 2], b: [i64; 2]) -> (result: [i64; 2]) {
+    let m: MulFull2 = mul_full2(a, b);
+    return m.lo;
+}
+
+// ---- u128 divide (restoring, 2 chained 64-blocks) ----
+
+record DivState2 { q: [i64; 2], r: [i64; 2] }
+
+fn div_micro2(st: DivState2, div: [i64; 2]) -> (result: DivState2) {
+    let t: u64 = topbit_i64(st.q[1]);
+    let r1: [i64; 2] = shl1_2(st.r, t);
+    let q1: [i64; 2] = shl1_2(st.q, 0);
+    if ge2(r1, div) {
+        let s: SubOut2 = sub2rec(r1, div);
+        return DivState2 { q: replace(q1, 0, (q1[0] as u64 +% 1) as i64), r: s.d };
+    }
+    return DivState2 { q: q1, r: r1 };
+}
+
+fn div_block2(st: DivState2, div: [i64; 2]) -> (result: DivState2) {
+    let table: [i64; 64] = steps64();
+    iterate t over table carrying cur: DivState2 = st {
+        next cur = div_micro2(cur, div);
+    }
+    return cur;
+}
+
+fn divmod2rec(a: [i64; 2], div: [i64; 2]) -> (result: DivMod2) {
+    let s0: DivState2 = DivState2 { q: zeros2(), r: zeros2() };
+    let seeded: DivState2 = DivState2 { q: a, r: s0.r };
+    let s1: DivState2 = div_block2(seeded, div);
+    let s2: DivState2 = div_block2(s1, div);
+    return DivMod2 { q: s2.q, r: s2.r };
+}
+
+enum DivOut2 { Ok { q0: i64, q1: i64, r0: i64, r1: i64 }, Err { reason: i64 } }
+
+fn divmod_checked2(a: [i64; 2], div: [i64; 2]) -> (result: DivOut2) {
+    if is_zero2(div) {
+        return DivOut2.Err { reason: reason_div_by_zero() };
+    }
+    let d: DivMod2 = divmod2rec(a, div);
+    return DivOut2.Ok { q0: d.q[0], q1: d.q[1], r0: d.r[0], r1: d.r[1] };
+}
+
+// ---- u128 signed twins (two's complement) ----
+
+fn neg2(a: [i64; 2]) -> (result: [i64; 2]) {
+    let s: SubOut2 = sub2rec(zeros2(), a);
+    return s.d;
+}
+
+fn is_neg2(a: [i64; 2]) -> (result: bool) {
+    return topbit_i64(a[1]) == 1;
+}
+
+fn abs2(a: [i64; 2]) -> (result: [i64; 2]) {
+    if is_neg2(a) {
+        return neg2(a);
+    }
+    return a;
+}
+
+fn scmp2(a: [i64; 2], b: [i64; 2]) -> (result: i64) {
+    let na: bool = is_neg2(a);
+    let nb: bool = is_neg2(b);
+    if na && nb {
+        return cmp2(a, b);
+    }
+    if na {
+        return 0 - 1;
+    }
+    if nb {
+        return 1;
+    }
+    return cmp2(a, b);
+}
+
+// ---- u128 corpus entries ----
+
+fn entry_add2(a0: i64, a1: i64, b0: i64, b1: i64) -> (result: [i64; 2]) {
+    let s: AddOut2 = add2rec([a0, a1], [b0, b1]);
+    return s.r;
+}
+
+fn entry_add2_cy(a0: i64, a1: i64, b0: i64, b1: i64) -> (result: u64) {
+    let s: AddOut2 = add2rec([a0, a1], [b0, b1]);
+    return s.cy;
+}
+
+fn entry_sub2(a0: i64, a1: i64, b0: i64, b1: i64) -> (result: [i64; 2]) {
+    let s: SubOut2 = sub2rec([a0, a1], [b0, b1]);
+    return s.d;
+}
+
+fn entry_sub2_bw(a0: i64, a1: i64, b0: i64, b1: i64) -> (result: u64) {
+    let s: SubOut2 = sub2rec([a0, a1], [b0, b1]);
+    return s.bw;
+}
+
+fn entry_mul_lo2(a0: i64, a1: i64, b0: i64, b1: i64) -> (result: [i64; 2]) {
+    return mul_lo2([a0, a1], [b0, b1]);
+}
+
+fn entry_mul_hi2(a0: i64, a1: i64, b0: i64, b1: i64) -> (result: [i64; 2]) {
+    let m: MulFull2 = mul_full2([a0, a1], [b0, b1]);
+    return m.hi;
+}
+
+fn entry_divmod2(a0: i64, a1: i64, b0: i64, b1: i64) -> (result: DivOut2) {
+    return divmod_checked2([a0, a1], [b0, b1]);
+}
+
+fn entry_shl1_2(a0: i64, a1: i64) -> (result: [i64; 2]) {
+    return shl1_2([a0, a1], 0);
+}
+
+fn entry_shr1_2(a0: i64, a1: i64) -> (result: [i64; 2]) {
+    return shr1_2([a0, a1], 0);
+}
+
+fn entry_cmp2(a0: i64, a1: i64, b0: i64, b1: i64) -> (result: i64) {
+    return cmp2([a0, a1], [b0, b1]);
+}
+
+fn entry_scmp2(a0: i64, a1: i64, b0: i64, b1: i64) -> (result: i64) {
+    return scmp2([a0, a1], [b0, b1]);
+}
+
+fn entry_from_i64_2(x: i64) -> (result: [i64; 2]) {
+    return from_i64_2(x);
+}
+
+fn entry_to_i64_2(a0: i64, a1: i64) -> (result: MathResult) {
+    return to_i64_checked_2([a0, a1]);
+}
+
+fn entry_neg2(a0: i64, a1: i64) -> (result: [i64; 2]) {
+    return neg2([a0, a1]);
+}
+
+// ============================ u512 (N = 8) ============================
+
+record AddOut8 { r: [i64; 8], cy: u64 }
+record SubOut8 { d: [i64; 8], bw: u64 }
+record ShState8 { out: [i64; 8], cy: u64 }
+record ShrState8 { out: [i64; 8], k: u64, cy: u64 }
+record DivState8 { q: [i64; 8], r: [i64; 8] }
+record DivMod8 { q: [i64; 8], r: [i64; 8] }
+record RowState8 { lo: [i64; 8], hi: [i64; 8], carry: u64 }
+record MulFull8 { lo: [i64; 8], hi: [i64; 8] }
+record ColPair8 { lo: [i64; 8], hi: [i64; 8] }
+record BitState8 { best: u64, ctr: u64 }
+
+enum DivOut8 { Ok { q0: i64, q1: i64, q2: i64, q3: i64, q4: i64, q5: i64, q6: i64, q7: i64, r0: i64, r1: i64, r2: i64, r3: i64, r4: i64, r5: i64, r6: i64, r7: i64 }, Err { reason: i64 } }
+
+fn zeros8() -> (result: [i64; 8]) {
+    return [0, 0, 0, 0, 0, 0, 0, 0];
+}
+
+fn limbs8(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64) -> (result: [i64; 8]) {
+    return [a0, a1, a2, a3, a4, a5, a6, a7];
+}
+
+fn from_u64_8(x: u64) -> (result: [i64; 8]) {
+    return [(x as i64), 0, 0, 0, 0, 0, 0, 0];
+}
+
+fn from_i64_8(x: i64) -> (result: [i64; 8]) {
+    let s: i64 = x >> 63;
+    return [x, s, s, s, s, s, s, s];
+}
+
+fn to_u64_lo8(a: [i64; 8]) -> (result: u64) {
+    return a[0] as u64;
+}
+
+fn fits_u64_8(a: [i64; 8]) -> (result: bool) {
+    return a[1] == 0 && a[2] == 0 && a[3] == 0 && a[4] == 0 && a[5] == 0 && a[6] == 0 && a[7] == 0;
+}
+
+fn to_i64_checked_8(a: [i64; 8]) -> (result: MathResult) {
+    let s: i64 = a[0] >> 63;
+    if a[1] == s && a[2] == s && a[3] == s && a[4] == s && a[5] == s && a[6] == s && a[7] == s {
+        return MathResult.Ok { value: a[0] };
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+fn is_zero8(a: [i64; 8]) -> (result: bool) {
+    return a[0] == 0 && a[1] == 0 && a[2] == 0 && a[3] == 0 && a[4] == 0 && a[5] == 0 && a[6] == 0 && a[7] == 0;
+}
+
+fn is_min8(a: [i64; 8]) -> (result: bool) {
+    return a[0] == 0 && a[1] == 0 && a[2] == 0 && a[3] == 0 && a[4] == 0 && a[5] == 0 && a[6] == 0 && a[7] == i64_min8();
+}
+
+fn i64_min8() -> (result: i64) {
+    return 0 - 9223372036854775807 - 1;
+}
+
+fn add8rec(a: [i64; 8], b: [i64; 8]) -> (result: AddOut8) {
+    iterate i over a carrying st: AddOut8 = AddOut8 { r: zeros8(), cy: 0 } {
+        let s: CyOut = adc(a[i] as u64, b[i] as u64, st.cy);
+        next st = AddOut8 { r: replace(st.r, i, s.w as i64), cy: s.cy };
+    }
+    return st;
+}
+
+fn sub8rec(a: [i64; 8], b: [i64; 8]) -> (result: SubOut8) {
+    iterate i over a carrying st: SubOut8 = SubOut8 { d: zeros8(), bw: 0 } {
+        let m1: u64 = (a[i] as u64) -% (b[i] as u64);
+        let w1: u64 = select(m1 > (a[i] as u64), 1, 0);
+        let m2: u64 = m1 -% st.bw;
+        let w2: u64 = select(m2 > m1, 1, 0);
+        let bw: u64 = select(w1 == 1 || w2 == 1, 1, 0);
+        next st = SubOut8 { d: replace(st.d, i, m2 as i64), bw: bw };
+    }
+    return st;
+}
+
+fn shl1_8(a: [i64; 8], carry_in: u64) -> (result: [i64; 8]) {
+    iterate i over a carrying st: ShState8 = ShState8 { out: zeros8(), cy: carry_in } {
+        let w: u64 = (a[i] as u64) *% 2 +% st.cy;
+        next st = ShState8 { out: replace(st.out, i, w as i64), cy: topbit_i64(a[i]) };
+    }
+    return st.out;
+}
+
+fn shr1_8(a: [i64; 8], carry_in: u64) -> (result: [i64; 8]) {
+    iterate i over a carrying st: ShrState8 = ShrState8 { out: zeros8(), k: 7, cy: carry_in } {
+        let limb: u64 = a[st.k] as u64;
+        let w: u64 = limb / 2 +% st.cy *% 9223372036854775808;
+        next st = ShrState8 { out: replace(st.out, st.k, w as i64), k: st.k -% 1, cy: limb % 2 };
+    }
+    return st.out;
+}
+
+fn ge8(a: [i64; 8], b: [i64; 8]) -> (result: bool) {
+    let s: SubOut8 = sub8rec(a, b);
+    return s.bw == 0;
+}
+
+fn cmp8(a: [i64; 8], b: [i64; 8]) -> (result: i64) {
+    let s: SubOut8 = sub8rec(a, b);
+    if s.bw == 1 {
+        return 0 - 1;
+    }
+    if is_zero8(s.d) {
+        return 0;
+    }
+    return 1;
+}
+
+fn neg8(a: [i64; 8]) -> (result: [i64; 8]) {
+    let s: SubOut8 = sub8rec(zeros8(), a);
+    return s.d;
+}
+
+fn is_neg8(a: [i64; 8]) -> (result: bool) {
+    return topbit_i64(a[7]) == 1;
+}
+
+fn scmp8(a: [i64; 8], b: [i64; 8]) -> (result: i64) {
+    let na: bool = is_neg8(a);
+    let nb: bool = is_neg8(b);
+    if na && nb {
+        return cmp8(a, b);
+    }
+    if na {
+        return 0 - 1;
+    }
+    if nb {
+        return 1;
+    }
+    return cmp8(a, b);
+}
+
+// ---- u512 multiply (full 8x8 -> 16, unrolled rows) ----
+
+fn col_get8(lo: [i64; 8], hi: [i64; 8], k: u64) -> (result: u64) {
+    if k < 8 {
+        return lo[k] as u64;
+    }
+    return hi[k - 8] as u64;
+}
+
+fn col_set8(lo: [i64; 8], hi: [i64; 8], k: u64, v: u64) -> (result: ColPair8) {
+    if k < 8 {
+        return ColPair8 { lo: replace(lo, k, v as i64), hi: hi };
+    }
+    return ColPair8 { lo: lo, hi: replace(hi, k - 8, v as i64) };
+}
+
+fn mul_row8(st: RowState8, ai: u64, ictr: u64, b: [i64; 8]) -> (result: RowState8) {
+    iterate j over b carrying rs: RowState8 = st {
+        let k: u64 = ictr + j;
+        let w: Wide = mul_wide(ai, b[j] as u64);
+        let col: u64 = col_get8(rs.lo, rs.hi, k);
+        let m1: u64 = col +% rs.carry;
+        let c1: u64 = select(m1 < col, 1, 0);
+        let m2: u64 = m1 +% w.lo;
+        let c2: u64 = select(m2 < m1, 1, 0);
+        let cp: ColPair8 = col_set8(rs.lo, rs.hi, k, m2);
+        next rs = RowState8 { lo: cp.lo, hi: cp.hi, carry: w.hi +% c1 +% c2 };
+    }
+    return rs;
+}
+
+fn mul_full8(a: [i64; 8], b: [i64; 8]) -> (result: MulFull8) {
+    let s0: RowState8 = RowState8 { lo: zeros8(), hi: zeros8(), carry: 0 };
+    let r0: RowState8 = mul_row8(s0, a[0] as u64, 0, b);
+    let h0: [i64; 8] = replace(r0.hi, 0, (r0.hi[0] as u64 +% r0.carry) as i64);
+    let r1: RowState8 = mul_row8(RowState8 { lo: r0.lo, hi: h0, carry: 0 }, a[1] as u64, 1, b);
+    let h1: [i64; 8] = replace(r1.hi, 1, (r1.hi[1] as u64 +% r1.carry) as i64);
+    let r2: RowState8 = mul_row8(RowState8 { lo: r1.lo, hi: h1, carry: 0 }, a[2] as u64, 2, b);
+    let h2: [i64; 8] = replace(r2.hi, 2, (r2.hi[2] as u64 +% r2.carry) as i64);
+    let r3: RowState8 = mul_row8(RowState8 { lo: r2.lo, hi: h2, carry: 0 }, a[3] as u64, 3, b);
+    let h3: [i64; 8] = replace(r3.hi, 3, (r3.hi[3] as u64 +% r3.carry) as i64);
+    let r4: RowState8 = mul_row8(RowState8 { lo: r3.lo, hi: h3, carry: 0 }, a[4] as u64, 4, b);
+    let h4: [i64; 8] = replace(r4.hi, 4, (r4.hi[4] as u64 +% r4.carry) as i64);
+    let r5: RowState8 = mul_row8(RowState8 { lo: r4.lo, hi: h4, carry: 0 }, a[5] as u64, 5, b);
+    let h5: [i64; 8] = replace(r5.hi, 5, (r5.hi[5] as u64 +% r5.carry) as i64);
+    let r6: RowState8 = mul_row8(RowState8 { lo: r5.lo, hi: h5, carry: 0 }, a[6] as u64, 6, b);
+    let h6: [i64; 8] = replace(r6.hi, 6, (r6.hi[6] as u64 +% r6.carry) as i64);
+    let r7: RowState8 = mul_row8(RowState8 { lo: r6.lo, hi: h6, carry: 0 }, a[7] as u64, 7, b);
+    let h7: [i64; 8] = replace(r7.hi, 7, (r7.hi[7] as u64 +% r7.carry) as i64);
+    return MulFull8 { lo: r7.lo, hi: h7 };
+}
+
+fn mul_lo8(a: [i64; 8], b: [i64; 8]) -> (result: [i64; 8]) {
+    let m: MulFull8 = mul_full8(a, b);
+    return m.lo;
+}
+
+// ---- u512 divide (restoring, 8 chained 64-blocks) ----
+
+fn div_micro8(st: DivState8, div: [i64; 8]) -> (result: DivState8) {
+    let t: u64 = topbit_i64(st.q[7]);
+    let r1: [i64; 8] = shl1_8(st.r, t);
+    let q1: [i64; 8] = shl1_8(st.q, 0);
+    if ge8(r1, div) {
+        let s: SubOut8 = sub8rec(r1, div);
+        return DivState8 { q: replace(q1, 0, (q1[0] as u64 +% 1) as i64), r: s.d };
+    }
+    return DivState8 { q: q1, r: r1 };
+}
+
+fn div_block8(st: DivState8, div: [i64; 8]) -> (result: DivState8) {
+    let table: [i64; 64] = steps64();
+    iterate t over table carrying cur: DivState8 = st {
+        next cur = div_micro8(cur, div);
+    }
+    return cur;
+}
+
+fn divmod8rec(a: [i64; 8], div: [i64; 8]) -> (result: DivMod8) {
+    let s0: DivState8 = DivState8 { q: a, r: zeros8() };
+    let s1: DivState8 = div_block8(s0, div);
+    let s2: DivState8 = div_block8(s1, div);
+    let s3: DivState8 = div_block8(s2, div);
+    let s4: DivState8 = div_block8(s3, div);
+    let s5: DivState8 = div_block8(s4, div);
+    let s6: DivState8 = div_block8(s5, div);
+    let s7: DivState8 = div_block8(s6, div);
+    let s8: DivState8 = div_block8(s7, div);
+    return DivMod8 { q: s8.q, r: s8.r };
+}
+
+fn divmod_checked8(a: [i64; 8], div: [i64; 8]) -> (result: DivOut8) {
+    if is_zero8(div) {
+        return DivOut8.Err { reason: reason_div_by_zero() };
+    }
+    let d: DivMod8 = divmod8rec(a, div);
+    return DivOut8.Ok { q0: d.q[0], q1: d.q[1], q2: d.q[2], q3: d.q[3], q4: d.q[4], q5: d.q[5], q6: d.q[6], q7: d.q[7], r0: d.r[0], r1: d.r[1], r2: d.r[2], r3: d.r[3], r4: d.r[4], r5: d.r[5], r6: d.r[6], r7: d.r[7] };
+}
+
+// Signed division with truncation toward zero: magnitudes through the
+// unsigned kernel, quotient negated on sign mismatch, remainder taking
+// the dividend's sign. Most-negative operands are unrepresentable as
+// magnitudes and fail with overflow.
+fn sdivmod_checked8(a: [i64; 8], div: [i64; 8]) -> (result: DivOut8) {
+    if is_zero8(div) {
+        return DivOut8.Err { reason: reason_div_by_zero() };
+    }
+    if is_min8(a) {
+        return DivOut8.Err { reason: reason_overflow() };
+    }
+    if is_min8(div) {
+        return DivOut8.Err { reason: reason_overflow() };
+    }
+    let na: bool = is_neg8(a);
+    let nb: bool = is_neg8(div);
+    let ma: [i64; 8] = select(na, neg8(a), a);
+    let mb: [i64; 8] = select(nb, neg8(div), div);
+    let d: DivMod8 = divmod8rec(ma, mb);
+    let same_sign: bool = select(na, nb, select(nb, false, true));
+    let q: [i64; 8] = select(same_sign, d.q, neg8(d.q));
+    let r: [i64; 8] = select(na, neg8(d.r), d.r);
+    return DivOut8.Ok { q0: q[0], q1: q[1], q2: q[2], q3: q[3], q4: q[4], q5: q[5], q6: q[6], q7: q[7], r0: r[0], r1: r[1], r2: r[2], r3: r[3], r4: r[4], r5: r[5], r6: r[6], r7: r[7] };
+}
+
+// ---- clz / bit length ----
+
+fn clz64(x: u64) -> (result: u64) {
+    if x == 0 {
+        return 64;
+    }
+    let s32: bool = x < 4294967296;
+    let x1: u64 = select(s32, x *% 4294967296, x);
+    let n1: u64 = select(s32, 32, 0);
+    let s16: bool = x1 < 281474976710656;
+    let x2: u64 = select(s16, x1 *% 65536, x1);
+    let n2: u64 = n1 +% select(s16, 16, 0);
+    let s8: bool = x2 < 72057594037927936;
+    let x3: u64 = select(s8, x2 *% 256, x2);
+    let n3: u64 = n2 +% select(s8, 8, 0);
+    let s4: bool = x3 < 1152921504606846976;
+    let x4: u64 = select(s4, x3 *% 16, x3);
+    let n4: u64 = n3 +% select(s4, 4, 0);
+    let s2: bool = x4 < 4611686018427387904;
+    let x5: u64 = select(s2, x4 *% 4, x4);
+    let n5: u64 = n4 +% select(s2, 2, 0);
+    let s1: bool = x5 < 9223372036854775808;
+    return n5 +% select(s1, 1, 0);
+}
+
+fn bitlen8(a: [i64; 8]) -> (result: u64) {
+    iterate i over a carrying st: BitState8 = BitState8 { best: 0, ctr: 0 } {
+        let w: u64 = a[i] as u64;
+        let here: u64 = select(w == 0, 0, st.ctr +% ((64 as u64) -% clz64(w)));
+        next st = BitState8 { best: select(here > st.best, here, st.best), ctr: st.ctr +% 64 };
+    }
+    return st.best;
+}
+
+// ---- u512 corpus entries ----
+
+fn entry_add8(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, b0: i64, b1: i64, b2: i64, b3: i64, b4: i64, b5: i64, b6: i64, b7: i64) -> (result: [i64; 8]) {
+    let s: AddOut8 = add8rec(limbs8(a0, a1, a2, a3, a4, a5, a6, a7), limbs8(b0, b1, b2, b3, b4, b5, b6, b7));
+    return s.r;
+}
+
+fn entry_add8_cy(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, b0: i64, b1: i64, b2: i64, b3: i64, b4: i64, b5: i64, b6: i64, b7: i64) -> (result: u64) {
+    let s: AddOut8 = add8rec(limbs8(a0, a1, a2, a3, a4, a5, a6, a7), limbs8(b0, b1, b2, b3, b4, b5, b6, b7));
+    return s.cy;
+}
+
+fn entry_sub8(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, b0: i64, b1: i64, b2: i64, b3: i64, b4: i64, b5: i64, b6: i64, b7: i64) -> (result: [i64; 8]) {
+    let s: SubOut8 = sub8rec(limbs8(a0, a1, a2, a3, a4, a5, a6, a7), limbs8(b0, b1, b2, b3, b4, b5, b6, b7));
+    return s.d;
+}
+
+fn entry_mul_lo8(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, b0: i64, b1: i64, b2: i64, b3: i64, b4: i64, b5: i64, b6: i64, b7: i64) -> (result: [i64; 8]) {
+    let m: MulFull8 = mul_full8(limbs8(a0, a1, a2, a3, a4, a5, a6, a7), limbs8(b0, b1, b2, b3, b4, b5, b6, b7));
+    return m.lo;
+}
+
+fn entry_mul_hi8(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, b0: i64, b1: i64, b2: i64, b3: i64, b4: i64, b5: i64, b6: i64, b7: i64) -> (result: [i64; 8]) {
+    let m: MulFull8 = mul_full8(limbs8(a0, a1, a2, a3, a4, a5, a6, a7), limbs8(b0, b1, b2, b3, b4, b5, b6, b7));
+    return m.hi;
+}
+
+fn entry_divmod8(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, b0: i64, b1: i64, b2: i64, b3: i64, b4: i64, b5: i64, b6: i64, b7: i64) -> (result: DivOut8) {
+    return divmod_checked8(limbs8(a0, a1, a2, a3, a4, a5, a6, a7), limbs8(b0, b1, b2, b3, b4, b5, b6, b7));
+}
+
+fn entry_sdivmod8(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, b0: i64, b1: i64, b2: i64, b3: i64, b4: i64, b5: i64, b6: i64, b7: i64) -> (result: DivOut8) {
+    return sdivmod_checked8(limbs8(a0, a1, a2, a3, a4, a5, a6, a7), limbs8(b0, b1, b2, b3, b4, b5, b6, b7));
+}
+
+fn entry_shl1_8(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64) -> (result: [i64; 8]) {
+    return shl1_8(limbs8(a0, a1, a2, a3, a4, a5, a6, a7), 0);
+}
+
+fn entry_shr1_8(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64) -> (result: [i64; 8]) {
+    return shr1_8(limbs8(a0, a1, a2, a3, a4, a5, a6, a7), 0);
+}
+
+fn entry_cmp8(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, b0: i64, b1: i64, b2: i64, b3: i64, b4: i64, b5: i64, b6: i64, b7: i64) -> (result: i64) {
+    return cmp8(limbs8(a0, a1, a2, a3, a4, a5, a6, a7), limbs8(b0, b1, b2, b3, b4, b5, b6, b7));
+}
+
+fn entry_scmp8(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, b0: i64, b1: i64, b2: i64, b3: i64, b4: i64, b5: i64, b6: i64, b7: i64) -> (result: i64) {
+    return scmp8(limbs8(a0, a1, a2, a3, a4, a5, a6, a7), limbs8(b0, b1, b2, b3, b4, b5, b6, b7));
+}
+
+fn entry_from_i64_8(x: i64) -> (result: [i64; 8]) {
+    return from_i64_8(x);
+}
+
+fn entry_to_i64_8(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64) -> (result: MathResult) {
+    return to_i64_checked_8(limbs8(a0, a1, a2, a3, a4, a5, a6, a7));
+}
+
+fn entry_neg8(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64) -> (result: [i64; 8]) {
+    return neg8(limbs8(a0, a1, a2, a3, a4, a5, a6, a7));
+}
+
+fn entry_bitlen8(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64) -> (result: u64) {
+    return bitlen8(limbs8(a0, a1, a2, a3, a4, a5, a6, a7));
+}
+
+fn entry_clz64(x: u64) -> (result: u64) {
+    return clz64(x);
+}

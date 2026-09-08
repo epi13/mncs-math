@@ -50,9 +50,11 @@ Three exact tiers are first-class in MNCS source today:
    substitute for float workloads until the language gains a float type
    (see P001). Scale lives in the value/record type, never in a parameter.
 
-A fourth tier, **limb bigint** (`[u64; N]`, N ≤ 8 → 512 bits), covers
-magnitudes beyond i64 with schoolbook mul and restoring division built
-from bounded traversals plus helper-call structuring (nesting budget).
+A fourth tier, **limb bigint** (`[i64; N]` storage with u64 value
+semantics, concrete N = 2/8 → 128/512 bits, two's complement signed),
+covers magnitudes beyond i64 with schoolbook mul and restoring division
+built from bounded traversals, concrete records, and unrolled block
+chains (see RFC 0005).
 
 Floats (`f32/f64`), and everything needing them, are **specified but
 blocked**: documented in `docs/float-roadmap.md` with frozen oracle

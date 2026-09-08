@@ -1,0 +1,1279 @@
+{
+ "module": "mncs.math.fixed.v1",
+ "name": "fixed-point-scales",
+ "cases": [
+  {
+   "id": "from-int",
+   "fn": "entry_from_int_milli",
+   "args": [
+    {
+     "i64": 3
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 3000
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "from-int-max-ok",
+   "fn": "entry_from_int_milli",
+   "args": [
+    {
+     "i64": 9223372036854774
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 9223372036854774000
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "from-int-overflow",
+   "fn": "entry_from_int_milli",
+   "args": [
+    {
+     "i64": 9223372036854775
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 9223372036854775000
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "to-int-trunc-pos",
+   "fn": "entry_to_int_trunc_milli",
+   "args": [
+    {
+     "i64": 3500
+    }
+   ],
+   "expect": [
+    {
+     "i64": 3
+    }
+   ]
+  },
+  {
+   "id": "to-int-trunc-neg",
+   "fn": "entry_to_int_trunc_milli",
+   "args": [
+    {
+     "i64": -3500
+    }
+   ],
+   "expect": [
+    {
+     "i64": -3
+    }
+   ]
+  },
+  {
+   "id": "to-int-floor-neg",
+   "fn": "entry_to_int_floor_milli",
+   "args": [
+    {
+     "i64": -3500
+    }
+   ],
+   "expect": [
+    {
+     "i64": -4
+    }
+   ]
+  },
+  {
+   "id": "to-int-floor-pos",
+   "fn": "entry_to_int_floor_milli",
+   "args": [
+    {
+     "i64": 3500
+    }
+   ],
+   "expect": [
+    {
+     "i64": 3
+    }
+   ]
+  },
+  {
+   "id": "add-basic",
+   "fn": "entry_add_milli",
+   "args": [
+    {
+     "i64": 1500
+    },
+    {
+     "i64": 2300
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 3800
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "add-overflow",
+   "fn": "entry_add_milli",
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "add-sat-clamps",
+   "fn": "entry_add_sat_milli",
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "i64": 9223372036854775807
+    }
+   ]
+  },
+  {
+   "id": "mul-trunc-basic",
+   "fn": "entry_mul_trunc_milli",
+   "args": [
+    {
+     "i64": 1500
+    },
+    {
+     "i64": 2000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 3000
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-trunc-neg",
+   "fn": "entry_mul_trunc_milli",
+   "args": [
+    {
+     "i64": -1500
+    },
+    {
+     "i64": 2000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": -3000
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-trunc-frac",
+   "fn": "entry_mul_trunc_milli",
+   "args": [
+    {
+     "i64": 1501
+    },
+    {
+     "i64": 1001
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 1502
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-nearest-frac",
+   "fn": "entry_mul_nearest_milli",
+   "args": [
+    {
+     "i64": 1501
+    },
+    {
+     "i64": 1001
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 1503
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-nearest-half",
+   "fn": "entry_mul_nearest_milli",
+   "args": [
+    {
+     "i64": 1500
+    },
+    {
+     "i64": 1001
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 1502
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-nearest-neg-half",
+   "fn": "entry_mul_nearest_milli",
+   "args": [
+    {
+     "i64": -1500
+    },
+    {
+     "i64": 1001
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": -1502
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul-overflow",
+   "fn": "entry_mul_trunc_milli",
+   "args": [
+    {
+     "i64": 1000000000000
+    },
+    {
+     "i64": 1000000000000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-trunc-basic",
+   "fn": "entry_div_trunc_milli",
+   "args": [
+    {
+     "i64": 3000
+    },
+    {
+     "i64": 2000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 1500
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-trunc-frac",
+   "fn": "entry_div_trunc_milli",
+   "args": [
+    {
+     "i64": 1000
+    },
+    {
+     "i64": 3000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 333
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-nearest-frac",
+   "fn": "entry_div_nearest_milli",
+   "args": [
+    {
+     "i64": 1000
+    },
+    {
+     "i64": 3000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 333
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-nearest-half",
+   "fn": "entry_div_nearest_milli",
+   "args": [
+    {
+     "i64": 1000
+    },
+    {
+     "i64": 2000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 500
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-nearest-neg",
+   "fn": "entry_div_nearest_milli",
+   "args": [
+    {
+     "i64": -1000
+    },
+    {
+     "i64": 3000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": -333
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-by-zero",
+   "fn": "entry_div_trunc_milli",
+   "args": [
+    {
+     "i64": 1000
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "reason": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-overflow",
+   "fn": "entry_div_trunc_milli",
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "micro-mul",
+   "fn": "entry_mul_trunc_micro",
+   "args": [
+    {
+     "i64": 2000000
+    },
+    {
+     "i64": 3000000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 6000000
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "micro-div",
+   "fn": "entry_div_trunc_micro",
+   "args": [
+    {
+     "i64": 1000000
+    },
+    {
+     "i64": 2000000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 500000
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "micro-to-milli-half",
+   "fn": "entry_micro_to_milli",
+   "args": [
+    {
+     "i64": 1500
+    }
+   ],
+   "expect": [
+    {
+     "i64": 2
+    }
+   ]
+  },
+  {
+   "id": "micro-to-milli-neg-half",
+   "fn": "entry_micro_to_milli",
+   "args": [
+    {
+     "i64": -1500
+    }
+   ],
+   "expect": [
+    {
+     "i64": -2
+    }
+   ]
+  },
+  {
+   "id": "micro-to-milli-down",
+   "fn": "entry_micro_to_milli",
+   "args": [
+    {
+     "i64": 1499
+    }
+   ],
+   "expect": [
+    {
+     "i64": 1
+    }
+   ]
+  },
+  {
+   "id": "milli-to-micro",
+   "fn": "entry_milli_to_micro",
+   "args": [
+    {
+     "i64": 1500
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 1500000
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "milli-to-micro-overflow",
+   "fn": "entry_milli_to_micro",
+   "args": [
+    {
+     "i64": 9223372036854775807
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sqrt-exact",
+   "fn": "entry_sqrt_milli",
+   "args": [
+    {
+     "i64": 4000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 2000
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sqrt-floor",
+   "fn": "entry_sqrt_milli",
+   "args": [
+    {
+     "i64": 2000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 1414
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sqrt-neg",
+   "fn": "entry_sqrt_milli",
+   "args": [
+    {
+     "i64": -1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "reason": {
+        "i64": 13
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sqrt-zero",
+   "fn": "entry_sqrt_milli",
+   "args": [
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 0
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "exp-zero",
+   "fn": "entry_exp_milli",
+   "args": [
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 1000
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "exp-one",
+   "fn": "entry_exp_milli",
+   "args": [
+    {
+     "i64": 1000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 2718
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "exp-neg-one",
+   "fn": "entry_exp_milli",
+   "args": [
+    {
+     "i64": -1000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 368
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "exp-nine",
+   "fn": "entry_exp_milli",
+   "args": [
+    {
+     "i64": 9000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 8102501
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "exp-neg-nine",
+   "fn": "entry_exp_milli",
+   "args": [
+    {
+     "i64": -9000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 0
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "exp-two",
+   "fn": "entry_exp_milli",
+   "args": [
+    {
+     "i64": 2000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 7388
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "exp-domain-hi",
+   "fn": "entry_exp_milli",
+   "args": [
+    {
+     "i64": 9001
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "reason": {
+        "i64": 13
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "exp-domain-lo",
+   "fn": "entry_exp_milli",
+   "args": [
+    {
+     "i64": -9001
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "reason": {
+        "i64": 13
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sin-zero",
+   "fn": "entry_sin_milli",
+   "args": [
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 0
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sin-half-pi",
+   "fn": "entry_sin_milli",
+   "args": [
+    {
+     "i64": 1571
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 1000
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sin-pi",
+   "fn": "entry_sin_milli",
+   "args": [
+    {
+     "i64": 3142
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": -1
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sin-neg-half-pi",
+   "fn": "entry_sin_milli",
+   "args": [
+    {
+     "i64": -1571
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": -1000
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sin-two-pi",
+   "fn": "entry_sin_milli",
+   "args": [
+    {
+     "i64": 6283
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 0
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sin-large",
+   "fn": "entry_sin_milli",
+   "args": [
+    {
+     "i64": 100000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": -506
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "ln1p-zero",
+   "fn": "entry_ln1p_milli",
+   "args": [
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 0
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "ln1p-half",
+   "fn": "entry_ln1p_milli",
+   "args": [
+    {
+     "i64": 500
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 405
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "ln1p-neg-half",
+   "fn": "entry_ln1p_milli",
+   "args": [
+    {
+     "i64": -500
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": -692
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "ln1p-small",
+   "fn": "entry_ln1p_milli",
+   "args": [
+    {
+     "i64": 100
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 95
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "ln1p-domain",
+   "fn": "entry_ln1p_milli",
+   "args": [
+    {
+     "i64": 501
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "reason": {
+        "i64": 13
+       }
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

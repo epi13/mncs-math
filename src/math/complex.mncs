@@ -1,0 +1,628 @@
+mncs 0.8;
+
+// mncs.math.complex — complex numbers in two exact tiers.
+//
+// Gaussian integers (exact, i64 components): addition, subtraction,
+// multiplication (all checked), conjugation, norm-squared as an exact
+// u128 limb pair (via mncs.math.bigint.v1 — norms reach 2^127, past i64),
+// truncating and correctly-rounded division (128-bit numerators through
+// the u128 restoring kernel), exact divisibility, and norm-Euclid gcd.
+// Fixed-point complex (milli scale): the same algebra through the
+// truncating fixed kernels, with explicit overflow reasons.
+//
+// There is no phase/argument function: arg needs atan2, which needs a
+// float transcendental tier (P001). Magnitude over Gaussians is bounded
+// (g_abs_bounded) for the same reason — no u128 isqrt exists.
+//
+// Profile 0.8: records, payload enums, imports, cross-module arrays.
+module mncs.math.complex.v1;
+
+use mncs.math.error.v1;
+use mncs.math.scalar.v1;
+use mncs.math.bigint.v1;
+use mncs.math.fixed.v1;
+
+record Gauss { re: i64, im: i64 }
+
+enum GaussOutcome { Ok { re: i64, im: i64 }, Err { reason: i64 } }
+
+fn ok_gauss(re: i64, im: i64) -> (result: GaussOutcome) {
+    return GaussOutcome.Ok { re: re, im: im };
+}
+
+fn err_gauss(reason: i64) -> (result: GaussOutcome) {
+    return GaussOutcome.Err { reason: reason };
+}
+
+fn g_add(a: Gauss, b: Gauss) -> (result: GaussOutcome) {
+    let t1: MathResult = checked_add(a.re, b.re);
+    return match t1 {
+        MathResult.Err { reason } => err_gauss(reason),
+        Ok { value: re } => g_add_im(a, b, re),
+    };
+}
+
+fn g_add_im(a: Gauss, b: Gauss, re: i64) -> (result: GaussOutcome) {
+    let t2: MathResult = checked_add(a.im, b.im);
+    return match t2 {
+        MathResult.Err { reason } => err_gauss(reason),
+        Ok { value: im } => ok_gauss(re, im),
+    };
+}
+
+fn g_sub(a: Gauss, b: Gauss) -> (result: GaussOutcome) {
+    let t1: MathResult = checked_sub(a.re, b.re);
+    return match t1 {
+        MathResult.Err { reason } => err_gauss(reason),
+        Ok { value: re } => g_sub_im(a, b, re),
+    };
+}
+
+fn g_sub_im(a: Gauss, b: Gauss, re: i64) -> (result: GaussOutcome) {
+    let t2: MathResult = checked_sub(a.im, b.im);
+    return match t2 {
+        MathResult.Err { reason } => err_gauss(reason),
+        Ok { value: im } => ok_gauss(re, im),
+    };
+}
+
+fn g_conj(a: Gauss) -> (result: GaussOutcome) {
+    if a.im == i64_min() {
+        return err_gauss(reason_overflow());
+    }
+    return ok_gauss(a.re, 0 - a.im);
+}
+
+fn g_neg(a: Gauss) -> (result: GaussOutcome) {
+    if a.re == i64_min() {
+        return err_gauss(reason_overflow());
+    }
+    if a.im == i64_min() {
+        return err_gauss(reason_overflow());
+    }
+    return ok_gauss(0 - a.re, 0 - a.im);
+}
+
+fn g_mul(a: Gauss, b: Gauss) -> (result: GaussOutcome) {
+    let t1: MathResult = checked_mul(a.re, b.re);
+    return match t1 {
+        MathResult.Err { reason } => err_gauss(reason),
+        Ok { value: ac } => g_mul_bd(a, b, ac),
+    };
+}
+
+fn g_mul_bd(a: Gauss, b: Gauss, ac: i64) -> (result: GaussOutcome) {
+    let t2: MathResult = checked_mul(a.im, b.im);
+    return match t2 {
+        MathResult.Err { reason } => err_gauss(reason),
+        Ok { value: bd } => g_mul_ad(a, b, ac, bd),
+    };
+}
+
+fn g_mul_ad(a: Gauss, b: Gauss, ac: i64, bd: i64) -> (result: GaussOutcome) {
+    let t3: MathResult = checked_mul(a.re, b.im);
+    return match t3 {
+        MathResult.Err { reason } => err_gauss(reason),
+        Ok { value: ad } => g_mul_bc(a, b, ac, bd, ad),
+    };
+}
+
+fn g_mul_bc(a: Gauss, b: Gauss, ac: i64, bd: i64, ad: i64) -> (result: GaussOutcome) {
+    let t4: MathResult = checked_mul(a.im, b.re);
+    return match t4 {
+        MathResult.Err { reason } => err_gauss(reason),
+        Ok { value: bc } => g_mul_finish(ac, bd, ad, bc),
+    };
+}
+
+fn g_mul_finish(ac: i64, bd: i64, ad: i64, bc: i64) -> (result: GaussOutcome) {
+    let t5: MathResult = checked_sub(ac, bd);
+    return match t5 {
+        MathResult.Err { reason } => err_gauss(reason),
+        Ok { value: re } => g_mul_im(ad, bc, re),
+    };
+}
+
+fn g_mul_im(ad: i64, bc: i64, re: i64) -> (result: GaussOutcome) {
+    let t6: MathResult = checked_add(ad, bc);
+    return match t6 {
+        MathResult.Err { reason } => err_gauss(reason),
+        Ok { value: im } => ok_gauss(re, im),
+    };
+}
+
+// ---- norm (exact u128 limb pair) ----
+
+// a^2 as u128: sign-extend then low-128 multiply (a^2 < 2^127 always).
+fn sq_u128(x: i64) -> (result: [i64; 2]) {
+    let w: [i64; 2] = from_i64_2(x);
+    return mul_lo2(w, w);
+}
+
+// N(a+bi) = a^2 + b^2 as [i64; 2] (never carries out: sum < 2^127).
+fn g_norm2(re: i64, im: i64) -> (result: [i64; 2]) {
+    let s: AddOut2 = add2rec(sq_u128(re), sq_u128(im));
+    return s.r;
+}
+
+// Bounded absolute value: exact while the norm fits u64, else
+// precision_exhausted (no u128 isqrt exists in this tier).
+fn g_abs_bounded(re: i64, im: i64) -> (result: MathResult) {
+    let n: [i64; 2] = g_norm2(re, im);
+    if n[1] == 0 {
+        return MathResult.Ok { value: isqrt_u64(n[0] as u64) as i64 };
+    }
+    return MathResult.Err { reason: reason_precision_exhausted() };
+}
+
+// ---- Gaussian division ----
+
+// One signed-128 component divided by the positive-128 denominator:
+// truncating (round = false) or correctly rounded half-away (true).
+// Signs ride through magnitudes with truncation toward zero; the final
+// range check decides i64 fit.
+fn div_component(num: [i64; 2], den: [i64; 2], round: bool) -> (result: MathResult) {
+    let sn: bool = is_neg2(num);
+    let m: [i64; 2] = abs2(num);
+    let d: DivMod2 = divmod2rec(m, den);
+    let q: [i64; 2] = select(sn, neg2(d.q), d.q);
+    let r: [i64; 2] = select(sn, neg2(d.r), d.r);
+    return div_round_adj(q, r, den, sn, round);
+}
+
+fn div_round_adj(q: [i64; 2], r: [i64; 2], den: [i64; 2], sn: bool, round: bool) -> (result: MathResult) {
+    if round {
+        let ar: [i64; 2] = abs2(r);
+        let dbl: [i64; 2] = shl1_2(ar, 0);
+        if ge2(dbl, den) {
+            return div_adjusted(q, sn);
+        }
+    }
+    return to_i64_checked_2(q);
+}
+
+fn div_adjusted(q: [i64; 2], sn: bool) -> (result: MathResult) {
+    let one: [i64; 2] = from_u64_2(1);
+    if sn {
+        if is_zero2(q) {
+            return MathResult.Ok { value: 0 - 1 };
+        }
+        let s: SubOut2 = sub2rec(q, one);
+        return to_i64_checked_2(s.d);
+    }
+    let s: AddOut2 = add2rec(q, one);
+    return to_i64_checked_2(s.r);
+}
+
+// (ac+bd) and (bc-ad) as signed u128 (two's complement exact: both fit
+// in [-2^127, 2^127]).
+fn gauss_num_re(a: Gauss, b: Gauss) -> (result: [i64; 2]) {
+    let ac: [i64; 2] = mul_lo2(from_i64_2(a.re), from_i64_2(b.re));
+    let bd: [i64; 2] = mul_lo2(from_i64_2(a.im), from_i64_2(b.im));
+    let s: AddOut2 = add2rec(ac, bd);
+    return s.r;
+}
+
+fn gauss_num_im(a: Gauss, b: Gauss) -> (result: [i64; 2]) {
+    let bc: [i64; 2] = mul_lo2(from_i64_2(a.im), from_i64_2(b.re));
+    let ad: [i64; 2] = mul_lo2(from_i64_2(a.re), from_i64_2(b.im));
+    let s: SubOut2 = sub2rec(bc, ad);
+    return s.d;
+}
+
+fn g_div_parts(a: Gauss, b: Gauss, round: bool) -> (result: GaussOutcome) {
+    let den: [i64; 2] = g_norm2(b.re, b.im);
+    if is_zero2(den) {
+        return err_gauss(reason_div_by_zero());
+    }
+    let nre: [i64; 2] = gauss_num_re(a, b);
+    let nim: [i64; 2] = gauss_num_im(a, b);
+    let qr: MathResult = div_component(nre, den, round);
+    return match qr {
+        MathResult.Err { reason } => err_gauss(reason),
+        Ok { value: re } => g_div_im(nim, den, round, re),
+    };
+}
+
+fn g_div_im(nim: [i64; 2], den: [i64; 2], round: bool, re: i64) -> (result: GaussOutcome) {
+    let qi: MathResult = div_component(nim, den, round);
+    return match qi {
+        MathResult.Err { reason } => err_gauss(reason),
+        Ok { value: im } => ok_gauss(re, im),
+    };
+}
+
+fn g_div_round(a: Gauss, b: Gauss) -> (result: GaussOutcome) {
+    return g_div_parts(a, b, true);
+}
+
+fn g_div_trunc(a: Gauss, b: Gauss) -> (result: GaussOutcome) {
+    return g_div_parts(a, b, false);
+}
+
+// Exact division: truncating components must both leave zero remainder.
+fn g_exact_div(a: Gauss, b: Gauss) -> (result: GaussOutcome) {
+    let den: [i64; 2] = g_norm2(b.re, b.im);
+    if is_zero2(den) {
+        return err_gauss(reason_div_by_zero());
+    }
+    let nre: [i64; 2] = gauss_num_re(a, b);
+    let nim: [i64; 2] = gauss_num_im(a, b);
+    let dr: DivMod2 = divmod2rec(abs2(nre), den);
+    let di: DivMod2 = divmod2rec(abs2(nim), den);
+    if is_zero2(dr.r) {
+        if is_zero2(di.r) {
+            return g_exact_finish(a, b, nre, nim, den);
+        }
+    }
+    return err_gauss(reason_domain());
+}
+
+fn g_exact_finish(a: Gauss, b: Gauss, nre: [i64; 2], nim: [i64; 2], den: [i64; 2]) -> (result: GaussOutcome) {
+    let qr: MathResult = div_component(nre, den, false);
+    return match qr {
+        MathResult.Err { reason } => err_gauss(reason),
+        Ok { value: re } => g_div_im(nim, den, false, re),
+    };
+}
+
+fn g_divides(a: Gauss, b: Gauss) -> (result: bool) {
+    let q: GaussOutcome = g_exact_div(a, b);
+    return match q {
+        GaussOutcome.Ok { .. } => true,
+        Err { .. } => false,
+    };
+}
+
+// ---- Gaussian gcd (norm-Euclid) ----
+
+// Loop state carries the failure as DATA (err = 0 while fine): loop
+// bodies contain no match-then-continue sequencing — the remainder
+// outcome is split by total observers and re-packed into the next state.
+// Rounded division shrinks norms by >= sqrt(2) per step, so <= 127 steps
+// from 128-bit norms: two chained 64-phases cover it (same bound shape
+// as gcd_u64). The phase-2 fallback is unreachable by that bound.
+record GcdGState { x: Gauss, y: Gauss, err: i64 }
+
+fn g_rem(a: Gauss, b: Gauss) -> (result: GaussOutcome) {
+    let q: GaussOutcome = g_div_round(a, b);
+    return match q {
+        GaussOutcome.Err { reason } => err_gauss(reason),
+        Ok { re, im } => g_rem_sub(a, b, Gauss { re: re, im: im }),
+    };
+}
+
+fn g_rem_sub(a: Gauss, b: Gauss, q: Gauss) -> (result: GaussOutcome) {
+    let p: GaussOutcome = g_mul(b, q);
+    return match p {
+        GaussOutcome.Err { reason } => err_gauss(reason),
+        Ok { re, im } => g_sub(a, Gauss { re: re, im: im }),
+    };
+}
+
+fn rem_re(r: GaussOutcome) -> (result: i64) {
+    return match r {
+        GaussOutcome.Ok { re, im } => re,
+        Err { .. } => 0,
+    };
+}
+
+fn rem_im(r: GaussOutcome) -> (result: i64) {
+    return match r {
+        GaussOutcome.Ok { re, im } => im,
+        Err { .. } => 0,
+    };
+}
+
+fn rem_code(r: GaussOutcome) -> (result: i64) {
+    return match r {
+        GaussOutcome.Ok { .. } => 0,
+        Err { reason } => reason,
+    };
+}
+
+fn gcd_run64(x: Gauss, y: Gauss) -> (result: GcdGState) {
+    let table: [i64; 64] = steps64();
+    iterate i over table carrying st: GcdGState = GcdGState { x: x, y: y, err: 0 } {
+        if st.err != 0 {
+            return st;
+        }
+        if st.y.re == 0 && st.y.im == 0 {
+            return st;
+        }
+        let r: GaussOutcome = g_rem(st.x, st.y);
+        next st = GcdGState { x: st.y, y: Gauss { re: rem_re(r), im: rem_im(r) }, err: rem_code(r) };
+    }
+    return st;
+}
+
+fn gcd_finish(s: GcdGState) -> (result: GaussOutcome) {
+    if s.err != 0 {
+        return err_gauss(s.err);
+    }
+    if s.y.re == 0 && s.y.im == 0 {
+        return ok_gauss(s.x.re, s.x.im);
+    }
+    return err_gauss(reason_no_convergence());
+}
+
+fn g_gcd(a: Gauss, b: Gauss) -> (result: GaussOutcome) {
+    let s1: GcdGState = gcd_run64(a, b);
+    if s1.err != 0 {
+        return err_gauss(s1.err);
+    }
+    if s1.y.re == 0 && s1.y.im == 0 {
+        return ok_gauss(s1.x.re, s1.x.im);
+    }
+    let s2: GcdGState = gcd_run64(s1.x, s1.y);
+    return gcd_finish(s2);
+}
+
+// ---- fixed-point complex (milli) ----
+
+record Cx { re: i64, im: i64 }
+
+enum CxOutcome { Ok { re: i64, im: i64 }, Err { reason: i64 } }
+
+fn ok_cx(re: i64, im: i64) -> (result: CxOutcome) {
+    return CxOutcome.Ok { re: re, im: im };
+}
+
+fn err_cx(reason: i64) -> (result: CxOutcome) {
+    return CxOutcome.Err { reason: reason };
+}
+
+fn c_add(a: Cx, b: Cx) -> (result: CxOutcome) {
+    let t1: MathResult = add_milli(a.re, b.re);
+    return match t1 {
+        MathResult.Err { reason } => err_cx(reason),
+        Ok { value: re } => c_add_im(a, b, re),
+    };
+}
+
+fn c_add_im(a: Cx, b: Cx, re: i64) -> (result: CxOutcome) {
+    let t2: MathResult = add_milli(a.im, b.im);
+    return match t2 {
+        MathResult.Err { reason } => err_cx(reason),
+        Ok { value: im } => ok_cx(re, im),
+    };
+}
+
+fn c_conj(a: Cx) -> (result: CxOutcome) {
+    if a.im == i64_min() {
+        return err_cx(reason_overflow());
+    }
+    return ok_cx(a.re, 0 - a.im);
+}
+
+fn c_mul(a: Cx, b: Cx) -> (result: CxOutcome) {
+    let t1: MathResult = mul_trunc_milli(a.re, b.re);
+    return match t1 {
+        MathResult.Err { reason } => err_cx(reason),
+        Ok { value: ac } => c_mul_bd(a, b, ac),
+    };
+}
+
+fn c_mul_bd(a: Cx, b: Cx, ac: i64) -> (result: CxOutcome) {
+    let t2: MathResult = mul_trunc_milli(a.im, b.im);
+    return match t2 {
+        MathResult.Err { reason } => err_cx(reason),
+        Ok { value: bd } => c_mul_ad(a, b, ac, bd),
+    };
+}
+
+fn c_mul_ad(a: Cx, b: Cx, ac: i64, bd: i64) -> (result: CxOutcome) {
+    let t3: MathResult = mul_trunc_milli(a.re, b.im);
+    return match t3 {
+        MathResult.Err { reason } => err_cx(reason),
+        Ok { value: ad } => c_mul_bc(a, b, ac, bd, ad),
+    };
+}
+
+fn c_mul_bc(a: Cx, b: Cx, ac: i64, bd: i64, ad: i64) -> (result: CxOutcome) {
+    let t4: MathResult = mul_trunc_milli(a.im, b.re);
+    return match t4 {
+        MathResult.Err { reason } => err_cx(reason),
+        Ok { value: bc } => c_mul_finish(ac, bd, ad, bc),
+    };
+}
+
+fn c_mul_finish(ac: i64, bd: i64, ad: i64, bc: i64) -> (result: CxOutcome) {
+    let t5: MathResult = sub_milli(ac, bd);
+    return match t5 {
+        MathResult.Err { reason } => err_cx(reason),
+        Ok { value: re } => c_mul_im(ad, bc, re),
+    };
+}
+
+fn c_mul_im(ad: i64, bc: i64, re: i64) -> (result: CxOutcome) {
+    let t6: MathResult = add_milli(ad, bc);
+    return match t6 {
+        MathResult.Err { reason } => err_cx(reason),
+        Ok { value: im } => ok_cx(re, im),
+    };
+}
+
+fn c_div_trunc(a: Cx, b: Cx) -> (result: CxOutcome) {
+    let t1: MathResult = mul_trunc_milli(b.re, b.re);
+    return match t1 {
+        MathResult.Err { reason } => err_cx(reason),
+        Ok { value: cr } => c_div_ci(a, b, cr),
+    };
+}
+
+fn c_div_ci(a: Cx, b: Cx, cr: i64) -> (result: CxOutcome) {
+    let t2: MathResult = mul_trunc_milli(b.im, b.im);
+    return match t2 {
+        MathResult.Err { reason } => err_cx(reason),
+        Ok { value: ci } => c_div_den(a, b, cr, ci),
+    };
+}
+
+fn c_div_den(a: Cx, b: Cx, cr: i64, ci: i64) -> (result: CxOutcome) {
+    let t3: MathResult = add_milli(cr, ci);
+    return match t3 {
+        MathResult.Err { reason } => err_cx(reason),
+        Ok { value: den } => c_div_num(a, b, den),
+    };
+}
+
+fn c_div_num(a: Cx, b: Cx, den: i64) -> (result: CxOutcome) {
+    if b.re == 0 && b.im == 0 {
+        return err_cx(reason_div_by_zero());
+    }
+    if den == 0 {
+        return err_cx(reason_overflow());
+    }
+    let t4: MathResult = mul_trunc_milli(a.re, b.re);
+    return match t4 {
+        MathResult.Err { reason } => err_cx(reason),
+        Ok { value: ac } => c_div_rest(a, b, den, ac),
+    };
+}
+
+fn c_div_rest(a: Cx, b: Cx, den: i64, ac: i64) -> (result: CxOutcome) {
+    let t5: MathResult = mul_trunc_milli(a.im, b.im);
+    return match t5 {
+        MathResult.Err { reason } => err_cx(reason),
+        Ok { value: bd } => c_div_imi(a, b, den, ac, bd),
+    };
+}
+
+fn c_div_imi(a: Cx, b: Cx, den: i64, ac: i64, bd: i64) -> (result: CxOutcome) {
+    let t6: MathResult = mul_trunc_milli(a.im, b.re);
+    return match t6 {
+        MathResult.Err { reason } => err_cx(reason),
+        Ok { value: bc } => c_div_adr(a, b, den, ac, bd, bc),
+    };
+}
+
+fn c_div_adr(a: Cx, b: Cx, den: i64, ac: i64, bd: i64, bc: i64) -> (result: CxOutcome) {
+    let t7: MathResult = mul_trunc_milli(a.re, b.im);
+    return match t7 {
+        MathResult.Err { reason } => err_cx(reason),
+        Ok { value: ad } => c_div_finish(den, ac, bd, bc, ad),
+    };
+}
+
+fn c_div_finish(den: i64, ac: i64, bd: i64, bc: i64, ad: i64) -> (result: CxOutcome) {
+    let t8: MathResult = add_milli(ac, bd);
+    return match t8 {
+        MathResult.Err { reason } => err_cx(reason),
+        Ok { value: nr } => c_div_re(den, nr, bc, ad),
+    };
+}
+
+fn c_div_re(den: i64, nr: i64, bc: i64, ad: i64) -> (result: CxOutcome) {
+    let t9: MathResult = sub_milli(bc, ad);
+    return match t9 {
+        MathResult.Err { reason } => err_cx(reason),
+        Ok { value: ni } => c_div_quo(den, nr, ni),
+    };
+}
+
+fn c_div_quo(den: i64, nr: i64, ni: i64) -> (result: CxOutcome) {
+    let t10: MathResult = div_trunc_milli(nr, den);
+    return match t10 {
+        MathResult.Err { reason } => err_cx(reason),
+        Ok { value: re } => c_div_qi(den, ni, re),
+    };
+}
+
+fn c_div_qi(den: i64, ni: i64, re: i64) -> (result: CxOutcome) {
+    let t11: MathResult = div_trunc_milli(ni, den);
+    return match t11 {
+        MathResult.Err { reason } => err_cx(reason),
+        Ok { value: im } => ok_cx(re, im),
+    };
+}
+
+fn c_norm2_milli(re: i64, im: i64) -> (result: MathResult) {
+    let t1: MathResult = mul_trunc_milli(re, re);
+    return match t1 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: rr } => c_norm2_im(im, rr),
+    };
+}
+
+fn c_norm2_im(im: i64, rr: i64) -> (result: MathResult) {
+    let t2: MathResult = mul_trunc_milli(im, im);
+    return match t2 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: ii } => add_milli(rr, ii),
+    };
+}
+
+fn c_abs_milli(re: i64, im: i64) -> (result: MathResult) {
+    let n: MathResult = c_norm2_milli(re, im);
+    return match n {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => sqrt_milli(value),
+    };
+}
+
+// ---- corpus entries ----
+
+fn entry_g_add(ar: i64, ai: i64, br: i64, bi: i64) -> (result: GaussOutcome) {
+    return g_add(Gauss { re: ar, im: ai }, Gauss { re: br, im: bi });
+}
+
+fn entry_g_sub(ar: i64, ai: i64, br: i64, bi: i64) -> (result: GaussOutcome) {
+    return g_sub(Gauss { re: ar, im: ai }, Gauss { re: br, im: bi });
+}
+
+fn entry_g_mul(ar: i64, ai: i64, br: i64, bi: i64) -> (result: GaussOutcome) {
+    return g_mul(Gauss { re: ar, im: ai }, Gauss { re: br, im: bi });
+}
+
+fn entry_g_conj(re: i64, im: i64) -> (result: GaussOutcome) {
+    return g_conj(Gauss { re: re, im: im });
+}
+
+fn entry_g_norm2(re: i64, im: i64) -> (result: [i64; 2]) {
+    return g_norm2(re, im);
+}
+
+fn entry_g_abs(re: i64, im: i64) -> (result: MathResult) {
+    return g_abs_bounded(re, im);
+}
+
+fn entry_g_div_round(ar: i64, ai: i64, br: i64, bi: i64) -> (result: GaussOutcome) {
+    return g_div_round(Gauss { re: ar, im: ai }, Gauss { re: br, im: bi });
+}
+
+fn entry_g_div_trunc(ar: i64, ai: i64, br: i64, bi: i64) -> (result: GaussOutcome) {
+    return g_div_trunc(Gauss { re: ar, im: ai }, Gauss { re: br, im: bi });
+}
+
+fn entry_g_exact_div(ar: i64, ai: i64, br: i64, bi: i64) -> (result: GaussOutcome) {
+    return g_exact_div(Gauss { re: ar, im: ai }, Gauss { re: br, im: bi });
+}
+
+fn entry_g_divides(ar: i64, ai: i64, br: i64, bi: i64) -> (result: bool) {
+    return g_divides(Gauss { re: ar, im: ai }, Gauss { re: br, im: bi });
+}
+
+fn entry_g_gcd(ar: i64, ai: i64, br: i64, bi: i64) -> (result: GaussOutcome) {
+    return g_gcd(Gauss { re: ar, im: ai }, Gauss { re: br, im: bi });
+}
+
+fn entry_c_add(ar: i64, ai: i64, br: i64, bi: i64) -> (result: CxOutcome) {
+    return c_add(Cx { re: ar, im: ai }, Cx { re: br, im: bi });
+}
+
+fn entry_c_mul(ar: i64, ai: i64, br: i64, bi: i64) -> (result: CxOutcome) {
+    return c_mul(Cx { re: ar, im: ai }, Cx { re: br, im: bi });
+}
+
+fn entry_c_div(ar: i64, ai: i64, br: i64, bi: i64) -> (result: CxOutcome) {
+    return c_div_trunc(Cx { re: ar, im: ai }, Cx { re: br, im: bi });
+}
+
+fn entry_c_conj(re: i64, im: i64) -> (result: CxOutcome) {
+    return c_conj(Cx { re: re, im: im });
+}
+
+fn entry_c_abs(re: i64, im: i64) -> (result: MathResult) {
+    return c_abs_milli(re, im);
+}

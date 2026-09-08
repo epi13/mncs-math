@@ -1,0 +1,1150 @@
+{
+ "module": "mncs.math.complex.v1",
+ "name": "complex-tiers",
+ "cases": [
+  {
+   "id": "g-add",
+   "fn": "entry_g_add",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "GaussOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "re": {
+        "i64": 4
+       },
+       "im": {
+        "i64": 6
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "g-add-overflow",
+   "fn": "entry_g_add",
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "GaussOutcome",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "g-sub",
+   "fn": "entry_g_sub",
+   "args": [
+    {
+     "i64": 5
+    },
+    {
+     "i64": 7
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 10
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "GaussOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "re": {
+        "i64": 3
+       },
+       "im": {
+        "i64": -3
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "g-mul",
+   "fn": "entry_g_mul",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "GaussOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "re": {
+        "i64": -5
+       },
+       "im": {
+        "i64": 10
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "g-mul-i",
+   "fn": "entry_g_mul",
+   "args": [
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "GaussOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "re": {
+        "i64": -1
+       },
+       "im": {
+        "i64": 0
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "g-mul-overflow",
+   "fn": "entry_g_mul",
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "GaussOutcome",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "g-conj",
+   "fn": "entry_g_conj",
+   "args": [
+    {
+     "i64": 3
+    },
+    {
+     "i64": -4
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "GaussOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "re": {
+        "i64": 3
+       },
+       "im": {
+        "i64": 4
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "g-conj-min",
+   "fn": "entry_g_conj",
+   "args": [
+    {
+     "i64": 0
+    },
+    {
+     "i64": -9223372036854775808
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "GaussOutcome",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "g-norm2-basic",
+   "fn": "entry_g_norm2",
+   "args": [
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       25,
+       0
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "g-norm2-big",
+   "fn": "entry_g_norm2",
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 9223372036854775807
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       2,
+       9223372036854775806
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "g-abs-basic",
+   "fn": "entry_g_abs",
+   "args": [
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 5
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "g-abs-floor",
+   "fn": "entry_g_abs",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 2
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "g-abs-huge",
+   "fn": "entry_g_abs",
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "reason": {
+        "i64": 11
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "g-div-round",
+   "fn": "entry_g_div_round",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "GaussOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "re": {
+        "i64": 0
+       },
+       "im": {
+        "i64": 0
+       }
+      }
+     }
+    }
+   ],
+   "budget": 262144
+  },
+  {
+   "id": "g-div-round-half",
+   "fn": "entry_g_div_round",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "GaussOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "re": {
+        "i64": 1
+       },
+       "im": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ],
+   "budget": 262144
+  },
+  {
+   "id": "g-div-trunc-half",
+   "fn": "entry_g_div_trunc",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "GaussOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "re": {
+        "i64": 0
+       },
+       "im": {
+        "i64": 0
+       }
+      }
+     }
+    }
+   ],
+   "budget": 262144
+  },
+  {
+   "id": "g-div-zero",
+   "fn": "entry_g_div_round",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "GaussOutcome",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "reason": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ],
+   "budget": 262144
+  },
+  {
+   "id": "g-div-big-quotient",
+   "fn": "entry_g_div_round",
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "GaussOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "re": {
+        "i64": 9223372036854775807
+       },
+       "im": {
+        "i64": 9223372036854775807
+       }
+      }
+     }
+    }
+   ],
+   "budget": 262144
+  },
+  {
+   "id": "g-exact-yes",
+   "fn": "entry_g_exact_div",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "GaussOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "re": {
+        "i64": 3
+       },
+       "im": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ],
+   "budget": 262144
+  },
+  {
+   "id": "g-exact-no",
+   "fn": "entry_g_exact_div",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "GaussOutcome",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "reason": {
+        "i64": 13
+       }
+      }
+     }
+    }
+   ],
+   "budget": 262144
+  },
+  {
+   "id": "g-exact-zero-div",
+   "fn": "entry_g_exact_div",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "GaussOutcome",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "reason": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ],
+   "budget": 262144
+  },
+  {
+   "id": "g-divides-yes",
+   "fn": "entry_g_divides",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "bool": true
+    }
+   ],
+   "budget": 262144
+  },
+  {
+   "id": "g-divides-no",
+   "fn": "entry_g_divides",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    }
+   ],
+   "expect": [
+    {
+     "bool": false
+    }
+   ],
+   "budget": 262144
+  },
+  {
+   "id": "g-gcd-basic",
+   "fn": "entry_g_gcd",
+   "args": [
+    {
+     "i64": 8
+    },
+    {
+     "i64": 6
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 2
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "GaussOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "re": {
+        "i64": 0
+       },
+       "im": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ],
+   "budget": 262144
+  },
+  {
+   "id": "g-gcd-zero",
+   "fn": "entry_g_gcd",
+   "args": [
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "GaussOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "re": {
+        "i64": 3
+       },
+       "im": {
+        "i64": 4
+       }
+      }
+     }
+    }
+   ],
+   "budget": 262144
+  },
+  {
+   "id": "g-gcd-coprime",
+   "fn": "entry_g_gcd",
+   "args": [
+    {
+     "i64": 3
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 2
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "GaussOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "re": {
+        "i64": -1
+       },
+       "im": {
+        "i64": 0
+       }
+      }
+     }
+    }
+   ],
+   "budget": 262144
+  },
+  {
+   "id": "g-gcd-same",
+   "fn": "entry_g_gcd",
+   "args": [
+    {
+     "i64": 5
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 5
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "GaussOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "re": {
+        "i64": 5
+       },
+       "im": {
+        "i64": 5
+       }
+      }
+     }
+    }
+   ],
+   "budget": 262144
+  },
+  {
+   "id": "c-add",
+   "fn": "entry_c_add",
+   "args": [
+    {
+     "i64": 1000
+    },
+    {
+     "i64": 2000
+    },
+    {
+     "i64": 3000
+    },
+    {
+     "i64": 4000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "CxOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "re": {
+        "i64": 4000
+       },
+       "im": {
+        "i64": 6000
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "c-add-overflow",
+   "fn": "entry_c_add",
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "CxOutcome",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "c-mul-i",
+   "fn": "entry_c_mul",
+   "args": [
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1000
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "CxOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "re": {
+        "i64": -1000
+       },
+       "im": {
+        "i64": 0
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "c-mul-basic",
+   "fn": "entry_c_mul",
+   "args": [
+    {
+     "i64": 1500
+    },
+    {
+     "i64": 2000
+    },
+    {
+     "i64": 3000
+    },
+    {
+     "i64": -1000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "CxOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "re": {
+        "i64": 6500
+       },
+       "im": {
+        "i64": 4500
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "c-div-basic",
+   "fn": "entry_c_div",
+   "args": [
+    {
+     "i64": 1000
+    },
+    {
+     "i64": 2000
+    },
+    {
+     "i64": 3000
+    },
+    {
+     "i64": 4000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "CxOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "re": {
+        "i64": 440
+       },
+       "im": {
+        "i64": 80
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "c-div-zero",
+   "fn": "entry_c_div",
+   "args": [
+    {
+     "i64": 1000
+    },
+    {
+     "i64": 2000
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "CxOutcome",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "reason": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "c-conj",
+   "fn": "entry_c_conj",
+   "args": [
+    {
+     "i64": 1500
+    },
+    {
+     "i64": -2500
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "CxOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.complex.v1",
+      "payload": {
+       "re": {
+        "i64": 1500
+       },
+       "im": {
+        "i64": 2500
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "c-abs-345",
+   "fn": "entry_c_abs",
+   "args": [
+    {
+     "i64": 3000
+    },
+    {
+     "i64": 4000
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 5000
+       }
+      }
+     }
+    }
+   ]
+  }
+ ]
+}
