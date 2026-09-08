@@ -1,0 +1,152 @@
+mncs 0.11;
+
+// mncs.math.optimize — exact discrete and bracket optimization.
+//
+// Continuous gradient/coordinate descent with tolerances needs floats
+// (P001) and is specified in docs/optimize.md, not approximated here.
+// What this tier does exactly:
+//   ternary8   8 fixed ternary narrowings of a minimum bracket for a
+//              CONVEX cubic (caller contract: convex on the interval;
+//              thirds compare by exact cmp, so the kept third always
+//              contains the minimizer of a convex target).
+//   argmin8/argmax8  exact lattice minimizer/maximizer indices over
+//              [i64; 8] (first extremal index wins ties: deterministic).
+module mncs.math.optimize.v1;
+
+use mncs.math.error.v1;
+use mncs.math.scalar.v1;
+use mncs.math.rational.v1;
+use mncs.math.numerical.v1;
+use mncs.math.internal.v1;
+
+record TQ { ln: i64, ld: i64, un: i64, ud: i64, code: i64 }
+
+fn ternary8(coef0: i64, coef1: i64, coef2: i64, coef3: i64, lan: i64, lad: i64, uan: i64, uad: i64) -> (result: BracketOut) {
+    let flo: PolyV = poly_value(coef0, coef1, coef2, coef3, lan, lad);
+    let fhi: PolyV = poly_value(coef0, coef1, coef2, coef3, uan, uad);
+    return ternary8_check(coef0, coef1, coef2, coef3, lan, lad, uan, uad, flo, fhi);
+}
+
+fn ternary8_check(coef0: i64, coef1: i64, coef2: i64, coef3: i64, lan: i64, lad: i64, uan: i64, uad: i64, flo: PolyV, fhi: PolyV) -> (result: BracketOut) {
+    if flo.code != 0 {
+        return BracketOut.Err { reason: flo.code };
+    }
+    if fhi.code != 0 {
+        return BracketOut.Err { reason: fhi.code };
+    }
+    let table: [i64; 8] = steps8();
+    iterate i over table carrying st: TQ = TQ { ln: lan, ld: lad, un: uan, ud: uad, code: 0 } {
+        next st = ternary_step(coef0, coef1, coef2, coef3, st);
+    }
+    return ternary8_out(st);
+}
+
+fn ternary8_out(st: TQ) -> (result: BracketOut) {
+    if st.code != 0 {
+        return BracketOut.Err { reason: st.code };
+    }
+    return BracketOut.Ok { lan: st.ln, lad: st.ld, uan: st.un, uad: st.ud };
+}
+
+// One narrowing: thirds by observers, values by the shared evaluator,
+// the upper-or-lower third kept by exact comparison.
+fn ternary_step(coef0: i64, coef1: i64, coef2: i64, coef3: i64, st: TQ) -> (result: TQ) {
+    if st.code != 0 {
+        return st;
+    }
+    let w: FracOutcome = sub(Frac { num: st.un, den: st.ud }, Frac { num: st.ln, den: st.ld });
+    let wn: i64 = frac_num(w);
+    let wd: i64 = frac_den(w);
+    let wc: i64 = frac_code(w);
+    return ternary_third(coef0, coef1, coef2, coef3, st, wn, wd, wc);
+}
+
+fn ternary_third(coef0: i64, coef1: i64, coef2: i64, coef3: i64, st: TQ, wn: i64, wd: i64, wc: i64) -> (result: TQ) {
+    let t: FracOutcome = div(Frac { num: wn, den: wd }, Frac { num: 3, den: 1 });
+    let tn: i64 = frac_num(t);
+    let td: i64 = frac_den(t);
+    let tc: i64 = frac_code(t);
+    return ternary_mids(coef0, coef1, coef2, coef3, st, tn, td, wc, tc);
+}
+
+fn ternary_mids(coef0: i64, coef1: i64, coef2: i64, coef3: i64, st: TQ, tn: i64, td: i64, wc: i64, tc: i64) -> (result: TQ) {
+    let a: FracOutcome = add(Frac { num: st.ln, den: st.ld }, Frac { num: tn, den: td });
+    let m1n: i64 = frac_num(a);
+    let m1d: i64 = frac_den(a);
+    let m1c: i64 = frac_code(a);
+    let b: FracOutcome = sub(Frac { num: st.un, den: st.ud }, Frac { num: tn, den: td });
+    let m2n: i64 = frac_num(b);
+    let m2d: i64 = frac_den(b);
+    let m2c: i64 = frac_code(b);
+    return ternary_eval(coef0, coef1, coef2, coef3, st, m1n, m1d, m2n, m2d, wc, tc, m1c, m2c);
+}
+
+fn ternary_eval(coef0: i64, coef1: i64, coef2: i64, coef3: i64, st: TQ, m1n: i64, m1d: i64, m2n: i64, m2d: i64, wc: i64, tc: i64, m1c: i64, m2c: i64) -> (result: TQ) {
+    let f1: PolyV = poly_value(coef0, coef1, coef2, coef3, m1n, m1d);
+    let f2: PolyV = poly_value(coef0, coef1, coef2, coef3, m2n, m2d);
+    return ternary_move(st, m1n, m1d, m2n, m2d, wc, tc, m1c, m2c, f1.xn, f1.xd, f1.code, f2.xn, f2.xd, f2.code);
+}
+
+fn ternary_move(st: TQ, m1n: i64, m1d: i64, m2n: i64, m2d: i64, wc: i64, tc: i64, m1c: i64, m2c: i64, f1n: i64, f1d: i64, f1c: i64, f2n: i64, f2d: i64, f2c: i64) -> (result: TQ) {
+    let code: i64 = ternary_combine(st.code, wc, tc, m1c, m2c, f1c, f2c);
+    let c: i64 = cmp(Frac { num: f1n, den: f1d }, Frac { num: f2n, den: f2d });
+    return ternary_keep(st, m1n, m1d, m2n, m2d, code, c);
+}
+
+fn ternary_combine(e: i64, wc: i64, tc: i64, m1c: i64, m2c: i64, f1c: i64, f2c: i64) -> (result: i64) {
+    if e != 0 {
+        return e;
+    }
+    if wc != 0 {
+        return wc;
+    }
+    if tc != 0 {
+        return tc;
+    }
+    if m1c != 0 {
+        return m1c;
+    }
+    if m2c != 0 {
+        return m2c;
+    }
+    if f1c != 0 {
+        return f1c;
+    }
+    return f2c;
+}
+
+fn ternary_keep(st: TQ, m1n: i64, m1d: i64, m2n: i64, m2d: i64, code: i64, c: i64) -> (result: TQ) {
+    if c > 0 {
+        return TQ { ln: m1n, ld: m1d, un: st.un, ud: st.ud, code: code };
+    }
+    return TQ { ln: st.ln, ld: st.ld, un: m2n, ud: m2d, code: code };
+}
+
+// Exact lattice extrema (first index wins ties).
+fn argmin8(x: [i64; 8]) -> (result: u64) {
+    iterate i over x carrying best: u64 = 0 {
+        next best = select(x[i] < x[best], i as u64, best);
+    }
+    return best;
+}
+
+fn argmax8(x: [i64; 8]) -> (result: u64) {
+    iterate i over x carrying best: u64 = 0 {
+        next best = select(x[i] > x[best], i as u64, best);
+    }
+    return best;
+}
+
+// ---- entry wrappers ----
+
+fn entry_ternary8(coef0: i64, coef1: i64, coef2: i64, coef3: i64, lan: i64, lad: i64, uan: i64, uad: i64) -> (result: BracketOut) {
+    return ternary8(coef0, coef1, coef2, coef3, lan, lad, uan, uad);
+}
+
+fn entry_argmin8(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64) -> (result: u64) {
+    return argmin8([x0, x1, x2, x3, x4, x5, x6, x7]);
+}
+
+fn entry_argmax8(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64) -> (result: u64) {
+    return argmax8([x0, x1, x2, x3, x4, x5, x6, x7]);
+}

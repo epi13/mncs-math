@@ -1,0 +1,343 @@
+mncs 0.11;
+
+// mncs.math.numerical — exact numerical algorithms over rationals.
+//
+// Floating-point numerics approximates; this module keeps the
+// algorithms and drops the rounding. Bisection, Newton, Simpson, and
+// Euler steps run on canonical rationals, so brackets truly bracket,
+// Simpson on cubics is bit-exact (not "accurate to 1e-12"), and every
+// failure (zero derivative, unbracketed start, overflow) is an enum,
+// never a NaN.
+//
+// Functions under study are cubic polynomials by coefficient (shared
+// with autodiff's dual evaluator): higher-degree or transcendental
+// targets need closures/callable values (P006) or floats (P001), and
+// are specified in docs/numerical.md, not faked here.
+module mncs.math.numerical.v1;
+
+use mncs.math.error.v1;
+use mncs.math.scalar.v1;
+use mncs.math.rational.v1;
+use mncs.math.autodiff.v1;
+use mncs.math.internal.v1;
+
+enum BracketOut { Ok { lan: i64, lad: i64, uan: i64, uad: i64 }, Err { reason: i64 } }
+enum NewtonOut { Ok { xn: i64, xd: i64 }, Err { reason: i64 } }
+
+fn bracket_err(reason: i64) -> (result: BracketOut) {
+    return BracketOut.Err { reason: reason };
+}
+
+fn newton_err(reason: i64) -> (result: NewtonOut) {
+    return NewtonOut.Err { reason: reason };
+}
+
+// Cubic value lanes at a rational point. The tangent seed is zero:
+// value lanes never depend on tangent inputs, so this is a pure
+// evaluator sharing the tested dual chain (not a second Horner).
+record PolyV { xn: i64, xd: i64, code: i64 }
+
+fn poly_value(coef0: i64, coef1: i64, coef2: i64, coef3: i64, pn: i64, pd: i64) -> (result: PolyV) {
+    let t: DualQOut = dualq_poly3_q(coef0, coef1, coef2, coef3, pn, pd, 0, 1);
+    return match t {
+        DualQOut.Err { reason } => PolyV { xn: 0, xd: 1, code: reason },
+        Ok { xn, xd, yn, yd } => PolyV { xn: xn, xd: xd, code: 0 },
+    };
+}
+
+// Full dual lanes (Newton needs f and f' together).
+record PolyD { xn: i64, xd: i64, yn: i64, yd: i64, code: i64 }
+
+fn poly_dual(coef0: i64, coef1: i64, coef2: i64, coef3: i64, pn: i64, pd: i64) -> (result: PolyD) {
+    let t: DualQ = DualQ { xn: pn, xd: pd, yn: 1, yd: 1 };
+    let m2: DualQOut = dualq_mul(t, t);
+    return match m2 {
+        DualQOut.Err { reason } => PolyD { xn: 0, xd: 1, yn: 0, yd: 1, code: reason },
+        Ok { xn: a2n, xd: a2d, yn: b2n, yd: b2d } => poly_dual_m3(coef0, coef1, coef2, coef3, t, a2n, a2d, b2n, b2d),
+    };
+}
+
+fn poly_dual_m3(coef0: i64, coef1: i64, coef2: i64, coef3: i64, t: DualQ, a2n: i64, a2d: i64, b2n: i64, b2d: i64) -> (result: PolyD) {
+    let m3: DualQOut = dualq_mul(DualQ { xn: a2n, xd: a2d, yn: b2n, yd: b2d }, t);
+    return match m3 {
+        DualQOut.Err { reason } => PolyD { xn: 0, xd: 1, yn: 0, yd: 1, code: reason },
+        Ok { xn: a3n, xd: a3d, yn: b3n, yd: b3d } => poly_dual_acc(coef0, coef1, coef2, coef3, t, a2n, a2d, b2n, b2d, a3n, a3d, b3n, b3d),
+    };
+}
+
+fn poly_dual_acc(coef0: i64, coef1: i64, coef2: i64, coef3: i64, t: DualQ, a2n: i64, a2d: i64, b2n: i64, b2d: i64, a3n: i64, a3d: i64, b3n: i64, b3d: i64) -> (result: PolyD) {
+    let s: DualQOut = dualq_poly3_d(coef0, coef1, coef2, coef3, t, a2n, a2d, b2n, b2d, a3n, a3d, b3n, b3d);
+    return match s {
+        DualQOut.Err { reason } => PolyD { xn: 0, xd: 1, yn: 0, yd: 1, code: reason },
+        Ok { xn, xd, yn, yd } => PolyD { xn: xn, xd: xd, yn: yn, yd: yd, code: 0 },
+    };
+}
+
+// ---- bisection (8 fixed halvings over a validated bracket) ----
+
+record BQ { ln: i64, ld: i64, un: i64, ud: i64, code: i64 }
+
+fn bisect8(coef0: i64, coef1: i64, coef2: i64, coef3: i64, lan: i64, lad: i64, uan: i64, uad: i64) -> (result: BracketOut) {
+    let flo: PolyV = poly_value(coef0, coef1, coef2, coef3, lan, lad);
+    let fhi: PolyV = poly_value(coef0, coef1, coef2, coef3, uan, uad);
+    return bisect8_check(coef0, coef1, coef2, coef3, lan, lad, uan, uad, flo, fhi);
+}
+
+fn bisect8_check(coef0: i64, coef1: i64, coef2: i64, coef3: i64, lan: i64, lad: i64, uan: i64, uad: i64, flo: PolyV, fhi: PolyV) -> (result: BracketOut) {
+    if flo.code != 0 {
+        return bracket_err(flo.code);
+    }
+    if fhi.code != 0 {
+        return bracket_err(fhi.code);
+    }
+    let slo: i64 = cmp(Frac { num: flo.xn, den: flo.xd }, Frac { num: 0, den: 1 });
+    let shi: i64 = cmp(Frac { num: fhi.xn, den: fhi.xd }, Frac { num: 0, den: 1 });
+    return bisect8_start(coef0, coef1, coef2, coef3, lan, lad, uan, uad, slo, shi);
+}
+
+fn bisect8_start(coef0: i64, coef1: i64, coef2: i64, coef3: i64, lan: i64, lad: i64, uan: i64, uad: i64, slo: i64, shi: i64) -> (result: BracketOut) {
+    if slo == 0 {
+        return BracketOut.Ok { lan: lan, lad: lad, uan: lan, uad: lad };
+    }
+    if shi == 0 {
+        return BracketOut.Ok { lan: uan, lad: uad, uan: uan, uad: uad };
+    }
+    if slo == shi {
+        return bracket_err(reason_domain());
+    }
+    let table: [i64; 8] = steps8();
+    iterate i over table carrying st: BQ = BQ { ln: lan, ld: lad, un: uan, ud: uad, code: 0 } {
+        next st = bisect_step(coef0, coef1, coef2, coef3, st);
+    }
+    return bisect8_out(st);
+}
+
+fn bisect8_out(st: BQ) -> (result: BracketOut) {
+    if st.code != 0 {
+        return bracket_err(st.code);
+    }
+    return BracketOut.Ok { lan: st.ln, lad: st.ld, uan: st.un, uad: st.ud };
+}
+
+// One halving: midpoint by observers, signs by cmp, halves by select.
+// An exact midpoint root collapses the bracket onto itself.
+fn bisect_step(coef0: i64, coef1: i64, coef2: i64, coef3: i64, st: BQ) -> (result: BQ) {
+    if st.code != 0 {
+        return st;
+    }
+    let s: FracOutcome = add(Frac { num: st.ln, den: st.ld }, Frac { num: st.un, den: st.ud });
+    let mn: i64 = frac_num(s);
+    let md: i64 = frac_den(s);
+    let mc: i64 = frac_code(s);
+    return bisect_step_half(coef0, coef1, coef2, coef3, st, mn, md, mc);
+}
+
+fn bisect_step_half(coef0: i64, coef1: i64, coef2: i64, coef3: i64, st: BQ, mn: i64, md: i64, mc: i64) -> (result: BQ) {
+    let h: FracOutcome = div(Frac { num: mn, den: md }, Frac { num: 2, den: 1 });
+    let hn: i64 = frac_num(h);
+    let hd: i64 = frac_den(h);
+    let hc: i64 = frac_code(h);
+    return bisect_step_eval(coef0, coef1, coef2, coef3, st, hn, hd, mc, hc);
+}
+
+fn bisect_step_eval(coef0: i64, coef1: i64, coef2: i64, coef3: i64, st: BQ, hn: i64, hd: i64, mc: i64, hc: i64) -> (result: BQ) {
+    let fm: PolyV = poly_value(coef0, coef1, coef2, coef3, hn, hd);
+    let flo: PolyV = poly_value(coef0, coef1, coef2, coef3, st.ln, st.ld);
+    return bisect_step_pick(st, hn, hd, mc, hc, fm, flo);
+}
+
+fn bisect_step_pick(st: BQ, hn: i64, hd: i64, mc: i64, hc: i64, fm: PolyV, flo: PolyV) -> (result: BQ) {
+    let code: i64 = bisect_combine(st.code, mc, hc, fm.code, flo.code);
+    let sm: i64 = cmp(Frac { num: fm.xn, den: fm.xd }, Frac { num: 0, den: 1 });
+    let slo: i64 = cmp(Frac { num: flo.xn, den: flo.xd }, Frac { num: 0, den: 1 });
+    return bisect_step_move(st, hn, hd, code, sm, slo);
+}
+
+fn bisect_combine(e: i64, mc: i64, hc: i64, fc: i64, lc: i64) -> (result: i64) {
+    if e != 0 {
+        return e;
+    }
+    if mc != 0 {
+        return mc;
+    }
+    if hc != 0 {
+        return hc;
+    }
+    if fc != 0 {
+        return fc;
+    }
+    return lc;
+}
+
+fn bisect_step_move(st: BQ, hn: i64, hd: i64, code: i64, sm: i64, slo: i64) -> (result: BQ) {
+    if sm == 0 {
+        return BQ { ln: hn, ld: hd, un: hn, ud: hd, code: code };
+    }
+    if slo == sm {
+        return BQ { ln: hn, ld: hd, un: st.un, ud: st.ud, code: code };
+    }
+    return BQ { ln: st.ln, ld: st.ld, un: hn, ud: hd, code: code };
+}
+
+// ---- Newton (3 unrolled exact steps on the dual pair) ----
+
+fn newton_step(coef0: i64, coef1: i64, coef2: i64, coef3: i64, xn: i64, xd: i64) -> (result: NewtonOut) {
+    let d: PolyD = poly_dual(coef0, coef1, coef2, coef3, xn, xd);
+    return newton_apply(d, xn, xd);
+}
+
+fn newton_apply(d: PolyD, xn: i64, xd: i64) -> (result: NewtonOut) {
+    if d.code != 0 {
+        return newton_err(d.code);
+    }
+    if d.yn == 0 {
+        return newton_err(reason_domain());
+    }
+    let q: FracOutcome = div(Frac { num: d.xn, den: d.xd }, Frac { num: d.yn, den: d.yd });
+    return match q {
+        FracOutcome.Err { reason } => newton_err(reason),
+        Ok { num: qn, den: qd } => newton_sub(xn, xd, qn, qd),
+    };
+}
+
+fn newton_sub(xn: i64, xd: i64, qn: i64, qd: i64) -> (result: NewtonOut) {
+    let s: FracOutcome = sub(Frac { num: xn, den: xd }, Frac { num: qn, den: qd });
+    return match s {
+        FracOutcome.Err { reason } => newton_err(reason),
+        Ok { num: yn, den: yd } => NewtonOut.Ok { xn: yn, xd: yd },
+    };
+}
+
+fn newton3(coef0: i64, coef1: i64, coef2: i64, coef3: i64, xn: i64, xd: i64) -> (result: NewtonOut) {
+    let s1: NewtonOut = newton_step(coef0, coef1, coef2, coef3, xn, xd);
+    return match s1 {
+        NewtonOut.Err { reason } => newton_err(reason),
+        Ok { xn: a, xd: b } => newton3_s2(coef0, coef1, coef2, coef3, a, b),
+    };
+}
+
+fn newton3_s2(coef0: i64, coef1: i64, coef2: i64, coef3: i64, a: i64, b: i64) -> (result: NewtonOut) {
+    let s2: NewtonOut = newton_step(coef0, coef1, coef2, coef3, a, b);
+    return match s2 {
+        NewtonOut.Err { reason } => newton_err(reason),
+        Ok { xn: c, xd: d } => newton_step(coef0, coef1, coef2, coef3, c, d),
+    };
+}
+
+// ---- Simpson on cubics (exact: 2 subintervals integrate x^3 exactly) ----
+
+fn simpson_cubic(coef0: i64, coef1: i64, coef2: i64, coef3: i64, an: i64, ad: i64, bn: i64, bd: i64) -> (result: FracOutcome) {
+    let w: FracOutcome = sub(Frac { num: bn, den: bd }, Frac { num: an, den: ad });
+    return match w {
+        FracOutcome.Err { reason } => FracOutcome.Err { reason: reason },
+        Ok { num: wn, den: wd } => simpson_half(coef0, coef1, coef2, coef3, an, ad, bn, bd, wn, wd),
+    };
+}
+
+fn simpson_half(coef0: i64, coef1: i64, coef2: i64, coef3: i64, an: i64, ad: i64, bn: i64, bd: i64, wn: i64, wd: i64) -> (result: FracOutcome) {
+    let h: FracOutcome = div(Frac { num: wn, den: wd }, Frac { num: 2, den: 1 });
+    return match h {
+        FracOutcome.Err { reason } => FracOutcome.Err { reason: reason },
+        Ok { num: hn, den: hd } => simpson_mid(coef0, coef1, coef2, coef3, an, ad, bn, bd, hn, hd),
+    };
+}
+
+fn simpson_mid(coef0: i64, coef1: i64, coef2: i64, coef3: i64, an: i64, ad: i64, bn: i64, bd: i64, hn: i64, hd: i64) -> (result: FracOutcome) {
+    let m: FracOutcome = add(Frac { num: an, den: ad }, Frac { num: hn, den: hd });
+    return match m {
+        FracOutcome.Err { reason } => FracOutcome.Err { reason: reason },
+        Ok { num: mn, den: md } => simpson_vals(coef0, coef1, coef2, coef3, an, ad, mn, md, bn, bd, hn, hd),
+    };
+}
+
+fn simpson_vals(coef0: i64, coef1: i64, coef2: i64, coef3: i64, an: i64, ad: i64, mn: i64, md: i64, bn: i64, bd: i64, hn: i64, hd: i64) -> (result: FracOutcome) {
+    let fa: PolyV = poly_value(coef0, coef1, coef2, coef3, an, ad);
+    let fm: PolyV = poly_value(coef0, coef1, coef2, coef3, mn, md);
+    let fb: PolyV = poly_value(coef0, coef1, coef2, coef3, bn, bd);
+    return simpson_combine(fa, fm, fb, hn, hd);
+}
+
+fn simpson_combine(fa: PolyV, fm: PolyV, fb: PolyV, hn: i64, hd: i64) -> (result: FracOutcome) {
+    if fa.code != 0 {
+        return FracOutcome.Err { reason: fa.code };
+    }
+    if fm.code != 0 {
+        return FracOutcome.Err { reason: fm.code };
+    }
+    if fb.code != 0 {
+        return FracOutcome.Err { reason: fb.code };
+    }
+    let t4: FracOutcome = mul(Frac { num: 4, den: 1 }, Frac { num: fm.xn, den: fm.xd });
+    return match t4 {
+        FracOutcome.Err { reason } => FracOutcome.Err { reason: reason },
+        Ok { num: qn, den: qd } => simpson_sum(fa, fb, qn, qd, hn, hd),
+    };
+}
+
+fn simpson_sum(fa: PolyV, fb: PolyV, qn: i64, qd: i64, hn: i64, hd: i64) -> (result: FracOutcome) {
+    let s1: FracOutcome = add(Frac { num: fa.xn, den: fa.xd }, Frac { num: qn, den: qd });
+    return match s1 {
+        FracOutcome.Err { reason } => FracOutcome.Err { reason: reason },
+        Ok { num: r1n, den: r1d } => simpson_sum2(fb, r1n, r1d, hn, hd),
+    };
+}
+
+fn simpson_sum2(fb: PolyV, r1n: i64, r1d: i64, hn: i64, hd: i64) -> (result: FracOutcome) {
+    let s2: FracOutcome = add(Frac { num: r1n, den: r1d }, Frac { num: fb.xn, den: fb.xd });
+    return match s2 {
+        FracOutcome.Err { reason } => FracOutcome.Err { reason: reason },
+        Ok { num: r2n, den: r2d } => simpson_scale(r2n, r2d, hn, hd),
+    };
+}
+
+fn simpson_scale(r2n: i64, r2d: i64, hn: i64, hd: i64) -> (result: FracOutcome) {
+    let t: FracOutcome = mul(Frac { num: r2n, den: r2d }, Frac { num: hn, den: hd });
+    return match t {
+        FracOutcome.Err { reason } => FracOutcome.Err { reason: reason },
+        Ok { num: sn, den: sd } => div(Frac { num: sn, den: sd }, Frac { num: 3, den: 1 }),
+    };
+}
+
+// ---- explicit Euler step for y' = p*y + q (exact rational update) ----
+
+fn euler1(pn: i64, pd: i64, qn: i64, qd: i64, yn: i64, yd: i64, hn: i64, hd: i64) -> (result: FracOutcome) {
+    let t1: FracOutcome = mul(Frac { num: pn, den: pd }, Frac { num: yn, den: yd });
+    return match t1 {
+        FracOutcome.Err { reason } => FracOutcome.Err { reason: reason },
+        Ok { num: r1n, den: r1d } => euler1_add(pn, pd, qn, qd, yn, yd, hn, hd, r1n, r1d),
+    };
+}
+
+fn euler1_add(pn: i64, pd: i64, qn: i64, qd: i64, yn: i64, yd: i64, hn: i64, hd: i64, r1n: i64, r1d: i64) -> (result: FracOutcome) {
+    let t2: FracOutcome = add(Frac { num: r1n, den: r1d }, Frac { num: qn, den: qd });
+    return match t2 {
+        FracOutcome.Err { reason } => FracOutcome.Err { reason: reason },
+        Ok { num: r2n, den: r2d } => euler1_scale(yn, yd, hn, hd, r2n, r2d),
+    };
+}
+
+fn euler1_scale(yn: i64, yd: i64, hn: i64, hd: i64, r2n: i64, r2d: i64) -> (result: FracOutcome) {
+    let t3: FracOutcome = mul(Frac { num: hn, den: hd }, Frac { num: r2n, den: r2d });
+    return match t3 {
+        FracOutcome.Err { reason } => FracOutcome.Err { reason: reason },
+        Ok { num: r3n, den: r3d } => add(Frac { num: yn, den: yd }, Frac { num: r3n, den: r3d }),
+    };
+}
+
+// ---- entry wrappers ----
+
+fn entry_bisect8(coef0: i64, coef1: i64, coef2: i64, coef3: i64, lan: i64, lad: i64, uan: i64, uad: i64) -> (result: BracketOut) {
+    return bisect8(coef0, coef1, coef2, coef3, lan, lad, uan, uad);
+}
+
+fn entry_newton3(coef0: i64, coef1: i64, coef2: i64, coef3: i64, xn: i64, xd: i64) -> (result: NewtonOut) {
+    return newton3(coef0, coef1, coef2, coef3, xn, xd);
+}
+
+fn entry_simpson_cubic(coef0: i64, coef1: i64, coef2: i64, coef3: i64, an: i64, ad: i64, bn: i64, bd: i64) -> (result: FracOutcome) {
+    return simpson_cubic(coef0, coef1, coef2, coef3, an, ad, bn, bd);
+}
+
+fn entry_euler1(pn: i64, pd: i64, qn: i64, qd: i64, yn: i64, yd: i64, hn: i64, hd: i64) -> (result: FracOutcome) {
+    return euler1(pn, pd, qn, qd, yn, yd, hn, hd);
+}

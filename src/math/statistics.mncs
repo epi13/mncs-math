@@ -1,0 +1,208 @@
+mncs 0.11;
+
+// mncs.math.statistics — exact descriptive statistics over i64 samples.
+//
+// Count, sum, min, max, and sorting are exact integer work; mean,
+// variance, and median live one floor up as reduced fractions through
+// rational.make, so every reported moment is canonical and every
+// overflow is an honest Err instead of a wrapped lie. The variance is
+// the population form (8*S2 - S1^2)/64, nonnegative by construction;
+// a negative numerator would signal an implementation bug, and the
+// corpus pins exact reduced pairs (never floats) for each fixture.
+//
+// The 8-sorter is an explicit 19-comparator Bose-Nelson network. The
+// oracle proves it sorts all 40320 permutations of eight distinct
+// inputs at generation time; the corpus pins representative orders.
+module mncs.math.statistics.v1;
+
+use mncs.math.error.v1;
+use mncs.math.scalar.v1;
+use mncs.math.rational.v1;
+
+enum StatOut { Ok { mean_n: i64, mean_d: i64, var_n: i64, var_d: i64 }, Err { reason: i64 } }
+
+fn stat_err(reason: i64) -> (result: StatOut) {
+    return StatOut.Err { reason: reason };
+}
+
+fn sum8(x: [i64; 8]) -> (result: MathResult) {
+    iterate i over x carrying acc: MathResult = MathResult.Ok { value: 0 } {
+        next acc = sum8_fold(acc, x[i]);
+    }
+    return acc;
+}
+
+fn sum8_fold(acc: MathResult, v: i64) -> (result: MathResult) {
+    return match acc {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: s } => checked_add(s, v),
+    };
+}
+
+fn sumsq8(x: [i64; 8]) -> (result: MathResult) {
+    iterate i over x carrying acc: MathResult = MathResult.Ok { value: 0 } {
+        next acc = sumsq8_fold(acc, x[i]);
+    }
+    return acc;
+}
+
+fn sumsq8_fold(acc: MathResult, v: i64) -> (result: MathResult) {
+    return match acc {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: s } => sumsq8_add(s, v),
+    };
+}
+
+fn sumsq8_add(s: i64, v: i64) -> (result: MathResult) {
+    let t: MathResult = checked_mul(v, v);
+    return match t {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: sq } => checked_add(s, sq),
+    };
+}
+
+fn min8(x: [i64; 8]) -> (result: i64) {
+    iterate i over x carrying best: i64 = x[0] {
+        next best = select(x[i] < best, x[i], best);
+    }
+    return best;
+}
+
+fn max8(x: [i64; 8]) -> (result: i64) {
+    iterate i over x carrying best: i64 = x[0] {
+        next best = select(x[i] > best, x[i], best);
+    }
+    return best;
+}
+
+fn range8(x: [i64; 8]) -> (result: MathResult) {
+    return checked_sub(max8(x), min8(x));
+}
+
+// Exact mean (S1/8) and population variance ((8*S2 - S1^2)/64),
+// both reduced through rational.make.
+fn mean_var8(x: [i64; 8]) -> (result: StatOut) {
+    let s1: MathResult = sum8(x);
+    return match s1 {
+        MathResult.Err { reason } => stat_err(reason),
+        Ok { value: a } => mean_var8_s2(a, x),
+    };
+}
+
+fn mean_var8_s2(a: i64, x: [i64; 8]) -> (result: StatOut) {
+    let s2: MathResult = sumsq8(x);
+    return match s2 {
+        MathResult.Err { reason } => stat_err(reason),
+        Ok { value: b } => mean_var8_mean(a, b),
+    };
+}
+
+fn mean_var8_mean(a: i64, b: i64) -> (result: StatOut) {
+    let m: FracOutcome = make(a, 8);
+    return match m {
+        FracOutcome.Err { reason } => stat_err(reason),
+        Ok { num: mn, den: md } => mean_var8_var(a, b, mn, md),
+    };
+}
+
+fn mean_var8_var(a: i64, b: i64, mn: i64, md: i64) -> (result: StatOut) {
+    let t1: MathResult = checked_mul(8, b);
+    return match t1 {
+        MathResult.Err { reason } => stat_err(reason),
+        Ok { value: e8 } => mean_var8_sq(a, e8, mn, md),
+    };
+}
+
+fn mean_var8_sq(a: i64, e8: i64, mn: i64, md: i64) -> (result: StatOut) {
+    let t2: MathResult = checked_mul(a, a);
+    return match t2 {
+        MathResult.Err { reason } => stat_err(reason),
+        Ok { value: sq } => mean_var8_num(e8, sq, mn, md),
+    };
+}
+
+fn mean_var8_num(e8: i64, sq: i64, mn: i64, md: i64) -> (result: StatOut) {
+    let t3: MathResult = checked_sub(e8, sq);
+    return match t3 {
+        MathResult.Err { reason } => stat_err(reason),
+        Ok { value: num } => mean_var8_make(num, mn, md),
+    };
+}
+
+fn mean_var8_make(num: i64, mn: i64, md: i64) -> (result: StatOut) {
+    let v: FracOutcome = make(num, 64);
+    return match v {
+        FracOutcome.Err { reason } => stat_err(reason),
+        Ok { num: vn, den: vd } => StatOut.Ok { mean_n: mn, mean_d: md, var_n: vn, var_d: vd },
+    };
+}
+
+// Median as the exact mean of the two middle order statistics.
+fn median8(x: [i64; 8]) -> (result: FracOutcome) {
+    let s: [i64; 8] = sort8(x);
+    let t: MathResult = checked_add(s[3], s[4]);
+    return match t {
+        MathResult.Err { reason } => FracOutcome.Err { reason: reason },
+        Ok { value: num } => make(num, 2),
+    };
+}
+
+// One compare-swap stage of the sorting network (total).
+fn stage8(a: [i64; 8], i: u64, j: u64) -> (result: [i64; 8]) {
+    let lo: i64 = select(a[i] > a[j], a[j], a[i]);
+    let hi: i64 = select(a[i] > a[j], a[i], a[j]);
+    return replace(replace(a, i, lo), j, hi);
+}
+
+fn sort8(x: [i64; 8]) -> (result: [i64; 8]) {
+    let s00: [i64; 8] = stage8(x, 0, 1);
+    let s01: [i64; 8] = stage8(s00, 2, 3);
+    let s02: [i64; 8] = stage8(s01, 4, 5);
+    let s03: [i64; 8] = stage8(s02, 6, 7);
+    let s04: [i64; 8] = stage8(s03, 0, 2);
+    let s05: [i64; 8] = stage8(s04, 1, 3);
+    let s06: [i64; 8] = stage8(s05, 4, 6);
+    let s07: [i64; 8] = stage8(s06, 5, 7);
+    let s08: [i64; 8] = stage8(s07, 1, 2);
+    let s09: [i64; 8] = stage8(s08, 5, 6);
+    let s10: [i64; 8] = stage8(s09, 0, 4);
+    let s11: [i64; 8] = stage8(s10, 3, 7);
+    let s12: [i64; 8] = stage8(s11, 1, 5);
+    let s13: [i64; 8] = stage8(s12, 2, 6);
+    let s14: [i64; 8] = stage8(s13, 2, 4);
+    let s15: [i64; 8] = stage8(s14, 3, 5);
+    let s16: [i64; 8] = stage8(s15, 1, 2);
+    let s17: [i64; 8] = stage8(s16, 3, 4);
+    let s18: [i64; 8] = stage8(s17, 5, 6);
+    return s18;
+}
+
+// ---- entry wrappers ----
+
+fn entry_sum8(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64) -> (result: MathResult) {
+    return sum8([x0, x1, x2, x3, x4, x5, x6, x7]);
+}
+
+fn entry_min8(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64) -> (result: i64) {
+    return min8([x0, x1, x2, x3, x4, x5, x6, x7]);
+}
+
+fn entry_max8(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64) -> (result: i64) {
+    return max8([x0, x1, x2, x3, x4, x5, x6, x7]);
+}
+
+fn entry_range8(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64) -> (result: MathResult) {
+    return range8([x0, x1, x2, x3, x4, x5, x6, x7]);
+}
+
+fn entry_mean_var8(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64) -> (result: StatOut) {
+    return mean_var8([x0, x1, x2, x3, x4, x5, x6, x7]);
+}
+
+fn entry_median8(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64) -> (result: FracOutcome) {
+    return median8([x0, x1, x2, x3, x4, x5, x6, x7]);
+}
+
+fn entry_sort8(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64) -> (result: [i64; 8]) {
+    return sort8([x0, x1, x2, x3, x4, x5, x6, x7]);
+}

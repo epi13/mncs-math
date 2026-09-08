@@ -1,0 +1,637 @@
+{
+ "module": "mncs.math.numerical.v1",
+ "name": "numerical-exact",
+ "cases": [
+  {
+   "id": "bisect-sqrt2",
+   "fn": "entry_bisect8",
+   "args": [
+    {
+     "i64": -2
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "BracketOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.numerical.v1",
+      "payload": {
+       "lan": {
+        "i64": 181
+       },
+       "lad": {
+        "i64": 128
+       },
+       "uan": {
+        "i64": 363
+       },
+       "uad": {
+        "i64": 256
+       }
+      }
+     }
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "bisect-cubic",
+   "fn": "entry_bisect8",
+   "args": [
+    {
+     "i64": -2
+    },
+    {
+     "i64": -1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "BracketOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.numerical.v1",
+      "payload": {
+       "lan": {
+        "i64": 389
+       },
+       "lad": {
+        "i64": 256
+       },
+       "uan": {
+        "i64": 195
+       },
+       "uad": {
+        "i64": 128
+       }
+      }
+     }
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "bisect-endpoint",
+   "fn": "entry_bisect8",
+   "args": [
+    {
+     "i64": -4
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "BracketOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.numerical.v1",
+      "payload": {
+       "lan": {
+        "i64": 2
+       },
+       "lad": {
+        "i64": 1
+       },
+       "uan": {
+        "i64": 2
+       },
+       "uad": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "bisect-unbracketed",
+   "fn": "entry_bisect8",
+   "args": [
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "BracketOut",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.numerical.v1",
+      "payload": {
+       "reason": {
+        "i64": 13
+       }
+      }
+     }
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "newton-sqrt2",
+   "fn": "entry_newton3",
+   "args": [
+    {
+     "i64": -2
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "NewtonOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.numerical.v1",
+      "payload": {
+       "xn": {
+        "i64": 577
+       },
+       "xd": {
+        "i64": 408
+       }
+      }
+     }
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "newton-cubic",
+   "fn": "entry_newton3",
+   "args": [
+    {
+     "i64": -5
+    },
+    {
+     "i64": -2
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "NewtonOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.numerical.v1",
+      "payload": {
+       "xn": {
+        "i64": 4138744325037
+       },
+       "xd": {
+        "i64": 1975957316495
+       }
+      }
+     }
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "newton-flat",
+   "fn": "entry_newton3",
+   "args": [
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "NewtonOut",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.numerical.v1",
+      "payload": {
+       "reason": {
+        "i64": 13
+       }
+      }
+     }
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "simpson-cubic",
+   "fn": "entry_simpson_cubic",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "FracOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.rational.v1",
+      "payload": {
+       "num": {
+        "i64": 30
+       },
+       "den": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "simpson-square",
+   "fn": "entry_simpson_cubic",
+   "args": [
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "FracOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.rational.v1",
+      "payload": {
+       "num": {
+        "i64": 1
+       },
+       "den": {
+        "i64": 3
+       }
+      }
+     }
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "simpson-odd",
+   "fn": "entry_simpson_cubic",
+   "args": [
+    {
+     "i64": 0
+    },
+    {
+     "i64": -1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": -1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "FracOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.rational.v1",
+      "payload": {
+       "num": {
+        "i64": 0
+       },
+       "den": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "euler-exp",
+   "fn": "entry_euler1",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "FracOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.rational.v1",
+      "payload": {
+       "num": {
+        "i64": 3
+       },
+       "den": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "euler-linear",
+   "fn": "entry_euler1",
+   "args": [
+    {
+     "i64": -2
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 4
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "FracOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.rational.v1",
+      "payload": {
+       "num": {
+        "i64": 1
+       },
+       "den": {
+        "i64": 4
+       }
+      }
+     }
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "euler-frac",
+   "fn": "entry_euler1",
+   "args": [
+    {
+     "i64": 3
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 3
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "FracOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.rational.v1",
+      "payload": {
+       "num": {
+        "i64": 32
+       },
+       "den": {
+        "i64": 3
+       }
+      }
+     }
+    }
+   ],
+   "budget": 1048576
+  }
+ ]
+}

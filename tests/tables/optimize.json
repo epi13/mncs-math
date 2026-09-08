@@ -1,0 +1,296 @@
+{
+ "module": "mncs.math.optimize.v1",
+ "name": "optimize-exact",
+ "cases": [
+  {
+   "id": "ternary-quadratic",
+   "fn": "entry_ternary8",
+   "args": [
+    {
+     "i64": 9
+    },
+    {
+     "i64": -6
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 8
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "BracketOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.numerical.v1",
+      "payload": {
+       "lan": {
+        "i64": 6128
+       },
+       "lad": {
+        "i64": 2187
+       },
+       "uan": {
+        "i64": 20432
+       },
+       "uad": {
+        "i64": 6561
+       }
+      }
+     }
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "ternary-shifted",
+   "fn": "entry_ternary8",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": -2
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "BracketOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.numerical.v1",
+      "payload": {
+       "lan": {
+        "i64": -142
+       },
+       "lad": {
+        "i64": 729
+       },
+       "uan": {
+        "i64": 514
+       },
+       "uad": {
+        "i64": 6561
+       }
+      }
+     }
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "argmin-basic",
+   "fn": "entry_argmin8",
+   "args": [
+    {
+     "i64": 5
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 8
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 7
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 6
+    },
+    {
+     "i64": 4
+    }
+   ],
+   "expect": [
+    {
+     "u64": 3
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "argmax-basic",
+   "fn": "entry_argmax8",
+   "args": [
+    {
+     "i64": 5
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 8
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 7
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 6
+    },
+    {
+     "i64": 4
+    }
+   ],
+   "expect": [
+    {
+     "u64": 2
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "argmin-tie-first",
+   "fn": "entry_argmin8",
+   "args": [
+    {
+     "i64": 4
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 7
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 9
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 8
+    },
+    {
+     "i64": 3
+    }
+   ],
+   "expect": [
+    {
+     "u64": 1
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "argmax-tie-first",
+   "fn": "entry_argmax8",
+   "args": [
+    {
+     "i64": 4
+    },
+    {
+     "i64": 9
+    },
+    {
+     "i64": 7
+    },
+    {
+     "i64": 9
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 8
+    },
+    {
+     "i64": 3
+    }
+   ],
+   "expect": [
+    {
+     "u64": 1
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "argmin-neg",
+   "fn": "entry_argmin8",
+   "args": [
+    {
+     "i64": -5
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": -8
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": -2
+    },
+    {
+     "i64": 6
+    },
+    {
+     "i64": 4
+    }
+   ],
+   "expect": [
+    {
+     "u64": 2
+    }
+   ],
+   "budget": 1048576
+  }
+ ]
+}
