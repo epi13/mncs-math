@@ -1873,6 +1873,726 @@
      }
     }
    ]
+  },
+  {
+   "id": "halley-2",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.autodiff.v1",
+     "function": "entry_halley"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 1048576
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.autodiff.v1::HalleyOut",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.autodiff.v1::HalleyOut::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "fvd",
+        {
+         "integer": {
+          "value": 148877,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "fvn",
+        {
+         "integer": {
+          "value": -352,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "xd",
+        {
+         "integer": {
+          "value": 53,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "xn",
+        {
+         "integer": {
+          "value": 111,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "halley-3",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.autodiff.v1",
+     "function": "entry_halley"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 1048576
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.autodiff.v1::HalleyOut",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.autodiff.v1::HalleyOut::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "fvd",
+        {
+         "integer": {
+          "value": 111284641,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "fvn",
+        {
+         "integer": {
+          "value": 95584256,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "xd",
+        {
+         "integer": {
+          "value": 481,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "xn",
+        {
+         "integer": {
+          "value": 1043,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "halley-neg1",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.autodiff.v1",
+     "function": "entry_halley"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 1048576
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.autodiff.v1::HalleyOut",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.autodiff.v1::HalleyOut::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "fvd",
+        {
+         "integer": {
+          "value": 1331,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "fvn",
+        {
+         "integer": {
+          "value": -6400,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "xd",
+        {
+         "integer": {
+          "value": 11,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "xn",
+        {
+         "integer": {
+          "value": -15,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "halley-5/2",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.autodiff.v1",
+     "function": "entry_halley"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 1048576
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.autodiff.v1::HalleyOut",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.autodiff.v1::HalleyOut::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "fvd",
+        {
+         "integer": {
+          "value": 443845737152,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "fvn",
+        {
+         "integer": {
+          "value": 50791890375,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "xd",
+        {
+         "integer": {
+          "value": 7628,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "xn",
+        {
+         "integer": {
+          "value": 16055,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "halley-zero-den",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.autodiff.v1",
+     "function": "entry_halley"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.autodiff.v1::HalleyOut",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.autodiff.v1::HalleyOut::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "halley-overflow",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.autodiff.v1",
+     "function": "entry_halley"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2147483648,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.autodiff.v1::HalleyOut",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.autodiff.v1::HalleyOut::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "d2-2",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.autodiff.v1",
+     "function": "entry_d2cubic"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.rational.v1::FracOutcome",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.rational.v1::FracOutcome::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "den",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "num",
+        {
+         "integer": {
+          "value": 12,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "d2-half",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.autodiff.v1",
+     "function": "entry_d2cubic"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.rational.v1::FracOutcome",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.rational.v1::FracOutcome::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "den",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "num",
+        {
+         "integer": {
+          "value": 3,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "d2-neg3/2",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.autodiff.v1",
+     "function": "entry_d2cubic"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.rational.v1::FracOutcome",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.rational.v1::FracOutcome::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "den",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "num",
+        {
+         "integer": {
+          "value": -9,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "d2-zero-den",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.autodiff.v1",
+     "function": "entry_d2cubic"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.rational.v1::FracOutcome",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.rational.v1::FracOutcome::Err",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
   }
  ]
 }

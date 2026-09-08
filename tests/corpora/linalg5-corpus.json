@@ -1,0 +1,5732 @@
+{
+ "schema_version": "0.1",
+ "name": "linalg-5x5-6x6",
+ "cases": [
+  {
+   "id": "det5-ident",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.linalg5.v1",
+     "function": "entry_det5"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4000000
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "det5-diag",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.linalg5.v1",
+     "function": "entry_det5"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4000000
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 120,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "det5-singular",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.linalg5.v1",
+     "function": "entry_det5"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4000000
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 0,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "det5-pivot",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.linalg5.v1",
+     "function": "entry_det5"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 8000000
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 350,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "det5-generic",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.linalg5.v1",
+     "function": "entry_det5"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 8000000
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 550,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "rank5-full",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.linalg5.v1",
+     "function": "entry_rank5"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 8000000
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 5,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "rank5-zero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.linalg5.v1",
+     "function": "entry_rank5"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 8000000
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 0,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "rank5-three",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.linalg5.v1",
+     "function": "entry_rank5"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 8000000
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 3,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "solve5",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.linalg5.v1",
+     "function": "entry_solve5"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 10,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 11,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 15,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 8000000
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.linalg5.v1::SolveOut5",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.linalg5.v1::SolveOut5::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "x0d",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "x0n",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "x1d",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "x1n",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "x2d",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "x2n",
+        {
+         "integer": {
+          "value": -1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "x3d",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "x3n",
+        {
+         "integer": {
+          "value": 3,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "x4d",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "x4n",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "resid5",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.linalg5.v1",
+     "function": "entry_resid5"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -8,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -16,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 8,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -24,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -8,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -8,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 10,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 11,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 15,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4000000
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "det6-ident",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.linalg5.v1",
+     "function": "entry_det6"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 8000000
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "det6-diag",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.linalg5.v1",
+     "function": "entry_det6"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 6,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 8000000
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 720,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "det6-singular",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.linalg5.v1",
+     "function": "entry_det6"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 6,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 6,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 8000000
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 0,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "det6-generic",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.linalg5.v1",
+     "function": "entry_det6"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 8000000
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 276,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "rank6-full",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.linalg5.v1",
+     "function": "entry_rank6"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 8000000
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 6,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "rank6-zero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.linalg5.v1",
+     "function": "entry_rank6"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 8000000
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 0,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "rank6-swap",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.linalg5.v1",
+     "function": "entry_rank6"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 8000000
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 6,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "rank6-four",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.linalg5.v1",
+     "function": "entry_rank6"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 8000000
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.error.v1::MathResult",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.error.v1::MathResult::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "value",
+        {
+         "integer": {
+          "value": 4,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

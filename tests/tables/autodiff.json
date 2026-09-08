@@ -761,6 +761,331 @@
     }
    ],
    "budget": 32768
+  },
+  {
+   "id": "halley-2",
+   "fn": "entry_halley",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "HalleyOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.autodiff.v1",
+      "payload": {
+       "xn": {
+        "i64": 111
+       },
+       "xd": {
+        "i64": 53
+       },
+       "fvn": {
+        "i64": -352
+       },
+       "fvd": {
+        "i64": 148877
+       }
+      }
+     }
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "halley-3",
+   "fn": "entry_halley",
+   "args": [
+    {
+     "i64": 3
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "HalleyOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.autodiff.v1",
+      "payload": {
+       "xn": {
+        "i64": 1043
+       },
+       "xd": {
+        "i64": 481
+       },
+       "fvn": {
+        "i64": 95584256
+       },
+       "fvd": {
+        "i64": 111284641
+       }
+      }
+     }
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "halley-neg1",
+   "fn": "entry_halley",
+   "args": [
+    {
+     "i64": -1
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "HalleyOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.autodiff.v1",
+      "payload": {
+       "xn": {
+        "i64": -15
+       },
+       "xd": {
+        "i64": 11
+       },
+       "fvn": {
+        "i64": -6400
+       },
+       "fvd": {
+        "i64": 1331
+       }
+      }
+     }
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "halley-5/2",
+   "fn": "entry_halley",
+   "args": [
+    {
+     "i64": 5
+    },
+    {
+     "i64": 2
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "HalleyOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.autodiff.v1",
+      "payload": {
+       "xn": {
+        "i64": 16055
+       },
+       "xd": {
+        "i64": 7628
+       },
+       "fvn": {
+        "i64": 50791890375
+       },
+       "fvd": {
+        "i64": 443845737152
+       }
+      }
+     }
+    }
+   ],
+   "budget": 1048576
+  },
+  {
+   "id": "halley-zero-den",
+   "fn": "entry_halley",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "HalleyOut",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.autodiff.v1",
+      "payload": {
+       "reason": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "halley-overflow",
+   "fn": "entry_halley",
+   "args": [
+    {
+     "i64": 2147483648
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "HalleyOut",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.autodiff.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "d2-2",
+   "fn": "entry_d2cubic",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "FracOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.rational.v1",
+      "payload": {
+       "num": {
+        "i64": 12
+       },
+       "den": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "d2-half",
+   "fn": "entry_d2cubic",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "FracOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.rational.v1",
+      "payload": {
+       "num": {
+        "i64": 3
+       },
+       "den": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "d2-neg3/2",
+   "fn": "entry_d2cubic",
+   "args": [
+    {
+     "i64": -3
+    },
+    {
+     "i64": 2
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "FracOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.rational.v1",
+      "payload": {
+       "num": {
+        "i64": -9
+       },
+       "den": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "d2-zero-den",
+   "fn": "entry_d2cubic",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "FracOutcome",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.rational.v1",
+      "payload": {
+       "reason": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
   }
  ]
 }

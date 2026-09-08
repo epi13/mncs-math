@@ -1,0 +1,17 @@
+mncs 0.10;
+module bprobe.mulm_v4;
+record U { base: u64, exp: u64, acc: u64 }
+fn addm(x: u64, y: u64, m: u64) -> (result: u64) {
+    let room: u64 = m - y;
+    if x >= room {
+        return x - room;
+    }
+    return x + y;
+}
+fn direct_add(x: u64, y: u64, m: u64) -> (result: u64) {
+    return addm(x, y, m);
+}
+fn mk_rec(b: u64, e: u64) -> (result: u64) {
+    let st: U = U { base: b, exp: e, acc: 0 };
+    return st.acc +% st.base +% st.exp;
+}

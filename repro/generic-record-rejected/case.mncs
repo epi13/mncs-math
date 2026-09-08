@@ -1,0 +1,6 @@
+mncs 0.10;
+module p02_generic_record;
+record Wrap<T> { v: T }
+fn uw(x: Wrap<i64>) -> (result: i64) {
+    return x.v;
+}

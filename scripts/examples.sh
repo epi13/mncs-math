@@ -12,15 +12,17 @@ if [ "${#EXS[@]}" -eq 0 ]; then
   EXS=(ex_solve ex_sample)
 fi
 fail=0
+TMPD="$(mktemp -d "${TMPDIR:-/tmp}/mncs-examples.XXXXXX")"
+trap 'rm -rf "$TMPD"' EXIT
 for ex in "${EXS[@]}"; do
   corpus_name="${ex//_/-}-corpus.json"
   for b in mncs-research-bytecode mncs-portable-wasm-mvp; do
     echo "== example $ex @ $b =="
     "$MNCS_BIN" experiment run "$ROOT/examples/$ex.mncs" \
       --backend "$b" --corpus "$ROOT/examples/corpora/$corpus_name" \
-      >/tmp/mncs-ex-out.json 2>/tmp/mncs-ex-err.txt \
+      >"$TMPD/out.json" 2>"$TMPD/err.txt" \
       || { echo "FAIL example $ex @ $b (exit $?)"; fail=1; continue; }
-    python3 - /tmp/mncs-ex-out.json <<'EOF'
+    python3 - "$TMPD/out.json" <<'EOF'
 import json, sys
 d = json.load(open(sys.argv[1]))
 bad = [(c["case_id"], c.get("status"))

@@ -1,0 +1,741 @@
+{
+ "schema_version": "0.1",
+ "name": "ode-fixed-step",
+ "cases": [
+  {
+   "id": "euler-1000-0",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.ode.v1",
+     "function": "entry_euler_sho"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": 1000,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": -100,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "rk4-1000-0",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.ode.v1",
+     "function": "entry_rk4_sho"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": 993,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": -119,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "euler-0-1000",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.ode.v1",
+     "function": "entry_euler_sho"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": 100,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 1000,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "rk4-0-1000",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.ode.v1",
+     "function": "entry_rk4_sho"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": 119,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 993,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "euler-707-707",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.ode.v1",
+     "function": "entry_euler_sho"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 707,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 707,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": 777,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 637,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "rk4-707-707",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.ode.v1",
+     "function": "entry_rk4_sho"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 707,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 707,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": 786,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 618,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "euler--500-2000",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.ode.v1",
+     "function": "entry_euler_sho"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -500,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": -300,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 2050,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "rk4--500-2000",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.ode.v1",
+     "function": "entry_rk4_sho"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -500,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": -258,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 2045,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "rk4-2steps",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.ode.v1",
+     "function": "entry_rk4_sho2"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": 972,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": -237,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "decay-3steps",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.ode.v1",
+     "function": "entry_decay3"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 100000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 97030,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "d1",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.ode.v1",
+     "function": "entry_d1"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 16,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 64,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 12,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "d2",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.ode.v1",
+     "function": "entry_d2"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 16,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 36,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 64,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 2,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "lap",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.ode.v1",
+     "function": "entry_lap"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 34,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 25,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 45,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 29,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 41,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 4,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -9,6 +9,8 @@ mncs 0.11;
 // the population form (8*S2 - S1^2)/64, nonnegative by construction;
 // a negative numerator would signal an implementation bug, and the
 // corpus pins exact reduced pairs (never floats) for each fixture.
+// Covariance is the paired-sample form (8*Sxy - Sx*Sy)/64 with
+// cov(x, x) == var(x) pinned as a metamorphic property.
 //
 // The 8-sorter is an explicit 19-comparator Bose-Nelson network. The
 // oracle proves it sorts all 40320 permutations of eight distinct
@@ -137,6 +139,80 @@ fn mean_var8_make(num: i64, mn: i64, md: i64) -> (result: StatOut) {
     };
 }
 
+// Exact population covariance ((8*Sxy - Sx*Sy)/64) through checked
+// integer accumulation and rational.make. cov(x, x) == var(x) is a
+// metamorphic corpus property: the oracle asserts it at generation
+// time and pins both sides.
+fn sumxy8(x: [i64; 8], y: [i64; 8]) -> (result: MathResult) {
+    iterate i over x carrying acc: MathResult = MathResult.Ok { value: 0 } {
+        next acc = sumxy8_fold(acc, x[i], y[i]);
+    }
+    return acc;
+}
+
+fn sumxy8_fold(acc: MathResult, u: i64, v: i64) -> (result: MathResult) {
+    return match acc {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: s } => sumxy8_add(s, u, v),
+    };
+}
+
+fn sumxy8_add(s: i64, u: i64, v: i64) -> (result: MathResult) {
+    let t: MathResult = checked_mul(u, v);
+    return match t {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: p } => checked_add(s, p),
+    };
+}
+
+fn cov8(x: [i64; 8], y: [i64; 8]) -> (result: FracOutcome) {
+    let sx: MathResult = sum8(x);
+    return match sx {
+        MathResult.Err { reason } => FracOutcome.Err { reason: reason },
+        Ok { value: a } => cov8_sy(a, x, y),
+    };
+}
+
+fn cov8_sy(a: i64, x: [i64; 8], y: [i64; 8]) -> (result: FracOutcome) {
+    let sy: MathResult = sum8(y);
+    return match sy {
+        MathResult.Err { reason } => FracOutcome.Err { reason: reason },
+        Ok { value: b } => cov8_sxy(a, b, x, y),
+    };
+}
+
+fn cov8_sxy(a: i64, b: i64, x: [i64; 8], y: [i64; 8]) -> (result: FracOutcome) {
+    let sxy: MathResult = sumxy8(x, y);
+    return match sxy {
+        MathResult.Err { reason } => FracOutcome.Err { reason: reason },
+        Ok { value: c } => cov8_num(a, b, c),
+    };
+}
+
+fn cov8_num(a: i64, b: i64, c: i64) -> (result: FracOutcome) {
+    let t1: MathResult = checked_mul(8, c);
+    return match t1 {
+        MathResult.Err { reason } => FracOutcome.Err { reason: reason },
+        Ok { value: e8 } => cov8_sub(a, b, e8),
+    };
+}
+
+fn cov8_sub(a: i64, b: i64, e8: i64) -> (result: FracOutcome) {
+    let t2: MathResult = checked_mul(a, b);
+    return match t2 {
+        MathResult.Err { reason } => FracOutcome.Err { reason: reason },
+        Ok { value: ab } => cov8_make(e8, ab),
+    };
+}
+
+fn cov8_make(e8: i64, ab: i64) -> (result: FracOutcome) {
+    let t3: MathResult = checked_sub(e8, ab);
+    return match t3 {
+        MathResult.Err { reason } => FracOutcome.Err { reason: reason },
+        Ok { value: num } => make(num, 64),
+    };
+}
+
 // Median as the exact mean of the two middle order statistics.
 fn median8(x: [i64; 8]) -> (result: FracOutcome) {
     let s: [i64; 8] = sort8(x);
@@ -197,6 +273,10 @@ fn entry_range8(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x
 
 fn entry_mean_var8(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64) -> (result: StatOut) {
     return mean_var8([x0, x1, x2, x3, x4, x5, x6, x7]);
+}
+
+fn entry_cov8(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64, y0: i64, y1: i64, y2: i64, y3: i64, y4: i64, y5: i64, y6: i64, y7: i64) -> (result: FracOutcome) {
+    return cov8([x0, x1, x2, x3, x4, x5, x6, x7], [y0, y1, y2, y3, y4, y5, y6, y7]);
 }
 
 fn entry_median8(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64) -> (result: FracOutcome) {

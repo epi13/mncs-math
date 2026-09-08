@@ -559,6 +559,350 @@
    "budget": 32768
   },
   {
+   "id": "cov-basic",
+   "fn": "entry_cov8",
+   "args": [
+    {
+     "i64": 5
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 8
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 7
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 6
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 7
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 8
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 6
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 5
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "FracOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.rational.v1",
+      "payload": {
+       "num": {
+        "i64": -19
+       },
+       "den": {
+        "i64": 4
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "cov-self",
+   "fn": "entry_cov8",
+   "args": [
+    {
+     "i64": 3
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 9
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 6
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 9
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 6
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "FracOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.rational.v1",
+      "payload": {
+       "num": {
+        "i64": 423
+       },
+       "den": {
+        "i64": 64
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "cov-self-var",
+   "fn": "entry_mean_var8",
+   "args": [
+    {
+     "i64": 3
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 9
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 6
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "StatOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.statistics.v1",
+      "payload": {
+       "mean_n": {
+        "i64": 31
+       },
+       "mean_d": {
+        "i64": 8
+       },
+       "var_n": {
+        "i64": 423
+       },
+       "var_d": {
+        "i64": 64
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "cov-anti",
+   "fn": "entry_cov8",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 6
+    },
+    {
+     "i64": 7
+    },
+    {
+     "i64": 8
+    },
+    {
+     "i64": 8
+    },
+    {
+     "i64": 7
+    },
+    {
+     "i64": 6
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "FracOutcome",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.rational.v1",
+      "payload": {
+       "num": {
+        "i64": -21
+       },
+       "den": {
+        "i64": 4
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "cov-overflow",
+   "fn": "entry_cov8",
+   "args": [
+    {
+     "i64": 4611686018427387904
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 4611686018427387904
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "FracOutcome",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.rational.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
    "id": "sort-basic",
    "fn": "entry_sort8",
    "args": [

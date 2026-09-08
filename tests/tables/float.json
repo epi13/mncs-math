@@ -1,0 +1,992 @@
+{
+ "module": "mncs.math.float.v1",
+ "name": "float-binary64",
+ "cases": [
+  {
+   "id": "add",
+   "fn": "candidate_fadd",
+   "args": [
+    {
+     "f64": 1.5
+    },
+    {
+     "f64": 2.25
+    }
+   ],
+   "expect": [
+    {
+     "f64": 3.75
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "add-cancel",
+   "fn": "candidate_fadd",
+   "args": [
+    {
+     "f64": 1e+16
+    },
+    {
+     "f64": 1.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 1e+16
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "sub",
+   "fn": "candidate_fsub",
+   "args": [
+    {
+     "f64": 5.5
+    },
+    {
+     "f64": 8.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": -2.5
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "mul",
+   "fn": "candidate_fmul",
+   "args": [
+    {
+     "f64": 0.1
+    },
+    {
+     "f64": 3.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 0.30000000000000004
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "div",
+   "fn": "candidate_fdiv",
+   "args": [
+    {
+     "f64": 7.0
+    },
+    {
+     "f64": 2.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 3.5
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "div-recur",
+   "fn": "candidate_fdiv",
+   "args": [
+    {
+     "f64": 1.0
+    },
+    {
+     "f64": 3.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 0.3333333333333333
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "neg",
+   "fn": "candidate_fneg",
+   "args": [
+    {
+     "f64": 2.5
+    }
+   ],
+   "expect": [
+    {
+     "f64": -2.5
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "neg-zero",
+   "fn": "candidate_fneg",
+   "args": [
+    {
+     "f64": 0.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 0.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "neg-negzero",
+   "fn": "candidate_fneg",
+   "args": [
+    {
+     "f64": -0.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 0.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "lt-true",
+   "fn": "candidate_flt",
+   "args": [
+    {
+     "f64": 1.0
+    },
+    {
+     "f64": 2.0
+    }
+   ],
+   "expect": [
+    {
+     "bool": true
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "lt-false",
+   "fn": "candidate_flt",
+   "args": [
+    {
+     "f64": 2.0
+    },
+    {
+     "f64": 2.0
+    }
+   ],
+   "expect": [
+    {
+     "bool": false
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "ge-true",
+   "fn": "candidate_fge",
+   "args": [
+    {
+     "f64": 2.0
+    },
+    {
+     "f64": 2.0
+    }
+   ],
+   "expect": [
+    {
+     "bool": true
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "ge-false",
+   "fn": "candidate_fge",
+   "args": [
+    {
+     "f64": 1.5
+    },
+    {
+     "f64": 2.5
+    }
+   ],
+   "expect": [
+    {
+     "bool": false
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "eq-negzero",
+   "fn": "candidate_feq",
+   "args": [
+    {
+     "f64": 0.0
+    },
+    {
+     "f64": -0.0
+    }
+   ],
+   "expect": [
+    {
+     "bool": true
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "i2f-exact",
+   "fn": "candidate_i2f",
+   "args": [
+    {
+     "i64": 42
+    }
+   ],
+   "expect": [
+    {
+     "f64": 42.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "i2f-neg",
+   "fn": "candidate_i2f",
+   "args": [
+    {
+     "i64": -7
+    }
+   ],
+   "expect": [
+    {
+     "f64": -7.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "i2f-round",
+   "fn": "candidate_i2f",
+   "args": [
+    {
+     "i64": 9007199254740993
+    }
+   ],
+   "expect": [
+    {
+     "f64": 9007199254740992.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "f2i-trunc",
+   "fn": "candidate_f2i",
+   "args": [
+    {
+     "f64": 7.9
+    }
+   ],
+   "expect": [
+    {
+     "i64": 7
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "f2i-neg-trunc",
+   "fn": "candidate_f2i",
+   "args": [
+    {
+     "f64": -7.9
+    }
+   ],
+   "expect": [
+    {
+     "i64": -7
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "dot2",
+   "fn": "candidate_fdot2",
+   "args": [
+    {
+     "f64": 2.5
+    },
+    {
+     "f64": -1.5
+    },
+    {
+     "f64": 4.0
+    },
+    {
+     "f64": 2.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 7.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "dot3",
+   "fn": "candidate_fdot3",
+   "args": [
+    {
+     "f64": 1.0
+    },
+    {
+     "f64": 2.0
+    },
+    {
+     "f64": 3.0
+    },
+    {
+     "f64": 4.0
+    },
+    {
+     "f64": -5.0
+    },
+    {
+     "f64": 6.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 12.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "dot4-generic",
+   "fn": "entry_fdot4",
+   "args": [
+    {
+     "f64": 1.5
+    },
+    {
+     "f64": 2.5
+    },
+    {
+     "f64": -3.5
+    },
+    {
+     "f64": 4.5
+    },
+    {
+     "f64": 2.0
+    },
+    {
+     "f64": -1.0
+    },
+    {
+     "f64": 0.5
+    },
+    {
+     "f64": 3.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 12.25
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "horner",
+   "fn": "candidate_fhorn3",
+   "args": [
+    {
+     "f64": 2.0
+    },
+    {
+     "f64": 5.0
+    },
+    {
+     "f64": 1.0
+    },
+    {
+     "f64": -2.0
+    },
+    {
+     "f64": 3.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 23.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "newton-step",
+   "fn": "candidate_fnewton_step",
+   "args": [
+    {
+     "f64": 2.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 2.1
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "sin-0.0",
+   "fn": "candidate_fsin",
+   "args": [
+    {
+     "f64": 0.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 0.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "cos-0.0",
+   "fn": "candidate_fcos",
+   "args": [
+    {
+     "f64": 0.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 1.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "pythag-0.0",
+   "fn": "candidate_fpythag",
+   "args": [
+    {
+     "f64": 0.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 1.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "sin-0.5",
+   "fn": "candidate_fsin",
+   "args": [
+    {
+     "f64": 0.5
+    }
+   ],
+   "expect": [
+    {
+     "f64": 0.479425538604203
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "cos-0.5",
+   "fn": "candidate_fcos",
+   "args": [
+    {
+     "f64": 0.5
+    }
+   ],
+   "expect": [
+    {
+     "f64": 0.8775825618903728
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "pythag-0.5",
+   "fn": "candidate_fpythag",
+   "args": [
+    {
+     "f64": 0.5
+    }
+   ],
+   "expect": [
+    {
+     "f64": 1.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "sin-1.0",
+   "fn": "candidate_fsin",
+   "args": [
+    {
+     "f64": 1.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 0.8414709848078965
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "cos-1.0",
+   "fn": "candidate_fcos",
+   "args": [
+    {
+     "f64": 1.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 0.5403023058681398
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "pythag-1.0",
+   "fn": "candidate_fpythag",
+   "args": [
+    {
+     "f64": 1.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 1.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "sin--1.0",
+   "fn": "candidate_fsin",
+   "args": [
+    {
+     "f64": -1.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": -0.8414709848078965
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "cos--1.0",
+   "fn": "candidate_fcos",
+   "args": [
+    {
+     "f64": -1.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 0.5403023058681398
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "pythag--1.0",
+   "fn": "candidate_fpythag",
+   "args": [
+    {
+     "f64": -1.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 1.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "sin-3.0",
+   "fn": "candidate_fsin",
+   "args": [
+    {
+     "f64": 3.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 0.1411200080598672
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "cos-3.0",
+   "fn": "candidate_fcos",
+   "args": [
+    {
+     "f64": 3.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": -0.9899924966004454
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "pythag-3.0",
+   "fn": "candidate_fpythag",
+   "args": [
+    {
+     "f64": 3.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 0.9999999999999999
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "sum-gap",
+   "fn": "candidate_fsum_gap",
+   "args": [],
+   "expect": [
+    {
+     "f64": -1.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "sum6-left",
+   "fn": "candidate_fsum_left",
+   "args": [
+    {
+     "f64": 1e+16
+    },
+    {
+     "f64": 1e+16
+    },
+    {
+     "f64": -1e+16
+    },
+    {
+     "f64": 2.0
+    },
+    {
+     "f64": -1e+16
+    },
+    {
+     "f64": 1.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 3.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "sum6-right",
+   "fn": "candidate_fsum_right",
+   "args": [
+    {
+     "f64": 1e+16
+    },
+    {
+     "f64": 1e+16
+    },
+    {
+     "f64": -1e+16
+    },
+    {
+     "f64": 2.0
+    },
+    {
+     "f64": -1e+16
+    },
+    {
+     "f64": 1.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 0.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "sum6-pair",
+   "fn": "candidate_fsum_pair",
+   "args": [
+    {
+     "f64": 1e+16
+    },
+    {
+     "f64": 1e+16
+    },
+    {
+     "f64": -1e+16
+    },
+    {
+     "f64": 2.0
+    },
+    {
+     "f64": -1e+16
+    },
+    {
+     "f64": 1.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 2.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "sum6-evenodd",
+   "fn": "candidate_fsum_evenodd",
+   "args": [
+    {
+     "f64": 1e+16
+    },
+    {
+     "f64": 1e+16
+    },
+    {
+     "f64": -1e+16
+    },
+    {
+     "f64": 2.0
+    },
+    {
+     "f64": -1e+16
+    },
+    {
+     "f64": 1.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 4.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "sum6-loop",
+   "fn": "candidate_fsum_loop",
+   "args": [
+    {
+     "f64": 1e+16
+    },
+    {
+     "f64": 1e+16
+    },
+    {
+     "f64": -1e+16
+    },
+    {
+     "f64": 2.0
+    },
+    {
+     "f64": -1e+16
+    },
+    {
+     "f64": 1.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 3.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "sum6-ctl-left",
+   "fn": "candidate_fsum_left",
+   "args": [
+    {
+     "f64": 1.0
+    },
+    {
+     "f64": 2.0
+    },
+    {
+     "f64": 3.0
+    },
+    {
+     "f64": 4.0
+    },
+    {
+     "f64": 5.0
+    },
+    {
+     "f64": 6.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 21.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "sum6-ctl-right",
+   "fn": "candidate_fsum_right",
+   "args": [
+    {
+     "f64": 1.0
+    },
+    {
+     "f64": 2.0
+    },
+    {
+     "f64": 3.0
+    },
+    {
+     "f64": 4.0
+    },
+    {
+     "f64": 5.0
+    },
+    {
+     "f64": 6.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 21.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "sum6-ctl-pair",
+   "fn": "candidate_fsum_pair",
+   "args": [
+    {
+     "f64": 1.0
+    },
+    {
+     "f64": 2.0
+    },
+    {
+     "f64": 3.0
+    },
+    {
+     "f64": 4.0
+    },
+    {
+     "f64": 5.0
+    },
+    {
+     "f64": 6.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 21.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "sum6-ctl-evenodd",
+   "fn": "candidate_fsum_evenodd",
+   "args": [
+    {
+     "f64": 1.0
+    },
+    {
+     "f64": 2.0
+    },
+    {
+     "f64": 3.0
+    },
+    {
+     "f64": 4.0
+    },
+    {
+     "f64": 5.0
+    },
+    {
+     "f64": 6.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 21.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "sum6-ctl-loop",
+   "fn": "candidate_fsum_loop",
+   "args": [
+    {
+     "f64": 1.0
+    },
+    {
+     "f64": 2.0
+    },
+    {
+     "f64": 3.0
+    },
+    {
+     "f64": 4.0
+    },
+    {
+     "f64": 5.0
+    },
+    {
+     "f64": 6.0
+    }
+   ],
+   "expect": [
+    {
+     "f64": 21.0
+    }
+   ],
+   "budget": 4096
+  }
+ ]
+}

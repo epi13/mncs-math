@@ -1,0 +1,66 @@
+{
+ "schema_version": "0.1",
+ "name": "udomain",
+ "cases": [
+  {
+   "id": "usum",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "uprobe.udomain_v1",
+     "function": "entry_usum"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 15,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 25,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 35,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 80,
+      "type": {
+       "bits": 64,
+       "signed": false
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

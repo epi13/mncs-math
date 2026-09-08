@@ -1,0 +1,198 @@
+mncs 0.11;
+
+// mncs.math.ntt — Number Theoretic Transform (FFT-shaped workload
+// without floats) over p = 998244353 = 119 * 2^23 + 1, primitive
+// root g = 3. Sizes 8 and 16, decimation-in-time, iterative.
+//
+// Every root is COMPUTED at runtime with `pow_mod` from (p, g); the
+// only magic numbers are p and g themselves. Inverse transforms reuse
+// the forward stages with inverted twiddles plus a final n^-1 scale,
+// so `intt(ntt(x)) == x` is a metamorphic corpus property needing no
+// oracle beyond identity. Naive O(n^2) convolution in the same ring
+// cross-checks the NTT convolution.
+//
+// Step budget note: twiddles recompute per lane with `pow_mod`
+// instead of carried multiples, trading steps for simpler carried
+// state. That tradeoff is deliberate pressure on step budgets.
+//
+// Profile 0.11: `up_to` indices are first-class values (usable in
+// lets, arithmetic, indexing, and call args); 0.10 leaves them
+// unresolvable (MNE102). `replace` indices must be u64 (MNE199).
+module mncs.math.ntt.v1;
+
+use mncs.math.scalar.v1;
+
+fn ntt_prime() -> (result: u64) {
+    return 998244353;
+}
+
+fn ntt_primroot() -> (result: u64) {
+    return 3;
+}
+
+// w8 = g^((p-1)/8) = 3^124780544, the primitive 8th root.
+fn ntt_w8() -> (result: u64) {
+    return pow_mod(ntt_primroot(), 124780544, ntt_prime());
+}
+
+fn sub_mod(u: u64, v: u64, m: u64) -> (result: u64) {
+    return add_mod(u, m - v, m);
+}
+
+// ---- bit-reversal (explicit lanes: 3-bit rev is a fixed permute) ----
+
+fn bitrev8(a: [u64; 8]) -> (result: [u64; 8]) {
+    return [a[0], a[4], a[2], a[6], a[1], a[5], a[3], a[7]];
+}
+
+fn bitrev16(a: [u64; 16]) -> (result: [u64; 16]) {
+    return [a[0], a[8], a[4], a[12], a[2], a[10], a[6], a[14], a[1], a[9], a[5], a[13], a[3], a[11], a[7], a[15]];
+}
+
+// ---- one DIT stage: n/2 butterflies of half-width `len` ----
+
+record StageSt { a: [u64; 8] }
+
+fn ntt8_stage(a: [u64; 8], len: u64, wlen: u64) -> (result: [u64; 8]) {
+    let p: u64 = ntt_prime();
+    iterate j up_to 4 carrying st: StageSt = StageSt { a: a } {
+        let lane: u64 = j;
+        let pos: u64 = lane % len;
+        let block: u64 = lane / len;
+        let base: u64 = block * len * 2 + pos;
+        next st = ntt8_fly(st, base, len, pos, wlen, p);
+    }
+    return st.a;
+}
+
+fn ntt8_fly(st: StageSt, base: u64, len: u64, pos: u64, wlen: u64, p: u64) -> (result: StageSt) {
+    let u: u64 = st.a[base];
+    let tw: u64 = pow_mod(wlen, pos, p);
+    let v: u64 = mul_mod(st.a[base + len], tw, p);
+    let t1: [u64; 8] = replace(st.a, base, add_mod(u, v, p));
+    let t2: [u64; 8] = replace(t1, base + len, sub_mod(u, v, p));
+    return StageSt { a: t2 };
+}
+
+fn candidate_ntt8(a0: u64, a1: u64, a2: u64, a3: u64, a4: u64, a5: u64, a6: u64, a7: u64) -> (result: [u64; 8]) {
+    let r: [u64; 8] = bitrev8([a0, a1, a2, a3, a4, a5, a6, a7]);
+    let w: u64 = ntt_w8();
+    let s1: [u64; 8] = ntt8_stage(r, 1, pow_mod(w, 4, ntt_prime()));
+    let s2: [u64; 8] = ntt8_stage(s1, 2, pow_mod(w, 2, ntt_prime()));
+    return ntt8_stage(s2, 4, w);
+}
+
+fn candidate_intt8(a0: u64, a1: u64, a2: u64, a3: u64, a4: u64, a5: u64, a6: u64, a7: u64) -> (result: [u64; 8]) {
+    let r: [u64; 8] = bitrev8([a0, a1, a2, a3, a4, a5, a6, a7]);
+    let p: u64 = ntt_prime();
+    let w: u64 = pow_mod(ntt_w8(), p - 2, p);
+    let s1: [u64; 8] = ntt8_stage(r, 1, pow_mod(w, 4, p));
+    let s2: [u64; 8] = ntt8_stage(s1, 2, pow_mod(w, 2, p));
+    let s3: [u64; 8] = ntt8_stage(s2, 4, w);
+    return ntt8_scale(s3, pow_mod(8, p - 2, p), p);
+}
+
+fn ntt8_scale(a: [u64; 8], s: u64, p: u64) -> (result: [u64; 8]) {
+    iterate j up_to 8 carrying out: [u64; 8] = a {
+        let lane: u64 = j;
+        next out = ntt8_scale_step(out, lane, s, p);
+    }
+    return out;
+}
+
+fn ntt8_scale_step(out: [u64; 8], lane: u64, s: u64, p: u64) -> (result: [u64; 8]) {
+    return replace(out, lane, mul_mod(out[lane], s, p));
+}
+
+// ---- size 16 (same shape, 4 stages) ----
+
+record Stage16 { a: [u64; 16] }
+
+fn ntt16_stage(a: [u64; 16], len: u64, wlen: u64) -> (result: [u64; 16]) {
+    let p: u64 = ntt_prime();
+    iterate j up_to 8 carrying st: Stage16 = Stage16 { a: a } {
+        let lane: u64 = j;
+        let pos: u64 = lane % len;
+        let block: u64 = lane / len;
+        let base: u64 = block * len * 2 + pos;
+        next st = ntt16_fly(st, base, len, pos, wlen, p);
+    }
+    return st.a;
+}
+
+fn ntt16_fly(st: Stage16, base: u64, len: u64, pos: u64, wlen: u64, p: u64) -> (result: Stage16) {
+    let u: u64 = st.a[base];
+    let tw: u64 = pow_mod(wlen, pos, p);
+    let v: u64 = mul_mod(st.a[base + len], tw, p);
+    let t1: [u64; 16] = replace(st.a, base, add_mod(u, v, p));
+    let t2: [u64; 16] = replace(t1, base + len, sub_mod(u, v, p));
+    return Stage16 { a: t2 };
+}
+
+fn candidate_ntt16(a0: u64, a1: u64, a2: u64, a3: u64, a4: u64, a5: u64, a6: u64, a7: u64, a8: u64, a9: u64, a10: u64, a11: u64, a12: u64, a13: u64, a14: u64, a15: u64) -> (result: [u64; 16]) {
+    let r: [u64; 16] = bitrev16([a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15]);
+    let w: u64 = pow_mod(ntt_primroot(), 62390272, ntt_prime());
+    let s1: [u64; 16] = ntt16_stage(r, 1, pow_mod(w, 8, ntt_prime()));
+    let s2: [u64; 16] = ntt16_stage(s1, 2, pow_mod(w, 4, ntt_prime()));
+    let s3: [u64; 16] = ntt16_stage(s2, 4, pow_mod(w, 2, ntt_prime()));
+    return ntt16_stage(s3, 8, w);
+}
+
+// ---- NTT convolution (cross-implementation of the naive one) ----
+
+fn ntt_pointwise(fa: [u64; 8], fb: [u64; 8]) -> (result: [u64; 8]) {
+    iterate j up_to 8 carrying out: [u64; 8] = fa {
+        let lane: u64 = j;
+        let prod: u64 = mul_mod(fa[lane], fb[lane], ntt_prime());
+        next out = ntt_pw_write(out, lane, prod);
+    }
+    return out;
+}
+
+fn ntt_pw_write(out: [u64; 8], lane: u64, prod: u64) -> (result: [u64; 8]) {
+    return replace(out, lane, prod);
+}
+
+fn candidate_conv8_ntt(a0: u64, a1: u64, a2: u64, a3: u64, b0: u64, b1: u64, b2: u64, b3: u64) -> (result: [u64; 8]) {
+    let fa: [u64; 8] = candidate_ntt8(a0, a1, a2, a3, 0, 0, 0, 0);
+    let fb: [u64; 8] = candidate_ntt8(b0, b1, b2, b3, 0, 0, 0, 0);
+    let prod: [u64; 8] = ntt_pointwise(fa, fb);
+    return candidate_intt8(prod[0], prod[1], prod[2], prod[3], prod[4], prod[5], prod[6], prod[7]);
+}
+
+// ---- naive O(n^2) convolution mod p (cross-check target) ----
+
+fn candidate_conv4(a0: u64, a1: u64, a2: u64, a3: u64, b0: u64, b1: u64, b2: u64, b3: u64) -> (result: [u64; 8]) {
+    let p: u64 = ntt_prime();
+    let a: [u64; 4] = [a0, a1, a2, a3];
+    let b: [u64; 4] = [b0, b1, b2, b3];
+    return conv4_out(a, b, p);
+}
+
+fn conv4_out(a: [u64; 4], b: [u64; 4], p: u64) -> (result: [u64; 8]) {
+    iterate k up_to 7 carrying out: [u64; 8] = [0, 0, 0, 0, 0, 0, 0, 0] {
+        next out = conv4_lane(out, a, b, k, p);
+    }
+    return out;
+}
+
+fn conv4_lane(out: [u64; 8], a: [u64; 4], b: [u64; 4], k: u64, p: u64) -> (result: [u64; 8]) {
+    return replace(out, k, conv4_sum(a, b, k, p));
+}
+
+fn conv4_sum(a: [u64; 4], b: [u64; 4], k: u64, p: u64) -> (result: u64) {
+    iterate t up_to 4 carrying acc: u64 = 0 {
+        next acc = conv4_term(acc, a, b, k, t, p);
+    }
+    return acc;
+}
+
+fn conv4_term(acc: u64, a: [u64; 4], b: [u64; 4], k: u64, t: u64, p: u64) -> (result: u64) {
+    if t > k {
+        return acc;
+    }
+    if k - t > 3 {
+        return acc;
+    }
+    return add_mod(acc, mul_mod(a[t], b[k - t], p), p);
+}

@@ -1,0 +1,1326 @@
+{
+ "schema_version": "0.1",
+ "name": "poly-exact",
+ "cases": [
+  {
+   "id": "peval3",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.poly.v1",
+     "function": "entry_peval3"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 17,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "peval5",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.poly.v1",
+     "function": "entry_peval5"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 12,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "peval-wrap",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.poly.v1",
+     "function": "entry_peval3"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4294967296,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 0,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "padd3",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.poly.v1",
+     "function": "entry_padd3"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -7,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 9,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 8,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": 5,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 1,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 6,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "pdegree-full",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.poly.v1",
+     "function": "entry_pdegree4"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 3,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "pdegree-gap",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.poly.v1",
+     "function": "entry_pdegree4"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 9,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 2,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "pdegree-zero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.poly.v1",
+     "function": "entry_pdegree4"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": -1,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "pderiv3",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.poly.v1",
+     "function": "entry_pderiv3"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": -1,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 8,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 6,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "pderiv4",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.poly.v1",
+     "function": "entry_pderiv4"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": 2,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 6,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 12,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 20,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "pmul22",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.poly.v1",
+     "function": "entry_pmul22"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": -1,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": -2,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": -1,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 4,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 6,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "pmul33",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.poly.v1",
+     "function": "entry_pmul33"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": 2,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 1,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": -2,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 18,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": -5,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 2,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 20,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "psynth3",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.poly.v1",
+     "function": "entry_psynth3"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": 5,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 4,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 1,
+         "type": {
+          "bits": 64,
+          "signed": true
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "psynth3r",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.poly.v1",
+     "function": "entry_psynth3r"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 17,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "psynth3r-is-peval",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.poly.v1",
+     "function": "entry_peval3"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 17,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "qeval2",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.poly.v1",
+     "function": "entry_qeval2"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": -3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 32768
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.rational.v1::FracOutcome",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.rational.v1::FracOutcome::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "den",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "num",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

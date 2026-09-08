@@ -112,6 +112,36 @@ def mean_var(xs):
                    (v.numerator, v.denominator)))
 
 
+def cov(xs, ys):
+    s1 = 0
+    for v in xs:
+        s1 += v
+        if not fits(s1):
+            return ("err", OVF)
+    s2 = 0
+    for v in ys:
+        s2 += v
+        if not fits(s2):
+            return ("err", OVF)
+    s3 = 0
+    for a, b in zip(xs, ys):
+        p = a * b
+        if not fits(p):
+            return ("err", OVF)
+        s3 += p
+        if not fits(s3):
+            return ("err", OVF)
+    t1 = 8 * s3
+    t2 = s1 * s2
+    if not (fits(t1) and fits(t2)):
+        return ("err", OVF)
+    num = t1 - t2
+    if not fits(num):
+        return ("err", OVF)
+    v = Fraction(num, 64)
+    return ("ok", (v.numerator, v.denominator))
+
+
 def main():
     # Prove the network sorts every permutation of 8 distinct inputs.
     base = list(range(8))
@@ -147,6 +177,32 @@ def main():
     case("median-basic", "entry_median8", xs, [fracout(9, 2)])
     case("median-even-pair", "entry_median8", ys, [fracout(2, 1)])
     case("median-overflow", "entry_median8", [M63] * 8,
+         [fracout(reason=OVF)])
+
+    # covariance: (8*Sxy - Sx*Sy)/64, exact reduced fractions
+    zs = [2, 7, 1, 8, 3, 6, 4, 5]
+    r = cov(xs, zs)
+    assert r[0] == "ok", r
+    case("cov-basic", "entry_cov8", xs + zs, [fracout(*r[1])])
+    # metamorphic: cov(v, v) == var(v); both sides pinned
+    ws = [3, 1, 4, 1, 5, 9, 2, 6]
+    r = cov(ws, ws)
+    m = mean_var(ws)
+    assert r[0] == "ok" and m[0] == "ok" and r[1] == m[1][1], (r, m)
+    case("cov-self", "entry_cov8", ws + ws, [fracout(*r[1])])
+    case("cov-self-var", "entry_mean_var8", ws,
+         [statout(m[1][0], m[1][1])])
+    # perfect anti-correlation goes negative
+    ns = list(range(1, 9))
+    ms = list(range(8, 0, -1))
+    r = cov(ns, ms)
+    assert r[0] == "ok" and r[1][0] < 0, r
+    case("cov-anti", "entry_cov8", ns + ms, [fracout(*r[1])])
+    # product overflow is an honest Err, not a wrapped value
+    big = [2**62] + [0] * 7
+    r = cov(big, big)
+    assert r == ("err", OVF), r
+    case("cov-overflow", "entry_cov8", big + big,
          [fracout(reason=OVF)])
 
     case("sort-basic", "entry_sort8", xs, [SEQ(sorted(xs))])

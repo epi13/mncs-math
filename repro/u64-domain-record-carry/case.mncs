@@ -1,0 +1,16 @@
+mncs 0.10;
+module p29_cross;
+record StI { a: i64, b: i64 }
+record StU { a: u64, b: u64 }
+fn rec_i64_over_u64<N: Nat>(c: [u64; N]) -> (result: i64) {
+    iterate i over c carrying st: StI = StI { a: 0, b: 0 } {
+        next st = StI { a: st.a, b: st.b };
+    }
+    return st.a;
+}
+fn rec_u64_over_i64<N: Nat>(c: [i64; N]) -> (result: u64) {
+    iterate i over c carrying st: StU = StU { a: 0, b: 0 } {
+        next st = StU { a: st.a, b: st.b };
+    }
+    return st.a;
+}

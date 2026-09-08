@@ -1,0 +1,572 @@
+mncs 0.11;
+
+// mncs.math.linalg5 — 5x5 exact linear algebra plus 6x6 determinants and rank.
+//
+// A disciplined 4 -> 5 port of the `linalg.mncs` Bareiss architecture
+// (same records, same guard protocol, size-agnostic guards imported
+// rather than copied). The port exists to MEASURE the per-size cost:
+// every size is a hand-written kernel because const-expression
+// bounds (`[i64; N - 1]`, MNP149) and rank-generic arrays do not
+// exist. Compare line counts and step budgets against `linalg.mncs`
+// 4x4 in docs/performance.md.
+//
+// Solvers are Cramer (six 5x5 Bareiss determinants); the integer
+// residual check A*n == det*b verifies solutions without fractions.
+// 6x6 ships determinants and full-pivot rank (no Cramer solve: seven
+// 6x6 determinants exceed the value of a sixth copy — see
+// docs/generics.md).
+//
+// Profile 0.11: `up_to` indices as values, imports.
+module mncs.math.linalg5.v1;
+
+use mncs.math.error.v1;
+use mncs.math.scalar.v1;
+use mncs.math.rational.v1;
+use mncs.math.linalg.v1;
+
+// ---- 5x5 Bareiss determinant ----
+
+record BState5 { m: [i64; 25], prev: i64, sign: i64, ok: bool, zero: bool }
+record BStep5 { out: [i64; 25], ok: bool, q: u64 }
+
+fn find_pivot5(m: [i64; 25], k: u64) -> (result: u64) {
+    iterate r up_to 5 carrying found: u64 = 5 {
+        next found = select(r >= k && m[r * 5 + k] != 0 && found == 5, r, found);
+    }
+    return found;
+}
+
+fn swap_rows5(m: [i64; 25], r1: u64, r2: u64) -> (result: [i64; 25]) {
+    iterate c up_to 5 carrying out: [i64; 25] = m {
+        next out = replace(replace(out, r1 * 5 + c, m[r2 * 5 + c]), r2 * 5 + c, m[r1 * 5 + c]);
+    }
+    return out;
+}
+
+fn bareiss_elim5(st: BState5, k: u64, piv: i64) -> (result: BState5) {
+    iterate i over st.m carrying bs: BStep5 = BStep5 { out: st.m, ok: true, q: 0 } {
+        let r: u64 = bs.q / 5;
+        let c: u64 = bs.q % 5;
+        next bs = bareiss_next5(st, bs, r, c, k, piv);
+    }
+    return BState5 { m: bs.out, prev: piv, sign: st.sign, ok: st.ok && bs.ok, zero: false };
+}
+
+fn bareiss_next5(st: BState5, bs: BStep5, r: u64, c: u64, k: u64, piv: i64) -> (result: BStep5) {
+    let update: bool = r > k && c > k;
+    return bareiss_cell5(st, bs, r, c, k, piv, update);
+}
+
+fn bareiss_cell5(st: BState5, bs: BStep5, r: u64, c: u64, k: u64, piv: i64, update: bool) -> (result: BStep5) {
+    let a: i64 = st.m[r * 5 + c];
+    let b: i64 = st.m[r * 5 + k];
+    let cc: i64 = st.m[k * 5 + c];
+    let elem_ok: bool = select(update, bareiss_elem_ok(a, piv, b, cc, st.prev), true);
+    let num: i64 = a *% piv -% b *% cc;
+    let v: i64 = select(update, bareiss_quot(elem_ok, num, st.prev), a);
+    return BStep5 { out: replace(bs.out, r * 5 + c, v), ok: bs.ok && elem_ok, q: bs.q + 1 };
+}
+
+fn bareiss_pivot5(st: BState5, k: u64) -> (result: BState5) {
+    let r: u64 = find_pivot5(st.m, k);
+    if r == 5 {
+        return BState5 { m: st.m, prev: st.prev, sign: st.sign, ok: st.ok, zero: true };
+    }
+    let m2: [i64; 25] = swap_rows5(st.m, k, r);
+    return bareiss_elim5(BState5 { m: m2, prev: st.prev, sign: 0 - st.sign, ok: st.ok, zero: false }, k, m2[k * 5 + k]);
+}
+
+fn bareiss_step5(st: BState5, k: u64) -> (result: BState5) {
+    let p: i64 = st.m[k * 5 + k];
+    if p == 0 {
+        return bareiss_pivot5(st, k);
+    }
+    return bareiss_elim5(st, k, p);
+}
+
+fn det5_after(s: BState5) -> (result: MathResult) {
+    if s.zero {
+        return MathResult.Ok { value: 0 } ;
+    }
+    if s.ok {
+        if s.sign == 1 {
+            return MathResult.Ok { value: s.m[24] };
+        }
+        if s.m[24] == i64_min() {
+            return MathResult.Err { reason: reason_overflow() };
+        }
+        return MathResult.Ok { value: 0 - s.m[24] };
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+fn det5(m: [i64; 25]) -> (result: MathResult) {
+    let s0: BState5 = BState5 { m: m, prev: 1, sign: 1, ok: true, zero: false };
+    let s1: BState5 = bareiss_step5(s0, 0);
+    if s1.zero {
+        return MathResult.Ok { value: 0 };
+    }
+    if s1.ok {
+        return det5_s2(s1);
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+fn det5_s2(s1: BState5) -> (result: MathResult) {
+    let s2: BState5 = bareiss_step5(s1, 1);
+    if s2.zero {
+        return MathResult.Ok { value: 0 };
+    }
+    if s2.ok {
+        return det5_s3(s2);
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+fn det5_s3(s2: BState5) -> (result: MathResult) {
+    let s3: BState5 = bareiss_step5(s2, 2);
+    if s3.zero {
+        return MathResult.Ok { value: 0 };
+    }
+    if s3.ok {
+        return det5_s4(s3);
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+fn det5_s4(s3: BState5) -> (result: MathResult) {
+    let s4: BState5 = bareiss_step5(s3, 3);
+    return det5_after(s4);
+}
+
+fn entry_det5(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, a9: i64, a10: i64, a11: i64, a12: i64, a13: i64, a14: i64, a15: i64, a16: i64, a17: i64, a18: i64, a19: i64, a20: i64, a21: i64, a22: i64, a23: i64, a24: i64) -> (result: MathResult) {
+    return det5([a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24]);
+}
+
+// ---- rank5 via the same pivot elimination with column swaps ----
+
+record R5 { m: [i64; 25], prev: i64, piv: u64, ok: bool, done: bool }
+record PivScan5 { r: u64, c: u64, found: bool, q: u64 }
+record PivPos5 { r: u64, c: u64, found: bool }
+
+fn rank5_pivot_next(v: i64, pp: PivScan5, r: u64, c: u64, k: u64) -> (result: PivScan5) {
+    let take: bool = r >= k && c >= k && v != 0 && select(pp.found, false, true);
+    return PivScan5 { r: select(take, r, pp.r), c: select(take, c, pp.c), found: pp.found || take, q: pp.q + 1 };
+}
+
+fn rank5_pivot(m: [i64; 25], k: u64) -> (result: PivPos5) {
+    iterate i over m carrying pp: PivScan5 = PivScan5 { r: 0, c: 0, found: false, q: 0 } {
+        next pp = rank5_pivot_next(m[pp.q], pp, pp.q / 5, pp.q % 5, k);
+    }
+    return PivPos5 { r: pp.r, c: pp.c, found: pp.found };
+}
+
+fn swap_cols5(m: [i64; 25], c1: u64, c2: u64) -> (result: [i64; 25]) {
+    iterate r up_to 5 carrying out: [i64; 25] = m {
+        next out = replace(replace(out, r * 5 + c1, m[r * 5 + c2]), r * 5 + c2, m[r * 5 + c1]);
+    }
+    return out;
+}
+
+fn rank5_step(st: R5, k: u64) -> (result: R5) {
+    if st.done {
+        return st;
+    }
+    if select(st.ok, false, true) {
+        return st;
+    }
+    let pp: PivPos5 = rank5_pivot(st.m, k);
+    if select(pp.found, false, true) {
+        return R5 { m: st.m, prev: st.prev, piv: st.piv, ok: st.ok, done: true };
+    }
+    return rank5_elim(st, k, pp);
+}
+
+fn rank5_elim(st: R5, k: u64, pp: PivPos5) -> (result: R5) {
+    let mc: [i64; 25] = swap_cols5(st.m, k, pp.c);
+    let m1: [i64; 25] = swap_rows5(mc, k, pp.r);
+    let piv: i64 = m1[k * 5 + k];
+    let b: BState5 = bareiss_elim5(BState5 { m: m1, prev: st.prev, sign: 1, ok: true, zero: false }, k, piv);
+    return R5 { m: b.m, prev: piv, piv: st.piv + 1, ok: b.ok, done: false };
+}
+
+fn rank5(m: [i64; 25]) -> (result: MathResult) {
+    let s0: R5 = R5 { m: m, prev: 1, piv: 0, ok: true, done: false };
+    let s1: R5 = rank5_step(s0, 0);
+    let s2: R5 = rank5_step(s1, 1);
+    let s3: R5 = rank5_step(s2, 2);
+    let s4: R5 = rank5_step(s3, 3);
+    return rank5_out(s4);
+}
+
+fn rank5_out(s: R5) -> (result: MathResult) {
+    if select(s.ok, false, true) {
+        return MathResult.Err { reason: reason_overflow() };
+    }
+    if s.done {
+        return MathResult.Ok { value: s.piv as i64 };
+    }
+    let base: i64 = s.piv as i64;
+    let extra: i64 = select(s.m[24] != 0, 1, 0);
+    return rank5_last(base, extra);
+}
+
+fn rank5_last(base: i64, extra: i64) -> (result: MathResult) {
+    return MathResult.Ok { value: base + extra };
+}
+
+fn entry_rank5(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, a9: i64, a10: i64, a11: i64, a12: i64, a13: i64, a14: i64, a15: i64, a16: i64, a17: i64, a18: i64, a19: i64, a20: i64, a21: i64, a22: i64, a23: i64, a24: i64) -> (result: MathResult) {
+    return rank5([a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24]);
+}
+
+// ---- Cramer solve5 (six Bareiss determinants, canonical fractions) ----
+
+enum SolveOut5 { Ok { x0n: i64, x0d: i64, x1n: i64, x1d: i64, x2n: i64, x2d: i64, x3n: i64, x3d: i64, x4n: i64, x4d: i64 }, Err { reason: i64 } }
+
+record ColState25 { out: [i64; 25], q: u64 }
+
+fn replace_col5(m: [i64; 25], b: [i64; 5], j: u64, zero: [i64; 25]) -> (result: [i64; 25]) {
+    iterate i over m carrying cs: ColState25 = ColState25 { out: zero, q: 0 } {
+        next cs = replace_col5_next(cs, m, b, j, cs.q);
+    }
+    return cs.out;
+}
+
+fn replace_col5_next(cs: ColState25, m: [i64; 25], b: [i64; 5], j: u64, q: u64) -> (result: ColState25) {
+    let r: u64 = q / 5;
+    let c: u64 = q % 5;
+    return replace_col5_write(cs, m, b, j, r, c);
+}
+
+fn replace_col5_write(cs: ColState25, m: [i64; 25], b: [i64; 5], j: u64, r: u64, c: u64) -> (result: ColState25) {
+    let v: i64 = select(c == j, b[r], m[r * 5 + c]);
+    return ColState25 { out: replace(cs.out, r * 5 + c, v), q: cs.q + 1 };
+}
+
+fn zeros25() -> (result: [i64; 25]) {
+    return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+}
+
+fn solve5(m: [i64; 25], b: [i64; 5]) -> (result: SolveOut5) {
+    let d: MathResult = det5(m);
+    return match d {
+        MathResult.Err { reason } => SolveOut5.Err { reason: reason },
+        Ok { value: det } => solve5_b(m, b, det),
+    };
+}
+
+fn solve5_b(m: [i64; 25], b: [i64; 5], det: i64) -> (result: SolveOut5) {
+    if det == 0 {
+        return SolveOut5.Err { reason: reason_singular() };
+    }
+    let d0: MathResult = det5(replace_col5(m, b, 0, zeros25()));
+    return match d0 {
+        MathResult.Err { reason } => SolveOut5.Err { reason: reason },
+        Ok { value: n0 } => solve5_c(m, b, det, n0),
+    };
+}
+
+fn solve5_c(m: [i64; 25], b: [i64; 5], det: i64, n0: i64) -> (result: SolveOut5) {
+    let d1: MathResult = det5(replace_col5(m, b, 1, zeros25()));
+    return match d1 {
+        MathResult.Err { reason } => SolveOut5.Err { reason: reason },
+        Ok { value: n1 } => solve5_d(m, b, det, n0, n1),
+    };
+}
+
+fn solve5_d(m: [i64; 25], b: [i64; 5], det: i64, n0: i64, n1: i64) -> (result: SolveOut5) {
+    let d2: MathResult = det5(replace_col5(m, b, 2, zeros25()));
+    return match d2 {
+        MathResult.Err { reason } => SolveOut5.Err { reason: reason },
+        Ok { value: n2 } => solve5_e(m, b, det, n0, n1, n2),
+    };
+}
+
+fn solve5_e(m: [i64; 25], b: [i64; 5], det: i64, n0: i64, n1: i64, n2: i64) -> (result: SolveOut5) {
+    let d3: MathResult = det5(replace_col5(m, b, 3, zeros25()));
+    return match d3 {
+        MathResult.Err { reason } => SolveOut5.Err { reason: reason },
+        Ok { value: n3 } => solve5_f(m, b, det, n0, n1, n2, n3),
+    };
+}
+
+fn solve5_f(m: [i64; 25], b: [i64; 5], det: i64, n0: i64, n1: i64, n2: i64, n3: i64) -> (result: SolveOut5) {
+    let d4: MathResult = det5(replace_col5(m, b, 4, zeros25()));
+    return match d4 {
+        MathResult.Err { reason } => SolveOut5.Err { reason: reason },
+        Ok { value: n4 } => solve5_make(det, n0, n1, n2, n3, n4),
+    };
+}
+
+fn solve5_make(det: i64, n0: i64, n1: i64, n2: i64, n3: i64, n4: i64) -> (result: SolveOut5) {
+    let f0: FracOutcome = make(n0, det);
+    return match f0 {
+        FracOutcome.Err { reason } => SolveOut5.Err { reason: reason },
+        Ok { num: x0n, den: x0d } => solve5_make1(det, n1, n2, n3, n4, x0n, x0d),
+    };
+}
+
+fn solve5_make1(det: i64, n1: i64, n2: i64, n3: i64, n4: i64, x0n: i64, x0d: i64) -> (result: SolveOut5) {
+    let f1: FracOutcome = make(n1, det);
+    return match f1 {
+        FracOutcome.Err { reason } => SolveOut5.Err { reason: reason },
+        Ok { num: x1n, den: x1d } => solve5_make2(det, n2, n3, n4, x0n, x0d, x1n, x1d),
+    };
+}
+
+fn solve5_make2(det: i64, n2: i64, n3: i64, n4: i64, x0n: i64, x0d: i64, x1n: i64, x1d: i64) -> (result: SolveOut5) {
+    let f2: FracOutcome = make(n2, det);
+    return match f2 {
+        FracOutcome.Err { reason } => SolveOut5.Err { reason: reason },
+        Ok { num: x2n, den: x2d } => solve5_make3(det, n3, n4, x0n, x0d, x1n, x1d, x2n, x2d),
+    };
+}
+
+fn solve5_make3(det: i64, n3: i64, n4: i64, x0n: i64, x0d: i64, x1n: i64, x1d: i64, x2n: i64, x2d: i64) -> (result: SolveOut5) {
+    let f3: FracOutcome = make(n3, det);
+    return match f3 {
+        FracOutcome.Err { reason } => SolveOut5.Err { reason: reason },
+        Ok { num: x3n, den: x3d } => solve5_make4(det, n4, x0n, x0d, x1n, x1d, x2n, x2d, x3n, x3d),
+    };
+}
+
+fn solve5_make4(det: i64, n4: i64, x0n: i64, x0d: i64, x1n: i64, x1d: i64, x2n: i64, x2d: i64, x3n: i64, x3d: i64) -> (result: SolveOut5) {
+    let f4: FracOutcome = make(n4, det);
+    return match f4 {
+        FracOutcome.Err { reason } => SolveOut5.Err { reason: reason },
+        Ok { num: x4n, den: x4d } => SolveOut5.Ok { x0n: x0n, x0d: x0d, x1n: x1n, x1d: x1d, x2n: x2n, x2d: x2d, x3n: x3n, x3d: x3d, x4n: x4n, x4d: x4d },
+    };
+}
+
+fn entry_solve5(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, a9: i64, a10: i64, a11: i64, a12: i64, a13: i64, a14: i64, a15: i64, a16: i64, a17: i64, a18: i64, a19: i64, a20: i64, a21: i64, a22: i64, a23: i64, a24: i64, b0: i64, b1: i64, b2: i64, b3: i64, b4: i64) -> (result: SolveOut5) {
+    return solve5([a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24], [b0, b1, b2, b3, b4]);
+}
+
+// ---- exact integer residual: A*n == det*b lane by lane ----
+
+fn resid5_row(m: [i64; 25], n: [i64; 5], r: u64) -> (result: i64) {
+    return m[r * 5] * n[0] + m[r * 5 + 1] * n[1] + m[r * 5 + 2] * n[2] + m[r * 5 + 3] * n[3] + m[r * 5 + 4] * n[4];
+}
+
+fn entry_resid5(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, a9: i64, a10: i64, a11: i64, a12: i64, a13: i64, a14: i64, a15: i64, a16: i64, a17: i64, a18: i64, a19: i64, a20: i64, a21: i64, a22: i64, a23: i64, a24: i64, n0: i64, n1: i64, n2: i64, n3: i64, n4: i64, det: i64, b0: i64, b1: i64, b2: i64, b3: i64, b4: i64) -> (result: bool) {
+    let m: [i64; 25] = [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24];
+    let n: [i64; 5] = [n0, n1, n2, n3, n4];
+    let r0: bool = resid5_row(m, n, 0) == det * b0;
+    let r1: bool = resid5_row(m, n, 1) == det * b1;
+    let r2: bool = resid5_row(m, n, 2) == det * b2;
+    let r3: bool = resid5_row(m, n, 3) == det * b3;
+    let r4: bool = resid5_row(m, n, 4) == det * b4;
+    return r0 && r1 && r2 && r3 && r4;
+}
+
+// ---- 6x6 Bareiss determinant (scaling point) ----
+
+record BState6 { m: [i64; 36], prev: i64, sign: i64, ok: bool, zero: bool }
+record BStep6 { out: [i64; 36], ok: bool, q: u64 }
+
+fn find_pivot6(m: [i64; 36], k: u64) -> (result: u64) {
+    iterate r up_to 6 carrying found: u64 = 6 {
+        next found = select(r >= k && m[r * 6 + k] != 0 && found == 6, r, found);
+    }
+    return found;
+}
+
+fn swap_rows6(m: [i64; 36], r1: u64, r2: u64) -> (result: [i64; 36]) {
+    iterate c up_to 6 carrying out: [i64; 36] = m {
+        next out = replace(replace(out, r1 * 6 + c, m[r2 * 6 + c]), r2 * 6 + c, m[r1 * 6 + c]);
+    }
+    return out;
+}
+
+fn bareiss_elim6(st: BState6, k: u64, piv: i64) -> (result: BState6) {
+    iterate i over st.m carrying bs: BStep6 = BStep6 { out: st.m, ok: true, q: 0 } {
+        let r: u64 = bs.q / 6;
+        let c: u64 = bs.q % 6;
+        next bs = bareiss_next6(st, bs, r, c, k, piv);
+    }
+    return BState6 { m: bs.out, prev: piv, sign: st.sign, ok: st.ok && bs.ok, zero: false };
+}
+
+fn bareiss_next6(st: BState6, bs: BStep6, r: u64, c: u64, k: u64, piv: i64) -> (result: BStep6) {
+    let update: bool = r > k && c > k;
+    return bareiss_cell6(st, bs, r, c, k, piv, update);
+}
+
+fn bareiss_cell6(st: BState6, bs: BStep6, r: u64, c: u64, k: u64, piv: i64, update: bool) -> (result: BStep6) {
+    let a: i64 = st.m[r * 6 + c];
+    let b: i64 = st.m[r * 6 + k];
+    let cc: i64 = st.m[k * 6 + c];
+    let elem_ok: bool = select(update, bareiss_elem_ok(a, piv, b, cc, st.prev), true);
+    let num: i64 = a *% piv -% b *% cc;
+    let v: i64 = select(update, bareiss_quot(elem_ok, num, st.prev), a);
+    return BStep6 { out: replace(bs.out, r * 6 + c, v), ok: bs.ok && elem_ok, q: bs.q + 1 };
+}
+
+fn bareiss_pivot6(st: BState6, k: u64) -> (result: BState6) {
+    let r: u64 = find_pivot6(st.m, k);
+    if r == 6 {
+        return BState6 { m: st.m, prev: st.prev, sign: st.sign, ok: st.ok, zero: true };
+    }
+    let m2: [i64; 36] = swap_rows6(st.m, k, r);
+    return bareiss_elim6(BState6 { m: m2, prev: st.prev, sign: 0 - st.sign, ok: st.ok, zero: false }, k, m2[k * 6 + k]);
+}
+
+fn bareiss_step6(st: BState6, k: u64) -> (result: BState6) {
+    let p: i64 = st.m[k * 6 + k];
+    if p == 0 {
+        return bareiss_pivot6(st, k);
+    }
+    return bareiss_elim6(st, k, p);
+}
+
+fn det6_after(s: BState6) -> (result: MathResult) {
+    if s.zero {
+        return MathResult.Ok { value: 0 };
+    }
+    if s.ok {
+        if s.sign == 1 {
+            return MathResult.Ok { value: s.m[35] };
+        }
+        if s.m[35] == i64_min() {
+            return MathResult.Err { reason: reason_overflow() };
+        }
+        return MathResult.Ok { value: 0 - s.m[35] };
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+fn det6(m: [i64; 36]) -> (result: MathResult) {
+    let s0: BState6 = BState6 { m: m, prev: 1, sign: 1, ok: true, zero: false };
+    let s1: BState6 = bareiss_step6(s0, 0);
+    if s1.zero {
+        return MathResult.Ok { value: 0 };
+    }
+    if s1.ok {
+        return det6_s2(s1);
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+fn det6_s2(s1: BState6) -> (result: MathResult) {
+    let s2: BState6 = bareiss_step6(s1, 1);
+    if s2.zero {
+        return MathResult.Ok { value: 0 };
+    }
+    if s2.ok {
+        return det6_s3(s2);
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+fn det6_s3(s2: BState6) -> (result: MathResult) {
+    let s3: BState6 = bareiss_step6(s2, 2);
+    if s3.zero {
+        return MathResult.Ok { value: 0 };
+    }
+    if s3.ok {
+        return det6_s4(s3);
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+fn det6_s4(s3: BState6) -> (result: MathResult) {
+    let s4: BState6 = bareiss_step6(s3, 3);
+    if s4.zero {
+        return MathResult.Ok { value: 0 };
+    }
+    if s4.ok {
+        return det6_s5(s4);
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+fn det6_s5(s4: BState6) -> (result: MathResult) {
+    let s5: BState6 = bareiss_step6(s4, 4);
+    return det6_after(s5);
+}
+
+fn entry_det6(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, a9: i64, a10: i64, a11: i64, a12: i64, a13: i64, a14: i64, a15: i64, a16: i64, a17: i64, a18: i64, a19: i64, a20: i64, a21: i64, a22: i64, a23: i64, a24: i64, a25: i64, a26: i64, a27: i64, a28: i64, a29: i64, a30: i64, a31: i64, a32: i64, a33: i64, a34: i64, a35: i64) -> (result: MathResult) {
+    return det6([a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35]);
+}
+
+// ---- rank6 via full-pivot elimination with column swaps ----
+//
+// A disciplined 5 -> 6 port of the rank5 architecture above: five
+// elimination steps (k = 0..4) plus the trailing-cell check. Exists to
+// complete the 6x6 scaling story (det6 shipped without rank6) and to
+// measure the per-size copy cost documented in docs/performance.md.
+
+record R6 { m: [i64; 36], prev: i64, piv: u64, ok: bool, done: bool }
+record PivScan6 { r: u64, c: u64, found: bool, q: u64 }
+record PivPos6 { r: u64, c: u64, found: bool }
+
+fn rank6_pivot_next(v: i64, pp: PivScan6, r: u64, c: u64, k: u64) -> (result: PivScan6) {
+    let take: bool = r >= k && c >= k && v != 0 && select(pp.found, false, true);
+    return PivScan6 { r: select(take, r, pp.r), c: select(take, c, pp.c), found: pp.found || take, q: pp.q + 1 };
+}
+
+fn rank6_pivot(m: [i64; 36], k: u64) -> (result: PivPos6) {
+    iterate i over m carrying pp: PivScan6 = PivScan6 { r: 0, c: 0, found: false, q: 0 } {
+        next pp = rank6_pivot_next(m[pp.q], pp, pp.q / 6, pp.q % 6, k);
+    }
+    return PivPos6 { r: pp.r, c: pp.c, found: pp.found };
+}
+
+fn swap_cols6(m: [i64; 36], c1: u64, c2: u64) -> (result: [i64; 36]) {
+    iterate r up_to 6 carrying out: [i64; 36] = m {
+        next out = replace(replace(out, r * 6 + c1, m[r * 6 + c2]), r * 6 + c2, m[r * 6 + c1]);
+    }
+    return out;
+}
+
+fn rank6_step(st: R6, k: u64) -> (result: R6) {
+    if st.done {
+        return st;
+    }
+    if select(st.ok, false, true) {
+        return st;
+    }
+    let pp: PivPos6 = rank6_pivot(st.m, k);
+    if select(pp.found, false, true) {
+        return R6 { m: st.m, prev: st.prev, piv: st.piv, ok: st.ok, done: true };
+    }
+    return rank6_elim(st, k, pp);
+}
+
+fn rank6_elim(st: R6, k: u64, pp: PivPos6) -> (result: R6) {
+    let mc: [i64; 36] = swap_cols6(st.m, k, pp.c);
+    let m1: [i64; 36] = swap_rows6(mc, k, pp.r);
+    let piv: i64 = m1[k * 6 + k];
+    let b: BState6 = bareiss_elim6(BState6 { m: m1, prev: st.prev, sign: 1, ok: true, zero: false }, k, piv);
+    return R6 { m: b.m, prev: piv, piv: st.piv + 1, ok: b.ok, done: false };
+}
+
+fn rank6(m: [i64; 36]) -> (result: MathResult) {
+    let s0: R6 = R6 { m: m, prev: 1, piv: 0, ok: true, done: false };
+    let s1: R6 = rank6_step(s0, 0);
+    let s2: R6 = rank6_step(s1, 1);
+    let s3: R6 = rank6_step(s2, 2);
+    let s4: R6 = rank6_step(s3, 3);
+    let s5: R6 = rank6_step(s4, 4);
+    return rank6_out(s5);
+}
+
+fn rank6_out(s: R6) -> (result: MathResult) {
+    if select(s.ok, false, true) {
+        return MathResult.Err { reason: reason_overflow() };
+    }
+    if s.done {
+        return MathResult.Ok { value: s.piv as i64 };
+    }
+    let base: i64 = s.piv as i64;
+    let extra: i64 = select(s.m[35] != 0, 1, 0);
+    return rank6_last(base, extra);
+}
+
+fn rank6_last(base: i64, extra: i64) -> (result: MathResult) {
+    return MathResult.Ok { value: base + extra };
+}
+
+fn entry_rank6(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, a9: i64, a10: i64, a11: i64, a12: i64, a13: i64, a14: i64, a15: i64, a16: i64, a17: i64, a18: i64, a19: i64, a20: i64, a21: i64, a22: i64, a23: i64, a24: i64, a25: i64, a26: i64, a27: i64, a28: i64, a29: i64, a30: i64, a31: i64, a32: i64, a33: i64, a34: i64, a35: i64) -> (result: MathResult) {
+    return rank6([a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35]);
+}

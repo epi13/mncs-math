@@ -1,0 +1,113 @@
+mncs 0.10;
+
+// mncs.math.ode — fixed-step ODE integration and finite differences
+// on milli fixed-point lanes.
+//
+// All dynamics use WRAPPING i64 milli arithmetic (`+%`/`*%`, plain
+// `/` truncating toward zero) rather than the checked `MathResult`
+// twins: an RK4 step is ~16 ops, and a match-split per op would bury
+// the algorithm. The oracle mirrors the identical integer program in
+// Python (wrap + truncation), so expectations stay independent while
+// the rounding contract (truncation at every rescale) is explicit.
+// Overflow wraps; fixtures stay small enough that only documented
+// rescale truncation occurs.
+//
+// Targets are FIXED coefficient systems (P006: no callables): the
+// harmonic oscillator x'' = -x and exponential decay x' = -x/10.
+// Step h is milli (h = 120 for RK4 so h/6 = 20 is exact; h = 100
+// for Euler).
+//
+// Profile 0.10: traversal, replace, imports (for MathResult scan).
+module mncs.math.ode.v1;
+
+// ---- harmonic oscillator: one Euler step, h = 100 milli ----
+
+fn euler_sho(x: i64, v: i64) -> (result: [i64; 2]) {
+    let nx: i64 = x +% (v *% 100) / 1000;
+    let nv: i64 = v +% ((0 - x) *% 100) / 1000;
+    return [nx, nv];
+}
+
+fn entry_euler_sho(x: i64, v: i64) -> (result: [i64; 2]) {
+    return euler_sho(x, v);
+}
+
+// ---- harmonic oscillator: one RK4 step, h = 120 milli ----
+
+record RK4 { k1x: i64, k1v: i64, k2x: i64, k2v: i64 }
+record RK4b { k3x: i64, k3v: i64, k4x: i64, k4v: i64 }
+
+fn rk4_sho(x: i64, v: i64) -> (result: [i64; 2]) {
+    let k1: RK4 = RK4 { k1x: v, k1v: 0 - x, k2x: 0, k2v: 0 };
+    let k2: RK4 = rk4_half(x, v, k1.k1x, k1.k1v);
+    let k3: RK4b = rk4_half2(x, v, k2.k2x, k2.k2v);
+    let k4: RK4b = rk4_full(x, v, k3.k3x, k3.k3v);
+    let dx: i64 = k1.k1x +% 2 *% k2.k2x +% 2 *% k3.k3x +% k4.k4x;
+    let dv: i64 = k1.k1v +% 2 *% k2.k2v +% 2 *% k3.k3v +% k4.k4v;
+    return [x +% (dx *% 20) / 1000, v +% (dv *% 20) / 1000];
+}
+
+fn rk4_half(x: i64, v: i64, k1x: i64, k1v: i64) -> (result: RK4) {
+    let k2x: i64 = v +% (k1v *% 60) / 1000;
+    let k2v: i64 = 0 - (x +% (k1x *% 60) / 1000);
+    return RK4 { k1x: k1x, k1v: k1v, k2x: k2x, k2v: k2v };
+}
+
+fn rk4_half2(x: i64, v: i64, k2x: i64, k2v: i64) -> (result: RK4b) {
+    let k3x: i64 = v +% (k2v *% 60) / 1000;
+    let k3v: i64 = 0 - (x +% (k2x *% 60) / 1000);
+    return RK4b { k3x: k3x, k3v: k3v, k4x: 0, k4v: 0 };
+}
+
+fn rk4_full(x: i64, v: i64, k3x: i64, k3v: i64) -> (result: RK4b) {
+    let k4x: i64 = v +% (k3v *% 120) / 1000;
+    let k4v: i64 = 0 - (x +% (k3x *% 120) / 1000);
+    return RK4b { k3x: k3x, k3v: k3v, k4x: k4x, k4v: k4v };
+}
+
+fn entry_rk4_sho(x: i64, v: i64) -> (result: [i64; 2]) {
+    return rk4_sho(x, v);
+}
+
+fn entry_rk4_sho2(x: i64, v: i64) -> (result: [i64; 2]) {
+    let s1: [i64; 2] = rk4_sho(x, v);
+    return rk4_sho(s1[0], s1[1]);
+}
+
+// ---- exponential decay x' = -x/10, Euler, h = 100 milli ----
+
+fn euler_decay(x: i64) -> (result: i64) {
+    return x +% (((0 - x) / 10) *% 100) / 1000;
+}
+
+fn entry_decay3(x: i64) -> (result: i64) {
+    let s1: i64 = euler_decay(x);
+    let s2: i64 = euler_decay(s1);
+    return euler_decay(s2);
+}
+
+// ---- finite differences (exact fixtures, plain ops) ----
+
+fn d1_central(f0: i64, f2: i64, h: i64) -> (result: i64) {
+    return (f2 - f0) / (2 * h);
+}
+
+fn d2_central(f0: i64, f1: i64, f2: i64, h: i64) -> (result: i64) {
+    return (f0 - 2 * f1 + f2) / (h * h);
+}
+
+fn laplacian5(c: i64, n: i64, s: i64, w: i64, e: i64, h: i64) -> (result: i64) {
+    return (n + s + w + e - 4 * c) / (h * h);
+}
+
+fn entry_d1(f0: i64, f2: i64, h: i64) -> (result: i64) {
+    return d1_central(f0, f2, h);
+}
+
+fn entry_d2(f0: i64, f1: i64, f2: i64, h: i64) -> (result: i64) {
+    return d2_central(f0, f1, f2, h);
+}
+
+fn entry_lap(c: i64, n: i64, s: i64, w: i64, e: i64, h: i64) -> (result: i64) {
+    return laplacian5(c, n, s, w, e, h);
+}

@@ -1,0 +1,51 @@
+{
+ "schema_version": "0.1",
+ "name": "float-traps",
+ "cases": [
+  {
+   "id": "trap-div-zero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fdiv_zero"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   }
+  },
+  {
+   "id": "trap-overflow",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_foverflow"
+    },
+    "arguments": [],
+    "step_budget": 4096
+   }
+  },
+  {
+   "id": "trap-f2i-huge",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_f2i_huge"
+    },
+    "arguments": [],
+    "step_budget": 4096
+   }
+  }
+ ]
+}

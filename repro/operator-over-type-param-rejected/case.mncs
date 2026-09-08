@@ -1,0 +1,5 @@
+mncs 0.10;
+module p05_t_operators;
+fn gadd<T>(a: T, b: T) -> (result: T) {
+    return a + b;
+}

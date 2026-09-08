@@ -1,0 +1,164 @@
+mncs 0.11;
+
+// mncs.math.sparse — fixed-capacity sparse kernels (4x4, cap 8).
+//
+// No dynamic structures exist, so sparsity is fixed-capacity lanes
+// plus a logical `len`: every traversal runs the full capacity with
+// `i < len` masking (data-dependent VALUES, counted exits — the exit
+// count never depends on data, only the accumulated values do).
+// This is the honest current shape: O(rows x cap) masked work for
+// CSR rows, duplicate coordinates summing naturally in SpMV.
+//
+// Index discipline (the P009 pattern, library-level): lanes are i64;
+// kernels assume validated non-negative in-bounds lanes (documented
+// per fn, trap-on-violation like the vector maps). `coo_validate`
+// and `rowptr_ok` are the validators; corpus cases pin both the
+// accept and reject sides.
+//
+// Profile 0.11: `up_to`/traversal indices as values (comparisons for
+// masking need 0.11; 0.10 leaves indices unresolvable, MNE102).
+module mncs.math.sparse.v1;
+
+// ---- COO validation: 0 <= rows/cols < 4, 0 <= len <= 8 ----
+
+fn coo_validate<N: Nat>(rows: [i64; N], cols: [i64; N], len: i64) -> (result: bool) {
+    iterate k over rows carrying st: CooOk = CooOk { ok: true } {
+        let ki: i64 = k as i64;
+        let lane_ok: bool = coo_lane_ok(rows[k], cols[k], ki < len);
+        next st = CooOk { ok: st.ok && lane_ok };
+    }
+    return st.ok;
+}
+
+record CooOk { ok: bool }
+
+fn coo_lane_ok(r: i64, c: i64, active: bool) -> (result: bool) {
+    if active {
+        return r >= 0 && r < 4 && c >= 0 && c < 4;
+    }
+    return true;
+}
+
+// ---- COO SpMV: y[i] = sum over active k with rows[k] == i ----
+
+fn spmv_coo(rows: [i64; 8], cols: [i64; 8], vals: [i64; 8], len: i64, x: [i64; 4]) -> (result: [i64; 4]) {
+    iterate k over vals carrying y: [i64; 4] = [0, 0, 0, 0] {
+        let ki: i64 = k as i64;
+        let y2: [i64; 4] = spmv_coo_step(y, rows[k], cols[k], vals[k], ki < len, x);
+        next y = y2;
+    }
+    return y;
+}
+
+fn spmv_coo_step(y: [i64; 4], r: i64, c: i64, v: i64, active: bool, x: [i64; 4]) -> (result: [i64; 4]) {
+    if active {
+        return add_to_row(y, r as u64, v * x[c as u64]);
+    }
+    return y;
+}
+
+fn add_to_row(y: [i64; 4], r: u64, dv: i64) -> (result: [i64; 4]) {
+    return replace(y, r, y[r] + dv);
+}
+
+fn entry_spmv_coo(r0: i64, r1: i64, r2: i64, r3: i64, r4: i64, r5: i64, r6: i64, r7: i64, c0: i64, c1: i64, c2: i64, c3: i64, c4: i64, c5: i64, c6: i64, c7: i64, v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64, v6: i64, v7: i64, len: i64, x0: i64, x1: i64, x2: i64, x3: i64) -> (result: [i64; 4]) {
+    return spmv_coo([r0, r1, r2, r3, r4, r5, r6, r7], [c0, c1, c2, c3, c4, c5, c6, c7], [v0, v1, v2, v3, v4, v5, v6, v7], len, [x0, x1, x2, x3]);
+}
+
+fn entry_coo_validate(r0: i64, r1: i64, c0: i64, c1: i64, len: i64) -> (result: bool) {
+    return coo_validate<2>([r0, r1], [c0, c1], len);
+}
+
+// ---- CSR row-pointer validation: monotone, in [0, len] ----
+
+fn rowptr_ok(ptr: [i64; 5], len: i64) -> (result: bool) {
+    iterate k over ptr carrying st: PtrOk = PtrOk { ok: true, prev: 0 } {
+        let st2: PtrOk = rowptr_step(st, ptr[k], len);
+        next st = st2;
+    }
+    return st.ok;
+}
+
+record PtrOk { ok: bool, prev: i64 }
+
+fn rowptr_step(st: PtrOk, cur: i64, len: i64) -> (result: PtrOk) {
+    return PtrOk { ok: st.ok && st.prev <= cur && cur <= len, prev: cur };
+}
+
+fn entry_rowptr_ok(p0: i64, p1: i64, p2: i64, p3: i64, p4: i64, len: i64) -> (result: bool) {
+    return rowptr_ok([p0, p1, p2, p3, p4], len);
+}
+
+// ---- CSR SpMV: row r sums lanes [ptr[r], ptr[r+1]) ----
+
+fn spmv_csr(vals: [i64; 8], cols: [i64; 8], ptr: [i64; 5], x: [i64; 4]) -> (result: [i64; 4]) {
+    let y0: i64 = csr_row(vals, cols, ptr[0], ptr[1], x);
+    let y1: i64 = csr_row(vals, cols, ptr[1], ptr[2], x);
+    let y2: i64 = csr_row(vals, cols, ptr[2], ptr[3], x);
+    let y3: i64 = csr_row(vals, cols, ptr[3], ptr[4], x);
+    return [y0, y1, y2, y3];
+}
+
+fn csr_row(vals: [i64; 8], cols: [i64; 8], lo: i64, hi: i64, x: [i64; 4]) -> (result: i64) {
+    iterate k over vals carrying acc: i64 = 0 {
+        let ki: i64 = k as i64;
+        let acc2: i64 = csr_term(acc, vals[k], cols[k], ki >= lo && ki < hi, x);
+        next acc = acc2;
+    }
+    return acc;
+}
+
+fn csr_term(acc: i64, v: i64, c: i64, active: bool, x: [i64; 4]) -> (result: i64) {
+    if active {
+        return acc + v * x[c as u64];
+    }
+    return acc;
+}
+
+fn entry_spmv_csr(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64, v6: i64, v7: i64, c0: i64, c1: i64, c2: i64, c3: i64, c4: i64, c5: i64, c6: i64, c7: i64, p0: i64, p1: i64, p2: i64, p3: i64, p4: i64, x0: i64, x1: i64, x2: i64, x3: i64) -> (result: [i64; 4]) {
+    return spmv_csr([v0, v1, v2, v3, v4, v5, v6, v7], [c0, c1, c2, c3, c4, c5, c6, c7], [p0, p1, p2, p3, p4], [x0, x1, x2, x3]);
+}
+
+// ---- COO transpose: swap row/col lanes (vals ride along) ----
+
+fn entry_coo_transpose(r0: i64, r1: i64, r2: i64, c0: i64, c1: i64, c2: i64) -> (result: [i64; 6]) {
+    return [c0, c1, c2, r0, r1, r2];
+}
+
+// ---- sparse dot: sum over shared indices (cap 8 lanes each) ----
+
+fn sdot(ia: [i64; 8], va: [i64; 8], lena: i64, ib: [i64; 8], vb: [i64; 8], lenb: i64) -> (result: i64) {
+    iterate k over va carrying acc: i64 = 0 {
+        let ki: i64 = k as i64;
+        let acc2: i64 = sdot_term(acc, ia[k], va[k], ki < lena, ib, vb, lenb);
+        next acc = acc2;
+    }
+    return acc;
+}
+
+fn sdot_term(acc: i64, idx: i64, v: i64, active: bool, ib: [i64; 8], vb: [i64; 8], lenb: i64) -> (result: i64) {
+    if active {
+        return acc + v * slookup(ib, vb, lenb, idx);
+    }
+    return acc;
+}
+
+fn slookup(ib: [i64; 8], vb: [i64; 8], lenb: i64, idx: i64) -> (result: i64) {
+    iterate k over ib carrying acc: i64 = 0 {
+        let ki: i64 = k as i64;
+        let acc2: i64 = slookup_term(acc, ib[k], vb[k], ki < lenb, idx);
+        next acc = acc2;
+    }
+    return acc;
+}
+
+fn slookup_term(acc: i64, idxb: i64, vb: i64, active: bool, idx: i64) -> (result: i64) {
+    if active && idxb == idx {
+        return acc + vb;
+    }
+    return acc;
+}
+
+fn entry_sdot(a0: i64, a1: i64, a2: i64, v0: i64, v1: i64, v2: i64, lena: i64, b0: i64, b1: i64, b2: i64, w0: i64, w1: i64, w2: i64, lenb: i64) -> (result: i64) {
+    return sdot([a0, a1, a2, 0, 0, 0, 0, 0], [v0, v1, v2, 0, 0, 0, 0, 0], lena, [b0, b1, b2, 0, 0, 0, 0, 0], [w0, w1, w2, 0, 0, 0, 0, 0], lenb);
+}

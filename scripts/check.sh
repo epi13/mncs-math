@@ -11,14 +11,22 @@ CORPUS="$ROOT/tests/corpora/$MOD-corpus.json"
 export MNCS_LIBRARY_PATH="$ROOT/src:$MNCS_LANG/library"
 
 fail=0
+# Unique temp files per invocation: two concurrent check runs (or a
+# background conformance pass) must never share one output path.
+# (A shared /tmp path once corrupted a wasm result mid-baseline with
+# a JSON "Extra data" failure that looked like a backend bug.)
+TMPD="$(mktemp -d "${TMPDIR:-/tmp}/mncs-check.XXXXXX")"
+trap 'rm -rf "$TMPD"' EXIT
+OUT_JSON="$TMPD/out.json"
+ERR_TXT="$TMPD/err.txt"
 echo "== source-study $MOD =="
 "$MNCS_BIN" source-study "$SRC" --node-id "local-$MOD" > /dev/null \
   || { echo "FAIL source-study $MOD"; fail=1; }
 check_value_corpus() {
   # $1 = backend, $2 = corpus path: every case must return and meet expectation.
-  "$MNCS_BIN" experiment run "$SRC" --backend "$1" --corpus "$2" >/tmp/mncs-check-out.json 2>/tmp/mncs-check-err.txt \
-    || { echo "FAIL experiment $MOD @ $1 (exit $?)"; tail -n 20 /tmp/mncs-check-err.txt; return 1; }
-  python3 - /tmp/mncs-check-out.json <<'EOF'
+  "$MNCS_BIN" experiment run "$SRC" --backend "$1" --corpus "$2" >"$OUT_JSON" 2>"$ERR_TXT" \
+    || { echo "FAIL experiment $MOD @ $1 (exit $?)"; tail -n 20 "$ERR_TXT"; return 1; }
+  python3 - "$OUT_JSON" <<'EOF'
 import json, sys
 d = json.load(open(sys.argv[1]))
 bad = []
@@ -36,9 +44,9 @@ EOF
 }
 check_trap_corpus() {
   # $1 = backend, $2 = corpus path: every case must end in runtime_failure.
-  "$MNCS_BIN" experiment run "$SRC" --backend "$1" --corpus "$2" >/tmp/mncs-check-out.json 2>/tmp/mncs-check-err.txt \
-    || { echo "FAIL trap experiment $MOD @ $1 (exit $?)"; tail -n 20 /tmp/mncs-check-err.txt; return 1; }
-  python3 - /tmp/mncs-check-out.json <<'EOF'
+  "$MNCS_BIN" experiment run "$SRC" --backend "$1" --corpus "$2" >"$OUT_JSON" 2>"$ERR_TXT" \
+    || { echo "FAIL trap experiment $MOD @ $1 (exit $?)"; tail -n 20 "$ERR_TXT"; return 1; }
+  python3 - "$OUT_JSON" <<'EOF'
 import json, sys
 d = json.load(open(sys.argv[1]))
 bad = [(c["case_id"], "status=%s" % c.get("status"))
