@@ -1,0 +1,399 @@
+mncs 0.11;
+
+// mncs.math.matrix — concrete-shape dense matrices, row-major flat.
+//
+// Shapes are CONCRETE ([i64; 4], [i64; 9], [i64; 16] for 2x2/3x3/4x4):
+// nested sequences cannot project their inner rows ((a[i])[j] refuses
+// to parse), and repeat-with-Nat-param construction is unavailable, so
+// generic MxN matrices have no sound representation today (both limits
+// are filed as language pressure with reproducers). Flat storage with
+// literal bounds dodges both: construction is literal, indexing is
+// runtime-checked u64 arithmetic, and every kernel follows one uniform
+// counted-loop pattern per shape.
+//
+// Stateful elimination (determinant, solve, rank) lives in
+// mncs.math.linalg.v1; this module is construction, access, and
+// stateless algebra. Inversion is deliberately NOT here (see linalg:
+// inverse is never the solver).
+//
+// Profile 0.11: sequences, traversal, counted loops (row dots),
+// replace, imports.
+module mncs.math.matrix.v1;
+
+use mncs.math.error.v1;
+use mncs.math.scalar.v1;
+
+// ---- construction ----
+
+fn zeros4() -> (result: [i64; 4]) {
+    return [0, 0, 0, 0];
+}
+
+fn zeros9() -> (result: [i64; 9]) {
+    return [0, 0, 0, 0, 0, 0, 0, 0, 0];
+}
+
+fn zeros16() -> (result: [i64; 16]) {
+    return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+}
+
+fn identity4() -> (result: [i64; 4]) {
+    return [1, 0, 0, 1];
+}
+
+fn identity9() -> (result: [i64; 9]) {
+    return [1, 0, 0, 0, 1, 0, 0, 0, 1];
+}
+
+fn identity16() -> (result: [i64; 16]) {
+    return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+}
+
+// ---- access (row-major: idx = r * n + c) ----
+
+fn idx2(r: u64, c: u64) -> (result: u64) {
+    return r * 2 + c;
+}
+
+fn idx3(r: u64, c: u64) -> (result: u64) {
+    return r * 3 + c;
+}
+
+fn idx4(r: u64, c: u64) -> (result: u64) {
+    return r * 4 + c;
+}
+
+fn get4(m: [i64; 4], r: u64, c: u64) -> (result: i64) {
+    return m[idx2(r, c)];
+}
+
+fn set4(m: [i64; 4], r: u64, c: u64, v: i64) -> (result: [i64; 4]) {
+    return replace(m, idx2(r, c), v);
+}
+
+fn get9(m: [i64; 9], r: u64, c: u64) -> (result: i64) {
+    return m[idx3(r, c)];
+}
+
+fn set9(m: [i64; 9], r: u64, c: u64, v: i64) -> (result: [i64; 9]) {
+    return replace(m, idx3(r, c), v);
+}
+
+fn get16(m: [i64; 16], r: u64, c: u64) -> (result: i64) {
+    return m[idx4(r, c)];
+}
+
+fn set16(m: [i64; 16], r: u64, c: u64, v: i64) -> (result: [i64; 16]) {
+    return replace(m, idx4(r, c), v);
+}
+
+fn row4(m: [i64; 4], i: u64) -> (result: [i64; 2]) {
+    let base: u64 = i * 2;
+    return [m[base], m[base + 1]];
+}
+
+fn col4(m: [i64; 4], j: u64) -> (result: [i64; 2]) {
+    return [m[j], m[j + 2]];
+}
+
+fn row9(m: [i64; 9], i: u64) -> (result: [i64; 3]) {
+    let base: u64 = i * 3;
+    return [m[base], m[base + 1], m[base + 2]];
+}
+
+fn col9(m: [i64; 9], j: u64) -> (result: [i64; 3]) {
+    return [m[j], m[j + 3], m[j + 6]];
+}
+
+fn row16(m: [i64; 16], i: u64) -> (result: [i64; 4]) {
+    let base: u64 = i * 4;
+    return [m[base], m[base + 1], m[base + 2], m[base + 3]];
+}
+
+fn col16(m: [i64; 16], j: u64) -> (result: [i64; 4]) {
+    return [m[j], m[j + 4], m[j + 8], m[j + 12]];
+}
+
+fn diag4(m: [i64; 4]) -> (result: [i64; 2]) {
+    return [m[0], m[3]];
+}
+
+fn diag9(m: [i64; 9]) -> (result: [i64; 3]) {
+    return [m[0], m[4], m[8]];
+}
+
+fn diag16(m: [i64; 16]) -> (result: [i64; 4]) {
+    return [m[0], m[5], m[10], m[15]];
+}
+
+// ---- elementwise (total, wrapping) ----
+
+fn add4(a: [i64; 4], b: [i64; 4]) -> (result: [i64; 4]) {
+    iterate i over a carrying out: [i64; 4] = a {
+        next out = replace(out, i, a[i] +% b[i]);
+    }
+    return out;
+}
+
+fn add9(a: [i64; 9], b: [i64; 9]) -> (result: [i64; 9]) {
+    iterate i over a carrying out: [i64; 9] = a {
+        next out = replace(out, i, a[i] +% b[i]);
+    }
+    return out;
+}
+
+fn add16(a: [i64; 16], b: [i64; 16]) -> (result: [i64; 16]) {
+    iterate i over a carrying out: [i64; 16] = a {
+        next out = replace(out, i, a[i] +% b[i]);
+    }
+    return out;
+}
+
+fn scale4(s: i64, m: [i64; 4]) -> (result: [i64; 4]) {
+    iterate i over m carrying out: [i64; 4] = m {
+        next out = replace(out, i, s *% m[i]);
+    }
+    return out;
+}
+
+fn scale9(s: i64, m: [i64; 9]) -> (result: [i64; 9]) {
+    iterate i over m carrying out: [i64; 9] = m {
+        next out = replace(out, i, s *% m[i]);
+    }
+    return out;
+}
+
+fn scale16(s: i64, m: [i64; 16]) -> (result: [i64; 16]) {
+    iterate i over m carrying out: [i64; 16] = m {
+        next out = replace(out, i, s *% m[i]);
+    }
+    return out;
+}
+
+// ---- transpose ----
+
+record TState4 { out: [i64; 4], q: u64 }
+record TState9 { out: [i64; 9], q: u64 }
+record TState16 { out: [i64; 16], q: u64 }
+record MatVec2 { out: [i64; 2], q: u64 }
+record MatVec3 { out: [i64; 3], q: u64 }
+record MatVec4 { out: [i64; 4], q: u64 }
+
+fn transpose4(m: [i64; 4]) -> (result: [i64; 4]) {
+    iterate i over m carrying st: TState4 = TState4 { out: zeros4(), q: 0 } {
+        let r: u64 = st.q / 2;
+        let c: u64 = st.q % 2;
+        next st = TState4 { out: replace(st.out, c * 2 + r, m[st.q]), q: st.q + 1 };
+    }
+    return st.out;
+}
+
+fn transpose9(m: [i64; 9]) -> (result: [i64; 9]) {
+    iterate i over m carrying st: TState9 = TState9 { out: zeros9(), q: 0 } {
+        let r: u64 = st.q / 3;
+        let c: u64 = st.q % 3;
+        next st = TState9 { out: replace(st.out, c * 3 + r, m[st.q]), q: st.q + 1 };
+    }
+    return st.out;
+}
+
+fn transpose16(m: [i64; 16]) -> (result: [i64; 16]) {
+    iterate i over m carrying st: TState16 = TState16 { out: zeros16(), q: 0 } {
+        let r: u64 = st.q / 4;
+        let c: u64 = st.q % 4;
+        next st = TState16 { out: replace(st.out, c * 4 + r, m[st.q]), q: st.q + 1 };
+    }
+    return st.out;
+}
+
+// ---- row/column dots (counted inner loops) ----
+
+fn row_dot4(a: [i64; 4], b: [i64; 4], i: u64, j: u64) -> (result: i64) {
+    iterate k up_to 2 carrying s: i64 = 0 {
+        next s = s +% a[i * 2 + k] *% b[k * 2 + j];
+    }
+    return s;
+}
+
+fn row_dot9(a: [i64; 9], b: [i64; 9], i: u64, j: u64) -> (result: i64) {
+    iterate k up_to 3 carrying s: i64 = 0 {
+        next s = s +% a[i * 3 + k] *% b[k * 3 + j];
+    }
+    return s;
+}
+
+fn row_dot16(a: [i64; 16], b: [i64; 16], i: u64, j: u64) -> (result: i64) {
+    iterate k up_to 4 carrying s: i64 = 0 {
+        next s = s +% a[i * 4 + k] *% b[k * 4 + j];
+    }
+    return s;
+}
+
+// ---- matmul (wrapping; checked twins live in linalg) ----
+
+fn matmul4(a: [i64; 4], b: [i64; 4]) -> (result: [i64; 4]) {
+    iterate i over a carrying st: TState4 = TState4 { out: zeros4(), q: 0 } {
+        let r: u64 = st.q / 2;
+        let c: u64 = st.q % 2;
+        next st = TState4 { out: replace(st.out, st.q, row_dot4(a, b, r, c)), q: st.q + 1 };
+    }
+    return st.out;
+}
+
+fn matmul9(a: [i64; 9], b: [i64; 9]) -> (result: [i64; 9]) {
+    iterate i over a carrying st: TState9 = TState9 { out: zeros9(), q: 0 } {
+        let r: u64 = st.q / 3;
+        let c: u64 = st.q % 3;
+        next st = TState9 { out: replace(st.out, st.q, row_dot9(a, b, r, c)), q: st.q + 1 };
+    }
+    return st.out;
+}
+
+fn matmul16(a: [i64; 16], b: [i64; 16]) -> (result: [i64; 16]) {
+    iterate i over a carrying st: TState16 = TState16 { out: zeros16(), q: 0 } {
+        let r: u64 = st.q / 4;
+        let c: u64 = st.q % 4;
+        next st = TState16 { out: replace(st.out, st.q, row_dot16(a, b, r, c)), q: st.q + 1 };
+    }
+    return st.out;
+}
+
+// ---- matvec ----
+
+fn matvec_dot4(a: [i64; 4], x: [i64; 2], i: u64) -> (result: i64) {
+    iterate k up_to 2 carrying s: i64 = 0 {
+        next s = s +% a[i * 2 + k] *% x[k];
+    }
+    return s;
+}
+
+fn matvec_dot9(a: [i64; 9], x: [i64; 3], i: u64) -> (result: i64) {
+    iterate k up_to 3 carrying s: i64 = 0 {
+        next s = s +% a[i * 3 + k] *% x[k];
+    }
+    return s;
+}
+
+fn matvec_dot16(a: [i64; 16], x: [i64; 4], i: u64) -> (result: i64) {
+    iterate k up_to 4 carrying s: i64 = 0 {
+        next s = s +% a[i * 4 + k] *% x[k];
+    }
+    return s;
+}
+
+fn matvec4(a: [i64; 4], x: [i64; 2]) -> (result: [i64; 2]) {
+    iterate i over x carrying st: MatVec2 = MatVec2 { out: x, q: 0 } {
+        next st = MatVec2 { out: replace(st.out, st.q, matvec_dot4(a, x, st.q)), q: st.q + 1 };
+    }
+    return st.out;
+}
+
+fn matvec9(a: [i64; 9], x: [i64; 3]) -> (result: [i64; 3]) {
+    iterate i over x carrying st: MatVec3 = MatVec3 { out: x, q: 0 } {
+        next st = MatVec3 { out: replace(st.out, st.q, matvec_dot9(a, x, st.q)), q: st.q + 1 };
+    }
+    return st.out;
+}
+
+fn matvec16(a: [i64; 16], x: [i64; 4]) -> (result: [i64; 4]) {
+    iterate i over x carrying st: MatVec4 = MatVec4 { out: x, q: 0 } {
+        next st = MatVec4 { out: replace(st.out, st.q, matvec_dot16(a, x, st.q)), q: st.q + 1 };
+    }
+    return st.out;
+}
+
+// ---- trace ----
+
+fn trace_wrap4(m: [i64; 4]) -> (result: i64) {
+    return m[0] +% m[3];
+}
+
+fn trace_wrap9(m: [i64; 9]) -> (result: i64) {
+    return m[0] +% m[4] +% m[8];
+}
+
+fn trace_wrap16(m: [i64; 16]) -> (result: i64) {
+    return m[0] +% m[5] +% m[10] +% m[15];
+}
+
+fn trace_checked9(m: [i64; 9]) -> (result: MathResult) {
+    let t1: MathResult = checked_add(m[0], m[4]);
+    return match t1 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => checked_add(value, m[8]),
+    };
+}
+
+fn trace_checked16(m: [i64; 16]) -> (result: MathResult) {
+    let t1: MathResult = checked_add(m[0], m[5]);
+    return match t1 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: s1 } => trace_mid16(m, s1),
+    };
+}
+
+fn trace_mid16(m: [i64; 16], s1: i64) -> (result: MathResult) {
+    let t2: MathResult = checked_add(s1, m[10]);
+    return match t2 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: s2 } => checked_add(s2, m[15]),
+    };
+}
+
+// ---- corpus entries ----
+
+fn entry_identity4() -> (result: [i64; 4]) {
+    return identity4();
+}
+
+fn entry_get9(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, r: u64, c: u64) -> (result: i64) {
+    return get9([a0, a1, a2, a3, a4, a5, a6, a7, a8], r, c);
+}
+
+fn entry_set9(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, r: u64, c: u64, v: i64) -> (result: [i64; 9]) {
+    return set9([a0, a1, a2, a3, a4, a5, a6, a7, a8], r, c, v);
+}
+
+fn entry_row9(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, i: u64) -> (result: [i64; 3]) {
+    return row9([a0, a1, a2, a3, a4, a5, a6, a7, a8], i);
+}
+
+fn entry_col9(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, j: u64) -> (result: [i64; 3]) {
+    return col9([a0, a1, a2, a3, a4, a5, a6, a7, a8], j);
+}
+
+fn entry_transpose9(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64) -> (result: [i64; 9]) {
+    return transpose9([a0, a1, a2, a3, a4, a5, a6, a7, a8]);
+}
+
+fn entry_add9(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, b0: i64, b1: i64, b2: i64, b3: i64, b4: i64, b5: i64, b6: i64, b7: i64, b8: i64) -> (result: [i64; 9]) {
+    return add9([a0, a1, a2, a3, a4, a5, a6, a7, a8], [b0, b1, b2, b3, b4, b5, b6, b7, b8]);
+}
+
+fn entry_matmul4(a0: i64, a1: i64, a2: i64, a3: i64, b0: i64, b1: i64, b2: i64, b3: i64) -> (result: [i64; 4]) {
+    return matmul4([a0, a1, a2, a3], [b0, b1, b2, b3]);
+}
+
+fn entry_matmul9(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, b0: i64, b1: i64, b2: i64, b3: i64, b4: i64, b5: i64, b6: i64, b7: i64, b8: i64) -> (result: [i64; 9]) {
+    return matmul9([a0, a1, a2, a3, a4, a5, a6, a7, a8], [b0, b1, b2, b3, b4, b5, b6, b7, b8]);
+}
+
+fn entry_matmul16(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, a9: i64, a10: i64, a11: i64, a12: i64, a13: i64, a14: i64, a15: i64, b0: i64, b1: i64, b2: i64, b3: i64, b4: i64, b5: i64, b6: i64, b7: i64, b8: i64, b9: i64, b10: i64, b11: i64, b12: i64, b13: i64, b14: i64, b15: i64) -> (result: [i64; 16]) {
+    return matmul16([a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15], [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15]);
+}
+
+fn entry_matvec9(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, x0: i64, x1: i64, x2: i64) -> (result: [i64; 3]) {
+    return matvec9([a0, a1, a2, a3, a4, a5, a6, a7, a8], [x0, x1, x2]);
+}
+
+fn entry_matvec4(a0: i64, a1: i64, a2: i64, a3: i64, x0: i64, x1: i64) -> (result: [i64; 2]) {
+    return matvec4([a0, a1, a2, a3], [x0, x1]);
+}
+
+fn entry_trace9(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64) -> (result: MathResult) {
+    return trace_checked9([a0, a1, a2, a3, a4, a5, a6, a7, a8]);
+}
+
+fn entry_diag16(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, a9: i64, a10: i64, a11: i64, a12: i64, a13: i64, a14: i64, a15: i64) -> (result: [i64; 4]) {
+    return diag16([a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15]);
+}

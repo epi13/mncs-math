@@ -1,0 +1,137 @@
+mncs 0.11;
+
+// mncs.math.deterministic — reproducible randomness and hashing.
+//
+// Determinism is a testable property here, not a slogan: splitmix64,
+// Lemire-bounded sampling, Fisher-Yates shuffles, and FNV-1a hashing
+// are pure functions of their seeds, so the frozen corpus pins their
+// streams byte-for-byte on EVERY backend. Any backend divergence in
+// these values is a soundness bug in the backend, and this module is
+// the tripwire.
+//
+// Design notes:
+//   splitmix64  the standard Steele et al. mixer (u64 wrapping ops).
+//   bounded     Lemire's multiply-high map (x * bound) >> 64 computed
+//               through 16-bit limbs so every partial product fits u64
+//               exactly; the accumulation order keeps partial sums at
+//               or below the true high word, so wrapping operators are
+//               exact (never merely "wrapping"). Documented residual
+//               modulo bias is Lemire's, not ours; unbiased rejection
+//               sampling would need data-dependent looping.
+//   shuffle8    Fisher-Yates over [i64; 8] driven by the bounded draw.
+//   fnv1a_8     FNV-1a over eight limbs (limbs cross as u64 bit patterns).
+module mncs.math.deterministic.v1;
+
+use mncs.math.internal.v1;
+
+record Rng { st: u64, out: u64 }
+record Shuf8 { arr: [i64; 8], st: u64 }
+
+fn splitmix64(st: u64) -> (result: Rng) {
+    let z: u64 = st +% 11400714819323198485;
+    let a: u64 = (z ^ (z >> 30)) *% 13787848793156543929;
+    let b: u64 = (a ^ (a >> 27)) *% 10723151780598845931;
+    return Rng { st: z, out: b ^ (b >> 31) };
+}
+
+// 16-bit limbs of a u64 (exact; shifts/masks are total).
+fn limbs16(x: u64, k: u64) -> (result: u64) {
+    return (x >> (k * 16)) & 65535;
+}
+
+// High 64 bits of the 128-bit product x * bound, via 16-bit limbs.
+// Every partial product is below 2^32. Write the low half as
+// L = t0 + t1*2^16 + t2*2^32 + t3*2^48 with t0 < 2^32, t1 < 2^33,
+// t2, t3 < 2^34. The carry L>>64 is (A>>32) plus one exactly when the
+// leftover low bits round up, where A = t2 + t3*2^16: the comparison
+// form below computes that rounding bit without ever forming the
+// overflowing sum. The high accumulation stays at or below the true
+// high word (all terms nonnegative), so wrapping operators are exact.
+fn lemire_high(x: u64, bound: u64) -> (result: u64) {
+    let x0: u64 = limbs16(x, 0);
+    let x1: u64 = limbs16(x, 1);
+    let x2: u64 = limbs16(x, 2);
+    let x3: u64 = limbs16(x, 3);
+    let y0: u64 = limbs16(bound, 0);
+    let y1: u64 = limbs16(bound, 1);
+    let y2: u64 = limbs16(bound, 2);
+    let y3: u64 = limbs16(bound, 3);
+    let t0: u64 = x0 *% y0;
+    let t1: u64 = x0 *% y1 +% x1 *% y0;
+    let t2: u64 = x0 *% y2 +% x1 *% y1 +% x2 *% y0;
+    let t3: u64 = x0 *% y3 +% x1 *% y2 +% x2 *% y1 +% x3 *% y0;
+    let low48: u64 = t0 +% t1 *% 65536;
+    let bigA: u64 = t2 +% t3 *% 65536;
+    let big: u64 = (bigA & 4294967295) *% 4294967296;
+    let need: u64 = 18446744073709551615 - big;
+    let extra: u64 = select(low48 > need, 1, 0);
+    let carry: u64 = (bigA >> 32) +% extra;
+    let m1: u64 = x3 *% y1 +% x2 *% y2 +% x1 *% y3;
+    let m2: u64 = x3 *% y2 +% x2 *% y3;
+    return carry +% m1 +% m2 *% 65536 +% x3 *% y3 *% 4294967296;
+}
+
+// Bounded draw in 0..bound. Contract: bound >= 1 (bound 0 yields
+// residue 0, documented-invalid).
+fn uniform_bounded(st: u64, bound: u64) -> (result: Rng) {
+    let r: Rng = splitmix64(st);
+    return Rng { st: r.st, out: lemire_high(r.out, bound) };
+}
+
+// Power-of-two draw in 0..2^bits. Contract: 1 <= bits <= 64.
+fn uniform_pow2(st: u64, bits: u64) -> (result: Rng) {
+    let r: Rng = splitmix64(st);
+    return Rng { st: r.st, out: r.out >> (64 - bits) };
+}
+
+fn shuffle_step(s: Shuf8, k: u64) -> (result: Shuf8) {
+    let r: Rng = splitmix64(s.st);
+    let j: u64 = k + lemire_high(r.out, 8 - k);
+    let t: i64 = s.arr[k];
+    let a1: [i64; 8] = replace(s.arr, k, s.arr[j]);
+    return Shuf8 { arr: replace(a1, j, t), st: r.st };
+}
+
+fn shuffle8(x: [i64; 8], seed: u64) -> (result: Shuf8) {
+    iterate k up_to 7 carrying s: Shuf8 = Shuf8 { arr: x, st: seed } {
+        next s = shuffle_step(s, k);
+    }
+    return s;
+}
+
+fn fnv1a_8(x: [i64; 8]) -> (result: u64) {
+    iterate i over x carrying h: u64 = 14695981039346656037 {
+        next h = (h ^ (x[i] as u64)) *% 1099511628211;
+    }
+    return h;
+}
+
+// ---- entry wrappers ----
+
+fn entry_splitmix(st: u64) -> (result: [u64; 2]) {
+    let r: Rng = splitmix64(st);
+    return [r.st, r.out];
+}
+
+fn entry_lemire_high(x: u64, bound: u64) -> (result: u64) {
+    return lemire_high(x, bound);
+}
+
+fn entry_uniform_bounded(st: u64, bound: u64) -> (result: [u64; 2]) {
+    let r: Rng = uniform_bounded(st, bound);
+    return [r.st, r.out];
+}
+
+fn entry_uniform_pow2(st: u64, bits: u64) -> (result: [u64; 2]) {
+    let r: Rng = uniform_pow2(st, bits);
+    return [r.st, r.out];
+}
+
+fn entry_shuffle8(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64, seed: u64) -> (result: [i64; 8]) {
+    let s: Shuf8 = shuffle8([x0, x1, x2, x3, x4, x5, x6, x7], seed);
+    return s.arr;
+}
+
+fn entry_fnv1a_8(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64) -> (result: u64) {
+    return fnv1a_8([x0, x1, x2, x3, x4, x5, x6, x7]);
+}

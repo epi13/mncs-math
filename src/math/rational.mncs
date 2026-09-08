@@ -359,8 +359,47 @@ fn to_i64_trunc(a: Frac) -> (result: i64) {
 
 // ---- corpus entry points ----
 
+// Total observers splitting a FracOutcome into error-as-data parts for
+// loop bodies (complex.gcd precedent): residues are discarded under
+// a nonzero code and are chosen trap-free (denominator residue is 1).
+fn frac_num(f: FracOutcome) -> (result: i64) {
+    return match f {
+        FracOutcome.Ok { num, den } => num,
+        Err { .. } => 0,
+    };
+}
+
+fn frac_den(f: FracOutcome) -> (result: i64) {
+    return match f {
+        FracOutcome.Ok { num, den } => den,
+        Err { .. } => 1,
+    };
+}
+
+fn frac_code(f: FracOutcome) -> (result: i64) {
+    return match f {
+        FracOutcome.Ok { .. } => 0,
+        Err { reason } => reason,
+    };
+}
+
 fn candidate_make(num: i64, den: i64) -> (result: FracOutcome) {
     return make(num, den);
+}
+
+fn candidate_frac_num(an: i64, ad: i64, bn: i64, bd: i64) -> (result: i64) {
+    let t: FracOutcome = add(Frac { num: an, den: ad }, Frac { num: bn, den: bd });
+    return frac_num(t);
+}
+
+fn candidate_frac_den(an: i64, ad: i64, bn: i64, bd: i64) -> (result: i64) {
+    let t: FracOutcome = add(Frac { num: an, den: ad }, Frac { num: bn, den: bd });
+    return frac_den(t);
+}
+
+fn candidate_frac_code(an: i64, ad: i64, bn: i64, bd: i64) -> (result: i64) {
+    let t: FracOutcome = add(Frac { num: an, den: ad }, Frac { num: bn, den: bd });
+    return frac_code(t);
 }
 
 fn candidate_is_canonical(num: i64, den: i64) -> (result: bool) {

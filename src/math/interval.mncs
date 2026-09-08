@@ -1,0 +1,198 @@
+mncs 0.11;
+
+// mncs.math.interval — exact interval arithmetic over i64 endpoints.
+//
+// Integer intervals need no rounding modes: every endpoint operation is
+// exact, so outward rounding is automatic and containment is a theorem,
+// not a hope. The pressure this module applies is control-flow shape:
+// every operator is a 4-way min/max over checked products/quotients
+// with error-as-data folding, and division must prove the divisor
+// excludes zero through total sign tests before any quotient evaluates
+// (strict select would evaluate an untaken MIN/-1 quotient and trap).
+//
+// Empty intervals (lo > hi) are caller-contract violations: operators
+// assume iv_ok. Float intervals with directed rounding are specified in
+// docs/interval.md as blocked on a float type (P001).
+module mncs.math.interval.v1;
+
+use mncs.math.error.v1;
+use mncs.math.scalar.v1;
+
+record Iv { lo: i64, hi: i64 }
+enum IvOut { Ok { lo: i64, hi: i64 }, Err { reason: i64 } }
+
+// True exactly for nonempty intervals.
+fn iv_ok(a: Iv) -> (result: bool) {
+    return a.lo <= a.hi;
+}
+
+fn iv_err(reason: i64) -> (result: IvOut) {
+    return IvOut.Err { reason: reason };
+}
+
+fn iv_neg(a: Iv) -> (result: IvOut) {
+    if a.lo == i64_min() {
+        return iv_err(reason_overflow());
+    }
+    if a.hi == i64_min() {
+        return iv_err(reason_overflow());
+    }
+    return IvOut.Ok { lo: 0 - a.hi, hi: 0 - a.lo };
+}
+
+fn iv_add(a: Iv, b: Iv) -> (result: IvOut) {
+    let t0: MathResult = checked_add(a.lo, b.lo);
+    return match t0 {
+        MathResult.Err { reason } => iv_err(reason),
+        Ok { value: lo } => iv_add_hi(lo, a, b),
+    };
+}
+
+fn iv_add_hi(lo: i64, a: Iv, b: Iv) -> (result: IvOut) {
+    let t1: MathResult = checked_add(a.hi, b.hi);
+    return match t1 {
+        MathResult.Err { reason } => iv_err(reason),
+        Ok { value: hi } => IvOut.Ok { lo: lo, hi: hi },
+    };
+}
+
+fn iv_sub(a: Iv, b: Iv) -> (result: IvOut) {
+    let t0: MathResult = checked_sub(a.lo, b.hi);
+    return match t0 {
+        MathResult.Err { reason } => iv_err(reason),
+        Ok { value: lo } => iv_sub_hi(lo, a, b),
+    };
+}
+
+fn iv_sub_hi(lo: i64, a: Iv, b: Iv) -> (result: IvOut) {
+    let t1: MathResult = checked_sub(a.hi, b.lo);
+    return match t1 {
+        MathResult.Err { reason } => iv_err(reason),
+        Ok { value: hi } => IvOut.Ok { lo: lo, hi: hi },
+    };
+}
+
+// Four checked products folded through min/max with a sticky bad flag.
+record IvP { lo: i64, hi: i64, bad: bool, k: u64 }
+
+fn iv_prod(p: i64, q: i64, st: IvP) -> (result: IvP) {
+    let t: MathResult = checked_mul(p, q);
+    return match t {
+        MathResult.Err { reason } => IvP { lo: st.lo, hi: st.hi, bad: true, k: st.k },
+        Ok { value: v } => iv_prod_ok(v, st),
+    };
+}
+
+fn iv_prod_ok(v: i64, st: IvP) -> (result: IvP) {
+    if st.k == 0 {
+        return IvP { lo: v, hi: v, bad: st.bad, k: 1 };
+    }
+    return IvP { lo: select(v < st.lo, v, st.lo), hi: select(v > st.hi, v, st.hi), bad: st.bad, k: 1 };
+}
+
+fn iv_mul(a: Iv, b: Iv) -> (result: IvOut) {
+    let s0: IvP = IvP { lo: 0, hi: 0, bad: false, k: 0 };
+    let s1: IvP = iv_prod(a.lo, b.lo, s0);
+    let s2: IvP = iv_prod(a.lo, b.hi, s1);
+    let s3: IvP = iv_prod(a.hi, b.lo, s2);
+    let s4: IvP = iv_prod(a.hi, b.hi, s3);
+    return iv_mul_out(s4);
+}
+
+fn iv_mul_out(s: IvP) -> (result: IvOut) {
+    if s.bad {
+        return iv_err(reason_overflow());
+    }
+    return IvOut.Ok { lo: s.lo, hi: s.hi };
+}
+
+// Division: the zero-containment test runs first through total sign
+// tests, so no quotient is ever formed against a zero divisor.
+fn iv_div(a: Iv, b: Iv) -> (result: IvOut) {
+    if b.lo <= 0 && 0 <= b.hi {
+        return iv_err(reason_div_by_zero());
+    }
+    let s0: IvP = IvP { lo: 0, hi: 0, bad: false, k: 0 };
+    let s1: IvP = iv_quot(a.lo, b.lo, s0);
+    let s2: IvP = iv_quot(a.lo, b.hi, s1);
+    let s3: IvP = iv_quot(a.hi, b.lo, s2);
+    let s4: IvP = iv_quot(a.hi, b.hi, s3);
+    return iv_mul_out(s4);
+}
+
+fn iv_quot(p: i64, q: i64, st: IvP) -> (result: IvP) {
+    if p == i64_min() && q == 0 - 1 {
+        return IvP { lo: st.lo, hi: st.hi, bad: true, k: st.k };
+    }
+    return iv_prod_ok(p / q, st);
+}
+
+fn iv_width(a: Iv) -> (result: MathResult) {
+    return checked_sub(a.hi, a.lo);
+}
+
+fn iv_contains(a: Iv, x: i64) -> (result: bool) {
+    return a.lo <= x && x <= a.hi;
+}
+
+// Intersection: empty intersection is reported through the observer
+// pair below (intersect returns the hull-formula residue otherwise).
+fn iv_intersect(a: Iv, b: Iv) -> (result: Iv) {
+    return Iv { lo: select(a.lo > b.lo, a.lo, b.lo), hi: select(a.hi < b.hi, a.hi, b.hi) };
+}
+
+fn iv_disjoint(a: Iv, b: Iv) -> (result: bool) {
+    return a.hi < b.lo || b.hi < a.lo;
+}
+
+fn iv_hull(a: Iv, b: Iv) -> (result: Iv) {
+    return Iv { lo: select(a.lo < b.lo, a.lo, b.lo), hi: select(a.hi > b.hi, a.hi, b.hi) };
+}
+
+// ---- entry wrappers ----
+
+fn entry_iv_ok(lo: i64, hi: i64) -> (result: bool) {
+    return iv_ok(Iv { lo: lo, hi: hi });
+}
+
+fn entry_iv_neg(lo: i64, hi: i64) -> (result: IvOut) {
+    return iv_neg(Iv { lo: lo, hi: hi });
+}
+
+fn entry_iv_add(a0: i64, a1: i64, b0: i64, b1: i64) -> (result: IvOut) {
+    return iv_add(Iv { lo: a0, hi: a1 }, Iv { lo: b0, hi: b1 });
+}
+
+fn entry_iv_sub(a0: i64, a1: i64, b0: i64, b1: i64) -> (result: IvOut) {
+    return iv_sub(Iv { lo: a0, hi: a1 }, Iv { lo: b0, hi: b1 });
+}
+
+fn entry_iv_mul(a0: i64, a1: i64, b0: i64, b1: i64) -> (result: IvOut) {
+    return iv_mul(Iv { lo: a0, hi: a1 }, Iv { lo: b0, hi: b1 });
+}
+
+fn entry_iv_div(a0: i64, a1: i64, b0: i64, b1: i64) -> (result: IvOut) {
+    return iv_div(Iv { lo: a0, hi: a1 }, Iv { lo: b0, hi: b1 });
+}
+
+fn entry_iv_width(lo: i64, hi: i64) -> (result: MathResult) {
+    return iv_width(Iv { lo: lo, hi: hi });
+}
+
+fn entry_iv_contains(lo: i64, hi: i64, x: i64) -> (result: bool) {
+    return iv_contains(Iv { lo: lo, hi: hi }, x);
+}
+
+fn entry_iv_intersect(a0: i64, a1: i64, b0: i64, b1: i64) -> (result: [i64; 2]) {
+    let r: Iv = iv_intersect(Iv { lo: a0, hi: a1 }, Iv { lo: b0, hi: b1 });
+    return [r.lo, r.hi];
+}
+
+fn entry_iv_disjoint(a0: i64, a1: i64, b0: i64, b1: i64) -> (result: bool) {
+    return iv_disjoint(Iv { lo: a0, hi: a1 }, Iv { lo: b0, hi: b1 });
+}
+
+fn entry_iv_hull(a0: i64, a1: i64, b0: i64, b1: i64) -> (result: [i64; 2]) {
+    let r: Iv = iv_hull(Iv { lo: a0, hi: a1 }, Iv { lo: b0, hi: b1 });
+    return [r.lo, r.hi];
+}

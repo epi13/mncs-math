@@ -1,0 +1,1261 @@
+mncs 0.11;
+
+// mncs.math.linalg — exact linear algebra over integers and rationals.
+//
+// Center of the library's "algorithms, not just names" claim:
+//   det      2x2 closed form, 3x3 Sarrus (checked), 4x4 Bareiss
+//            fraction-free elimination with row pivoting (exact)
+//   solve    Cramer via exact determinants, canonicalized through
+//            rational.make (inverse is NEVER the solver; adjugate
+//            inversion exists only as inv2, clearly supplementary)
+//   rank     3x3 via 2x2 minors, 4x4 via Bareiss pivot elimination
+//   subst    forward/backward substitution over rationals (paired
+//            numerator/denominator arrays)
+//   lu       rational LU with first-nonzero pivoting at 3x3, with
+//            solve-via-LU composition proving the factors
+//   norms    induced 1/infinity and Frobenius-squared (exact, checked)
+//
+// Float LU/QR/Cholesky/eigen are specified in docs/linear-algebra.md as
+// blocked on a float type (P001): they need division/sqrt semantics this
+// tier cannot spell. Nothing here pretends otherwise.
+//
+// Control-flow rules applied throughout: select arms carry total ops
+// only (verified strict: untaken trapping arms fail — see docs), loop
+// bodies never match-then-continue (outcomes split through total
+// observers into error-as-data state), array builders validate through
+// pure predicates with wrapping trial values.
+//
+// Profile 0.11: counted loops, concrete shapes, imports.
+module mncs.math.linalg.v1;
+
+use mncs.math.error.v1;
+use mncs.math.scalar.v1;
+use mncs.math.rational.v1;
+use mncs.math.matrix.v1;
+
+record BState4 { m: [i64; 16], prev: i64, sign: i64, ok: bool, zero: bool }
+record BState3 { m: [i64; 9], prev: i64, sign: i64, ok: bool, zero: bool }
+
+// ---- 2x2 closed forms ----
+
+fn det2(m: [i64; 4]) -> (result: MathResult) {
+    let t1: MathResult = checked_mul(m[0], m[3]);
+    return match t1 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: ad } => det2_bc(m, ad),
+    };
+}
+
+fn det2_bc(m: [i64; 4], ad: i64) -> (result: MathResult) {
+    let t2: MathResult = checked_mul(m[1], m[2]);
+    return match t2 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: bc } => checked_sub(ad, bc),
+    };
+}
+
+// ---- 3x3 Sarrus (exact, checked) ----
+
+fn sarrus_term(m: [i64; 9], i: u64, j: u64, k: u64) -> (result: MathResult) {
+    let t1: MathResult = checked_mul(m[i], m[j]);
+    return match t1 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: p } => checked_mul(p, m[k]),
+    };
+}
+
+fn det3(m: [i64; 9]) -> (result: MathResult) {
+    let t1: MathResult = sarrus_term(m, 0, 4, 8);
+    return match t1 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: a } => det3_b(m, a),
+    };
+}
+
+fn det3_b(m: [i64; 9], a: i64) -> (result: MathResult) {
+    let t2: MathResult = sarrus_term(m, 1, 5, 6);
+    return match t2 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: b } => det3_c(m, a, b),
+    };
+}
+
+fn det3_c(m: [i64; 9], a: i64, b: i64) -> (result: MathResult) {
+    let t3: MathResult = sarrus_term(m, 2, 3, 7);
+    return match t3 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: c } => det3_d(m, a, b, c),
+    };
+}
+
+fn det3_d(m: [i64; 9], a: i64, b: i64, c: i64) -> (result: MathResult) {
+    let t4: MathResult = sarrus_term(m, 2, 4, 6);
+    return match t4 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: d } => det3_e(m, a, b, c, d),
+    };
+}
+
+fn det3_e(m: [i64; 9], a: i64, b: i64, c: i64, d: i64) -> (result: MathResult) {
+    let t5: MathResult = sarrus_term(m, 1, 3, 8);
+    return match t5 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: e } => det3_f(m, a, b, c, d, e),
+    };
+}
+
+fn det3_f(m: [i64; 9], a: i64, b: i64, c: i64, d: i64, e: i64) -> (result: MathResult) {
+    let t6: MathResult = sarrus_term(m, 0, 5, 7);
+    return match t6 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: f } => det3_sum(a, b, c, d, e, f),
+    };
+}
+
+fn det3_sum(a: i64, b: i64, c: i64, d: i64, e: i64, f: i64) -> (result: MathResult) {
+    let s1: MathResult = checked_add(a, b);
+    return match s1 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: ab } => det3_sum2(ab, c, d, e, f),
+    };
+}
+
+fn det3_sum2(ab: i64, c: i64, d: i64, e: i64, f: i64) -> (result: MathResult) {
+    let s2: MathResult = checked_add(ab, c);
+    return match s2 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: abc } => det3_sum3(abc, d, e, f),
+    };
+}
+
+fn det3_sum3(abc: i64, d: i64, e: i64, f: i64) -> (result: MathResult) {
+    let s3: MathResult = checked_sub(abc, d);
+    return match s3 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: r } => det3_sum4(r, e, f),
+    };
+}
+
+fn det3_sum4(r: i64, e: i64, f: i64) -> (result: MathResult) {
+    let s4: MathResult = checked_sub(r, e);
+    return match s4 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: s } => checked_sub(s, f),
+    };
+}
+
+// ---- Bareiss 4x4 (fraction-free elimination with row pivoting) ----
+
+// First row at/after k with a nonzero entry in column k; 4 = none.
+fn find_pivot4(m: [i64; 16], k: u64) -> (result: u64) {
+    iterate r up_to 4 carrying found: u64 = 4 {
+        next found = select(r >= k && m[r * 4 + k] != 0 && found == 4, r, found);
+    }
+    return found;
+}
+
+fn swap_rows4(m: [i64; 16], r1: u64, r2: u64) -> (result: [i64; 16]) {
+    iterate c up_to 4 carrying out: [i64; 16] = m {
+        next out = replace(replace(out, r1 * 4 + c, m[r2 * 4 + c]), r2 * 4 + c, m[r1 * 4 + c]);
+    }
+    return out;
+}
+
+// Pure validity predicate for one Bareiss element update. Nested ifs
+// keep every checked operation behind its guard (strict && would not).
+fn bareiss_elem_ok(a: i64, p: i64, b: i64, c: i64, prev: i64) -> (result: bool) {
+    if mul_ok(a, p) {
+        if mul_ok(b, c) {
+            let t1: i64 = a * p;
+            let t2: i64 = b * c;
+            if sub_ok(t1, t2) {
+                let num: i64 = t1 - t2;
+                if num % prev == 0 {
+                    if num == i64_min() {
+                        if prev == 0 - 1 {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+// Trial value (wrapping) plus the gated exact quotient. The division
+// executes only under ok (if/return is lazy); the fallback is discarded
+// residue, never a result.
+fn bareiss_quot(ok: bool, num: i64, prev: i64) -> (result: i64) {
+    if ok {
+        return num / prev;
+    }
+    return 0;
+}
+
+record BStep4 { out: [i64; 16], ok: bool, q: u64 }
+
+fn bareiss_elim4(st: BState4, k: u64, piv: i64) -> (result: BState4) {
+    iterate i over st.m carrying bs: BStep4 = BStep4 { out: st.m, ok: true, q: 0 } {
+        let r: u64 = bs.q / 4;
+        let c: u64 = bs.q % 4;
+        next bs = bareiss_next(st, bs, r, c, k, piv);
+    }
+    return BState4 { m: bs.out, prev: piv, sign: st.sign, ok: st.ok && bs.ok, zero: false };
+}
+
+fn bareiss_next(st: BState4, bs: BStep4, r: u64, c: u64, k: u64, piv: i64) -> (result: BStep4) {
+    let update: bool = r > k && c > k;
+    return bareiss_cell(st, bs, r, c, k, piv, update);
+}
+
+fn bareiss_cell(st: BState4, bs: BStep4, r: u64, c: u64, k: u64, piv: i64, update: bool) -> (result: BStep4) {
+    let a: i64 = st.m[r * 4 + c];
+    let b: i64 = st.m[r * 4 + k];
+    let cc: i64 = st.m[k * 4 + c];
+    let elem_ok: bool = select(update, bareiss_elem_ok(a, piv, b, cc, st.prev), true);
+    let num: i64 = a *% piv -% b *% cc;
+    let v: i64 = select(update, bareiss_quot(elem_ok, num, st.prev), a);
+    return BStep4 { out: replace(bs.out, r * 4 + c, v), ok: bs.ok && elem_ok, q: bs.q + 1 };
+}
+
+fn bareiss_pivot4(st: BState4, k: u64) -> (result: BState4) {
+    let r: u64 = find_pivot4(st.m, k);
+    if r == 4 {
+        return BState4 { m: st.m, prev: st.prev, sign: st.sign, ok: st.ok, zero: true };
+    }
+    let m2: [i64; 16] = swap_rows4(st.m, k, r);
+    return bareiss_elim4(BState4 { m: m2, prev: st.prev, sign: 0 - st.sign, ok: st.ok, zero: false }, k, m2[k * 4 + k]);
+}
+
+fn bareiss_step4(st: BState4, k: u64) -> (result: BState4) {
+    let p: i64 = st.m[k * 4 + k];
+    if p == 0 {
+        return bareiss_pivot4(st, k);
+    }
+    return bareiss_elim4(st, k, p);
+}
+
+fn det4_after(s: BState4) -> (result: MathResult) {
+    if s.zero {
+        return MathResult.Ok { value: 0 };
+    }
+    if s.ok {
+        if s.sign == 1 {
+            return MathResult.Ok { value: s.m[15] };
+        }
+        if s.m[15] == i64_min() {
+            return MathResult.Err { reason: reason_overflow() };
+        }
+        return MathResult.Ok { value: 0 - s.m[15] };
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+fn det4(m: [i64; 16]) -> (result: MathResult) {
+    let s0: BState4 = BState4 { m: m, prev: 1, sign: 1, ok: true, zero: false };
+    let s1: BState4 = bareiss_step4(s0, 0);
+    if s1.zero {
+        return MathResult.Ok { value: 0 };
+    }
+    if s1.ok {
+        return det4_s2(s1);
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+fn det4_s2(s1: BState4) -> (result: MathResult) {
+    let s2: BState4 = bareiss_step4(s1, 1);
+    if s2.zero {
+        return MathResult.Ok { value: 0 };
+    }
+    if s2.ok {
+        return det4_s3(s2);
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+fn det4_s3(s2: BState4) -> (result: MathResult) {
+    let s3: BState4 = bareiss_step4(s2, 2);
+    return det4_after(s3);
+}
+
+enum SolveOut2 { Ok { x0n: i64, x0d: i64, x1n: i64, x1d: i64 }, Err { reason: i64 } }
+enum SolveOut3 { Ok { x0n: i64, x0d: i64, x1n: i64, x1d: i64, x2n: i64, x2d: i64 }, Err { reason: i64 } }
+enum SolveOut4 { Ok { x0n: i64, x0d: i64, x1n: i64, x1d: i64, x2n: i64, x2d: i64, x3n: i64, x3d: i64 }, Err { reason: i64 } }
+enum SubOut3 { Ok { y0n: i64, y0d: i64, y1n: i64, y1d: i64, y2n: i64, y2d: i64 }, Err { reason: i64 } }
+enum InvOut2 { Ok { a00n: i64, a00d: i64, a01n: i64, a01d: i64, a10n: i64, a10d: i64, a11n: i64, a11d: i64 }, Err { reason: i64 } }
+
+// ---- Cramer solvers (exact determinants, canonicalized coordinates) ----
+
+fn solve2(m: [i64; 4], b: [i64; 2]) -> (result: SolveOut2) {
+    let d: MathResult = det2(m);
+    return match d {
+        MathResult.Err { reason } => SolveOut2.Err { reason: reason },
+        Ok { value: det } => solve2_b(m, b, det),
+    };
+}
+
+fn solve2_b(m: [i64; 4], b: [i64; 2], det: i64) -> (result: SolveOut2) {
+    if det == 0 {
+        return SolveOut2.Err { reason: reason_singular() };
+    }
+    let m0: [i64; 4] = [b[0], m[1], b[1], m[3]];
+    let d0: MathResult = det2(m0);
+    return match d0 {
+        MathResult.Err { reason } => SolveOut2.Err { reason: reason },
+        Ok { value: n0 } => solve2_c(m, b, det, n0),
+    };
+}
+
+fn solve2_c(m: [i64; 4], b: [i64; 2], det: i64, n0: i64) -> (result: SolveOut2) {
+    let m1: [i64; 4] = [m[0], b[0], m[2], b[1]];
+    let d1: MathResult = det2(m1);
+    return match d1 {
+        MathResult.Err { reason } => SolveOut2.Err { reason: reason },
+        Ok { value: n1 } => solve2_make(det, n0, n1),
+    };
+}
+
+fn solve2_make(det: i64, n0: i64, n1: i64) -> (result: SolveOut2) {
+    let f0: FracOutcome = make(n0, det);
+    return match f0 {
+        FracOutcome.Err { reason } => SolveOut2.Err { reason: reason },
+        Ok { num: x0n, den: x0d } => solve2_make1(det, n1, x0n, x0d),
+    };
+}
+
+fn solve2_make1(det: i64, n1: i64, x0n: i64, x0d: i64) -> (result: SolveOut2) {
+    let f1: FracOutcome = make(n1, det);
+    return match f1 {
+        FracOutcome.Err { reason } => SolveOut2.Err { reason: reason },
+        Ok { num: x1n, den: x1d } => SolveOut2.Ok { x0n: x0n, x0d: x0d, x1n: x1n, x1d: x1d },
+    };
+}
+
+record ColState9 { out: [i64; 9], q: u64 }
+
+fn replace_col3(m: [i64; 9], b: [i64; 3], j: u64, zero: [i64; 9]) -> (result: [i64; 9]) {
+    iterate i over m carrying cs: ColState9 = ColState9 { out: zero, q: 0 } {
+        let r: u64 = cs.q / 3;
+        let c: u64 = cs.q % 3;
+        next cs = ColState9 { out: replace(cs.out, cs.q, select(c == j, b[r], m[cs.q])), q: cs.q + 1 };
+    }
+    return cs.out;
+}
+
+fn solve3(m: [i64; 9], b: [i64; 3]) -> (result: SolveOut3) {
+    let d: MathResult = det3(m);
+    return match d {
+        MathResult.Err { reason } => SolveOut3.Err { reason: reason },
+        Ok { value: det } => solve3_b(m, b, det),
+    };
+}
+
+fn solve3_b(m: [i64; 9], b: [i64; 3], det: i64) -> (result: SolveOut3) {
+    if det == 0 {
+        return SolveOut3.Err { reason: reason_singular() };
+    }
+    let d0: MathResult = det3(replace_col3(m, b, 0, zeros9()));
+    return match d0 {
+        MathResult.Err { reason } => SolveOut3.Err { reason: reason },
+        Ok { value: n0 } => solve3_c(m, b, det, n0),
+    };
+}
+
+fn solve3_c(m: [i64; 9], b: [i64; 3], det: i64, n0: i64) -> (result: SolveOut3) {
+    let d1: MathResult = det3(replace_col3(m, b, 1, zeros9()));
+    return match d1 {
+        MathResult.Err { reason } => SolveOut3.Err { reason: reason },
+        Ok { value: n1 } => solve3_d(m, b, det, n0, n1),
+    };
+}
+
+fn solve3_d(m: [i64; 9], b: [i64; 3], det: i64, n0: i64, n1: i64) -> (result: SolveOut3) {
+    let d2: MathResult = det3(replace_col3(m, b, 2, zeros9()));
+    return match d2 {
+        MathResult.Err { reason } => SolveOut3.Err { reason: reason },
+        Ok { value: n2 } => solve3_make(det, n0, n1, n2),
+    };
+}
+
+fn solve3_make(det: i64, n0: i64, n1: i64, n2: i64) -> (result: SolveOut3) {
+    let f0: FracOutcome = make(n0, det);
+    return match f0 {
+        FracOutcome.Err { reason } => SolveOut3.Err { reason: reason },
+        Ok { num: x0n, den: x0d } => solve3_make1(det, n1, n2, x0n, x0d),
+    };
+}
+
+fn solve3_make1(det: i64, n1: i64, n2: i64, x0n: i64, x0d: i64) -> (result: SolveOut3) {
+    let f1: FracOutcome = make(n1, det);
+    return match f1 {
+        FracOutcome.Err { reason } => SolveOut3.Err { reason: reason },
+        Ok { num: x1n, den: x1d } => solve3_make2(det, n2, x0n, x0d, x1n, x1d),
+    };
+}
+
+fn solve3_make2(det: i64, n2: i64, x0n: i64, x0d: i64, x1n: i64, x1d: i64) -> (result: SolveOut3) {
+    let f2: FracOutcome = make(n2, det);
+    return match f2 {
+        FracOutcome.Err { reason } => SolveOut3.Err { reason: reason },
+        Ok { num: x2n, den: x2d } => SolveOut3.Ok { x0n: x0n, x0d: x0d, x1n: x1n, x1d: x1d, x2n: x2n, x2d: x2d },
+    };
+}
+
+record ColState16 { out: [i64; 16], q: u64 }
+
+fn replace_col4(m: [i64; 16], b: [i64; 4], j: u64, zero: [i64; 16]) -> (result: [i64; 16]) {
+    iterate i over m carrying cs: ColState16 = ColState16 { out: zero, q: 0 } {
+        let r: u64 = cs.q / 4;
+        let c: u64 = cs.q % 4;
+        next cs = ColState16 { out: replace(cs.out, cs.q, select(c == j, b[r], m[cs.q])), q: cs.q + 1 };
+    }
+    return cs.out;
+}
+
+fn solve4(m: [i64; 16], b: [i64; 4]) -> (result: SolveOut4) {
+    let d: MathResult = det4(m);
+    return match d {
+        MathResult.Err { reason } => SolveOut4.Err { reason: reason },
+        Ok { value: det } => solve4_b(m, b, det),
+    };
+}
+
+fn solve4_b(m: [i64; 16], b: [i64; 4], det: i64) -> (result: SolveOut4) {
+    if det == 0 {
+        return SolveOut4.Err { reason: reason_singular() };
+    }
+    let d0: MathResult = det4(replace_col4(m, b, 0, zeros16()));
+    return match d0 {
+        MathResult.Err { reason } => SolveOut4.Err { reason: reason },
+        Ok { value: n0 } => solve4_c(m, b, det, n0),
+    };
+}
+
+fn solve4_c(m: [i64; 16], b: [i64; 4], det: i64, n0: i64) -> (result: SolveOut4) {
+    let d1: MathResult = det4(replace_col4(m, b, 1, zeros16()));
+    return match d1 {
+        MathResult.Err { reason } => SolveOut4.Err { reason: reason },
+        Ok { value: n1 } => solve4_d(m, b, det, n0, n1),
+    };
+}
+
+fn solve4_d(m: [i64; 16], b: [i64; 4], det: i64, n0: i64, n1: i64) -> (result: SolveOut4) {
+    let d2: MathResult = det4(replace_col4(m, b, 2, zeros16()));
+    return match d2 {
+        MathResult.Err { reason } => SolveOut4.Err { reason: reason },
+        Ok { value: n2 } => solve4_e(m, b, det, n0, n1, n2),
+    };
+}
+
+fn solve4_e(m: [i64; 16], b: [i64; 4], det: i64, n0: i64, n1: i64, n2: i64) -> (result: SolveOut4) {
+    let d3: MathResult = det4(replace_col4(m, b, 3, zeros16()));
+    return match d3 {
+        MathResult.Err { reason } => SolveOut4.Err { reason: reason },
+        Ok { value: n3 } => solve4_make(det, n0, n1, n2, n3),
+    };
+}
+
+fn solve4_make(det: i64, n0: i64, n1: i64, n2: i64, n3: i64) -> (result: SolveOut4) {
+    let f0: FracOutcome = make(n0, det);
+    return match f0 {
+        FracOutcome.Err { reason } => SolveOut4.Err { reason: reason },
+        Ok { num: x0n, den: x0d } => solve4_make1(det, n1, n2, n3, x0n, x0d),
+    };
+}
+
+fn solve4_make1(det: i64, n1: i64, n2: i64, n3: i64, x0n: i64, x0d: i64) -> (result: SolveOut4) {
+    let f1: FracOutcome = make(n1, det);
+    return match f1 {
+        FracOutcome.Err { reason } => SolveOut4.Err { reason: reason },
+        Ok { num: x1n, den: x1d } => solve4_make2(det, n2, n3, x0n, x0d, x1n, x1d),
+    };
+}
+
+fn solve4_make2(det: i64, n2: i64, n3: i64, x0n: i64, x0d: i64, x1n: i64, x1d: i64) -> (result: SolveOut4) {
+    let f2: FracOutcome = make(n2, det);
+    return match f2 {
+        FracOutcome.Err { reason } => SolveOut4.Err { reason: reason },
+        Ok { num: x2n, den: x2d } => solve4_make3(det, n3, x0n, x0d, x1n, x1d, x2n, x2d),
+    };
+}
+
+fn solve4_make3(det: i64, n3: i64, x0n: i64, x0d: i64, x1n: i64, x1d: i64, x2n: i64, x2d: i64) -> (result: SolveOut4) {
+    let f3: FracOutcome = make(n3, det);
+    return match f3 {
+        FracOutcome.Err { reason } => SolveOut4.Err { reason: reason },
+        Ok { num: x3n, den: x3d } => SolveOut4.Ok { x0n: x0n, x0d: x0d, x1n: x1n, x1d: x1d, x2n: x2n, x2d: x2d, x3n: x3n, x3d: x3d },
+    };
+}
+
+// ---- rank3 via 2x2 minors (rank 3 iff det != 0; rank 2 iff some
+// 2x2 minor is nonzero; rank 1 iff some entry is nonzero) ----
+
+// 0 = zero minor, 1 = nonzero minor, 2 = undetermined (overflow).
+fn minor_nz3(m: [i64; 9], r: u64, c: u64) -> (result: u64) {
+    let r0: u64 = (r + 1) % 3;
+    let r1: u64 = (r + 2) % 3;
+    let c0: u64 = (c + 1) % 3;
+    let c1: u64 = (c + 2) % 3;
+    let d: MathResult = det2([m[r0 * 3 + c0], m[r0 * 3 + c1], m[r1 * 3 + c0], m[r1 * 3 + c1]]);
+    return match d {
+        MathResult.Err { reason } => 2,
+        Ok { value: v } => minor_bit(v),
+    };
+}
+
+fn minor_bit(v: i64) -> (result: u64) {
+    if v == 0 {
+        return 0;
+    }
+    return 1;
+}
+
+record RankScan { found: bool, bad: bool, q: u64 }
+
+fn rank3(m: [i64; 9]) -> (result: MathResult) {
+    let d: MathResult = det3(m);
+    return match d {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: det } => rank3_rest(m, det),
+    };
+}
+
+fn rank3_rest(m: [i64; 9], det: i64) -> (result: MathResult) {
+    if det != 0 {
+        return MathResult.Ok { value: 3 };
+    }
+    iterate i over m carrying rs: RankScan = RankScan { found: false, bad: false, q: 0 } {
+        let bit: u64 = minor_nz3(m, rs.q / 3, rs.q % 3);
+        next rs = RankScan { found: rs.found || bit == 1, bad: rs.bad || bit == 2, q: rs.q + 1 };
+    }
+    return rank3_finish(m, rs.found, rs.bad);
+}
+
+fn rank3_finish(m: [i64; 9], found: bool, bad: bool) -> (result: MathResult) {
+    if bad {
+        return MathResult.Err { reason: reason_overflow() };
+    }
+    if found {
+        return MathResult.Ok { value: 2 };
+    }
+    return rank3_entries(m);
+}
+
+fn rank3_entries(m: [i64; 9]) -> (result: MathResult) {
+    iterate i over m carrying seen: bool = false {
+        next seen = seen || m[i] != 0;
+    }
+    if seen {
+        return MathResult.Ok { value: 1 };
+    }
+    return MathResult.Ok { value: 0 };
+}
+
+// ---- supplementary adjugate inverse (2x2 only; never the solver) ----
+
+fn inv2(m: [i64; 4]) -> (result: InvOut2) {
+    let d: MathResult = det2(m);
+    return match d {
+        MathResult.Err { reason } => InvOut2.Err { reason: reason },
+        Ok { value: det } => inv2_b(m, det),
+    };
+}
+
+fn inv2_b(m: [i64; 4], det: i64) -> (result: InvOut2) {
+    if det == 0 {
+        return InvOut2.Err { reason: reason_singular() };
+    }
+    let f00: FracOutcome = make(m[3], det);
+    return match f00 {
+        FracOutcome.Err { reason } => InvOut2.Err { reason: reason },
+        Ok { num: a00n, den: a00d } => inv2_c(m, det, a00n, a00d),
+    };
+}
+
+fn make_neg(v: i64, den: i64) -> (result: FracOutcome) {
+    if v == i64_min() {
+        return FracOutcome.Err { reason: reason_overflow() };
+    }
+    return make(0 - v, den);
+}
+
+fn inv2_c(m: [i64; 4], det: i64, a00n: i64, a00d: i64) -> (result: InvOut2) {
+    let f01: FracOutcome = make_neg(m[1], det);
+    return match f01 {
+        FracOutcome.Err { reason } => InvOut2.Err { reason: reason },
+        Ok { num: a01n, den: a01d } => inv2_d(m, det, a00n, a00d, a01n, a01d),
+    };
+}
+
+fn inv2_d(m: [i64; 4], det: i64, a00n: i64, a00d: i64, a01n: i64, a01d: i64) -> (result: InvOut2) {
+    let f10: FracOutcome = make_neg(m[2], det);
+    return match f10 {
+        FracOutcome.Err { reason } => InvOut2.Err { reason: reason },
+        Ok { num: a10n, den: a10d } => inv2_e(m, det, a00n, a00d, a01n, a01d, a10n, a10d),
+    };
+}
+
+fn inv2_e(m: [i64; 4], det: i64, a00n: i64, a00d: i64, a01n: i64, a01d: i64, a10n: i64, a10d: i64) -> (result: InvOut2) {
+    let f11: FracOutcome = make(m[0], det);
+    return match f11 {
+        FracOutcome.Err { reason } => InvOut2.Err { reason: reason },
+        Ok { num: a11n, den: a11d } => InvOut2.Ok { a00n: a00n, a00d: a00d, a01n: a01n, a01d: a01d, a10n: a10n, a10d: a10d, a11n: a11n, a11d: a11d },
+    };
+}
+
+// ---- rational substitution (paired numerator/denominator arrays) ----
+
+// Forward substitution for unit-or-general lower-triangular L at 3x3:
+// y0 = b0 / l00; y1 = (b1 - l10*y0) / l11; y2 = (b2 - l20*y0 - l21*y1) / l22.
+fn sub_fwd3(ln: [i64; 9], ld: [i64; 9], bn: [i64; 3], bd: [i64; 3]) -> (result: SubOut3) {
+    let s0: FracOutcome = div(Frac { num: bn[0], den: bd[0] }, Frac { num: ln[0], den: ld[0] });
+    return match s0 {
+        FracOutcome.Err { reason } => SubOut3.Err { reason: reason },
+        Ok { num: y0n, den: y0d } => sub_fwd3_s1(ln, ld, bn, bd, y0n, y0d),
+    };
+}
+
+fn sub_fwd3_s1(ln: [i64; 9], ld: [i64; 9], bn: [i64; 3], bd: [i64; 3], y0n: i64, y0d: i64) -> (result: SubOut3) {
+    let p1: FracOutcome = mul(Frac { num: ln[3], den: ld[3] }, Frac { num: y0n, den: y0d });
+    return match p1 {
+        FracOutcome.Err { reason } => SubOut3.Err { reason: reason },
+        Ok { num: pn, den: pd } => sub_fwd3_s1b(ln, ld, bn, bd, y0n, y0d, pn, pd),
+    };
+}
+
+fn sub_fwd3_s1b(ln: [i64; 9], ld: [i64; 9], bn: [i64; 3], bd: [i64; 3], y0n: i64, y0d: i64, pn: i64, pd: i64) -> (result: SubOut3) {
+    let t1: FracOutcome = sub(Frac { num: bn[1], den: bd[1] }, Frac { num: pn, den: pd });
+    return sub_fwd3_s1j(ln, ld, bn, bd, y0n, y0d, t1);
+}
+
+fn sub_fwd3_s1j(ln: [i64; 9], ld: [i64; 9], bn: [i64; 3], bd: [i64; 3], y0n: i64, y0d: i64, t1: FracOutcome) -> (result: SubOut3) {
+    return match t1 {
+        FracOutcome.Err { reason } => SubOut3.Err { reason: reason },
+        Ok { num: r1n, den: r1d } => sub_fwd3_s1d(ln, ld, bn, bd, y0n, y0d, r1n, r1d),
+    };
+}
+
+fn sub_fwd3_s1d(ln: [i64; 9], ld: [i64; 9], bn: [i64; 3], bd: [i64; 3], y0n: i64, y0d: i64, r1n: i64, r1d: i64) -> (result: SubOut3) {
+    let s1: FracOutcome = div(Frac { num: r1n, den: r1d }, Frac { num: ln[4], den: ld[4] });
+    return match s1 {
+        FracOutcome.Err { reason } => SubOut3.Err { reason: reason },
+        Ok { num: y1n, den: y1d } => sub_fwd3_s2(ln, ld, bn, bd, y0n, y0d, y1n, y1d),
+    };
+}
+
+fn sub_fwd3_s2(ln: [i64; 9], ld: [i64; 9], bn: [i64; 3], bd: [i64; 3], y0n: i64, y0d: i64, y1n: i64, y1d: i64) -> (result: SubOut3) {
+    let p2a: FracOutcome = mul(Frac { num: ln[6], den: ld[6] }, Frac { num: y0n, den: y0d });
+    return match p2a {
+        FracOutcome.Err { reason } => SubOut3.Err { reason: reason },
+        Ok { num: an, den: ad } => sub_fwd3_s2b(ln, ld, bn, bd, y0n, y0d, y1n, y1d, an, ad),
+    };
+}
+
+fn sub_fwd3_s2b(ln: [i64; 9], ld: [i64; 9], bn: [i64; 3], bd: [i64; 3], y0n: i64, y0d: i64, y1n: i64, y1d: i64, an: i64, ad: i64) -> (result: SubOut3) {
+    let t2a: FracOutcome = sub(Frac { num: bn[2], den: bd[2] }, Frac { num: an, den: ad });
+    return match t2a {
+        FracOutcome.Err { reason } => SubOut3.Err { reason: reason },
+        Ok { num: bn, den: bd } => sub_fwd3_s2c(ln, ld, y0n, y0d, y1n, y1d, bn, bd),
+    };
+}
+
+fn sub_fwd3_s2c(ln: [i64; 9], ld: [i64; 9], y0n: i64, y0d: i64, y1n: i64, y1d: i64, bn: i64, bd: i64) -> (result: SubOut3) {
+    let p2b: FracOutcome = mul(Frac { num: ln[7], den: ld[7] }, Frac { num: y1n, den: y1d });
+    return match p2b {
+        FracOutcome.Err { reason } => SubOut3.Err { reason: reason },
+        Ok { num: cn, den: cd } => sub_fwd3_s2e(ln, ld, y0n, y0d, y1n, y1d, bn, bd, cn, cd),
+    };
+}
+
+fn sub_fwd3_s2e(ln: [i64; 9], ld: [i64; 9], y0n: i64, y0d: i64, y1n: i64, y1d: i64, bn: i64, bd: i64, cn: i64, cd: i64) -> (result: SubOut3) {
+    let t2: FracOutcome = sub(Frac { num: bn, den: bd }, Frac { num: cn, den: cd });
+    return match t2 {
+        FracOutcome.Err { reason } => SubOut3.Err { reason: reason },
+        Ok { num: r2n, den: r2d } => sub_fwd3_s2f(ln, ld, y0n, y0d, y1n, y1d, r2n, r2d),
+    };
+}
+
+fn sub_fwd3_s2f(ln: [i64; 9], ld: [i64; 9], y0n: i64, y0d: i64, y1n: i64, y1d: i64, r2n: i64, r2d: i64) -> (result: SubOut3) {
+    let s2: FracOutcome = div(Frac { num: r2n, den: r2d }, Frac { num: ln[8], den: ld[8] });
+    return match s2 {
+        FracOutcome.Err { reason } => SubOut3.Err { reason: reason },
+        Ok { num: y2n, den: y2d } => SubOut3.Ok { y0n: y0n, y0d: y0d, y1n: y1n, y1d: y1d, y2n: y2n, y2d: y2d },
+    };
+}
+
+// Backward substitution for upper-triangular U at 3x3.
+fn sub_bwd3(un: [i64; 9], ud: [i64; 9], bn: [i64; 3], bd: [i64; 3]) -> (result: SubOut3) {
+    let s2: FracOutcome = div(Frac { num: bn[2], den: bd[2] }, Frac { num: un[8], den: ud[8] });
+    return match s2 {
+        FracOutcome.Err { reason } => SubOut3.Err { reason: reason },
+        Ok { num: y2n, den: y2d } => sub_bwd3_s1(un, ud, bn, bd, y2n, y2d),
+    };
+}
+
+fn sub_bwd3_s1(un: [i64; 9], ud: [i64; 9], bn: [i64; 3], bd: [i64; 3], y2n: i64, y2d: i64) -> (result: SubOut3) {
+    let p1: FracOutcome = mul(Frac { num: un[5], den: ud[5] }, Frac { num: y2n, den: y2d });
+    return match p1 {
+        FracOutcome.Err { reason } => SubOut3.Err { reason: reason },
+        Ok { num: pn, den: pd } => sub_bwd3_s1b(un, ud, bn, bd, y2n, y2d, pn, pd),
+    };
+}
+
+fn sub_bwd3_s1b(un: [i64; 9], ud: [i64; 9], bn: [i64; 3], bd: [i64; 3], y2n: i64, y2d: i64, pn: i64, pd: i64) -> (result: SubOut3) {
+    let t1: FracOutcome = sub(Frac { num: bn[1], den: bd[1] }, Frac { num: pn, den: pd });
+    return sub_bwd3_s1j(un, ud, bn, bd, y2n, y2d, t1);
+}
+
+fn sub_bwd3_s1j(un: [i64; 9], ud: [i64; 9], bn: [i64; 3], bd: [i64; 3], y2n: i64, y2d: i64, t1: FracOutcome) -> (result: SubOut3) {
+    return match t1 {
+        FracOutcome.Err { reason } => SubOut3.Err { reason: reason },
+        Ok { num: r1n, den: r1d } => sub_bwd3_s1d(un, ud, bn, bd, y2n, y2d, r1n, r1d),
+    };
+}
+
+fn sub_bwd3_s1d(un: [i64; 9], ud: [i64; 9], bn: [i64; 3], bd: [i64; 3], y2n: i64, y2d: i64, r1n: i64, r1d: i64) -> (result: SubOut3) {
+    let s1: FracOutcome = div(Frac { num: r1n, den: r1d }, Frac { num: un[4], den: ud[4] });
+    return match s1 {
+        FracOutcome.Err { reason } => SubOut3.Err { reason: reason },
+        Ok { num: y1n, den: y1d } => sub_bwd3_s0(un, ud, bn, bd, y1n, y1d, y2n, y2d),
+    };
+}
+
+fn sub_bwd3_s0(un: [i64; 9], ud: [i64; 9], bn: [i64; 3], bd: [i64; 3], y1n: i64, y1d: i64, y2n: i64, y2d: i64) -> (result: SubOut3) {
+    let p0a: FracOutcome = mul(Frac { num: un[1], den: ud[1] }, Frac { num: y1n, den: y1d });
+    return match p0a {
+        FracOutcome.Err { reason } => SubOut3.Err { reason: reason },
+        Ok { num: an, den: ad } => sub_bwd3_s0b(un, ud, bn, bd, y1n, y1d, y2n, y2d, an, ad),
+    };
+}
+
+fn sub_bwd3_s0b(un: [i64; 9], ud: [i64; 9], bn: [i64; 3], bd: [i64; 3], y1n: i64, y1d: i64, y2n: i64, y2d: i64, an: i64, ad: i64) -> (result: SubOut3) {
+    let t0a: FracOutcome = sub(Frac { num: bn[0], den: bd[0] }, Frac { num: an, den: ad });
+    return match t0a {
+        FracOutcome.Err { reason } => SubOut3.Err { reason: reason },
+        Ok { num: bn, den: bd } => sub_bwd3_s0c(un, ud, y1n, y1d, y2n, y2d, bn, bd),
+    };
+}
+
+fn sub_bwd3_s0c(un: [i64; 9], ud: [i64; 9], y1n: i64, y1d: i64, y2n: i64, y2d: i64, bn: i64, bd: i64) -> (result: SubOut3) {
+    let p0b: FracOutcome = mul(Frac { num: un[2], den: ud[2] }, Frac { num: y2n, den: y2d });
+    return match p0b {
+        FracOutcome.Err { reason } => SubOut3.Err { reason: reason },
+        Ok { num: cn, den: cd } => sub_bwd3_s0e(un, ud, y1n, y1d, y2n, y2d, bn, bd, cn, cd),
+    };
+}
+
+fn sub_bwd3_s0e(un: [i64; 9], ud: [i64; 9], y1n: i64, y1d: i64, y2n: i64, y2d: i64, bn: i64, bd: i64, cn: i64, cd: i64) -> (result: SubOut3) {
+    let t0: FracOutcome = sub(Frac { num: bn, den: bd }, Frac { num: cn, den: cd });
+    return sub_bwd3_s0j(un, ud, y1n, y1d, y2n, y2d, t0);
+}
+
+fn sub_bwd3_s0j(un: [i64; 9], ud: [i64; 9], y1n: i64, y1d: i64, y2n: i64, y2d: i64, t0: FracOutcome) -> (result: SubOut3) {
+    return match t0 {
+        FracOutcome.Err { reason } => SubOut3.Err { reason: reason },
+        Ok { num: r0n, den: r0d } => sub_bwd3_s0d(un, ud, y1n, y1d, y2n, y2d, r0n, r0d),
+    };
+}
+
+fn sub_bwd3_s0d(un: [i64; 9], ud: [i64; 9], y1n: i64, y1d: i64, y2n: i64, y2d: i64, r0n: i64, r0d: i64) -> (result: SubOut3) {
+    let s0: FracOutcome = div(Frac { num: r0n, den: r0d }, Frac { num: un[0], den: ud[0] });
+    return match s0 {
+        FracOutcome.Err { reason } => SubOut3.Err { reason: reason },
+        Ok { num: y0n, den: y0d } => SubOut3.Ok { y0n: y0n, y0d: y0d, y1n: y1n, y1d: y1d, y2n: y2n, y2d: y2d },
+    };
+}
+
+// ---- exact norms (checked; Frobenius reported squared) ----
+// norm1/norm_inf are the true induced norms (max column/row absolute
+// sum); norm_max is the entrywise maximum absolute value.
+
+record NAcc9 { s0: i64, s1: i64, s2: i64, bad: bool, q: u64 }
+record NAcc16 { s0: i64, s1: i64, s2: i64, s3: i64, bad: bool, q: u64 }
+record NMax { best: i64, bad: bool }
+
+// Total absolute value with a MIN flag: residue 0 is discarded under bad.
+fn norm_abs(v: i64) -> (result: i64) {
+    if v == i64_min() {
+        return 0;
+    }
+    return norm_abs_pos(v);
+}
+
+fn norm_abs_pos(v: i64) -> (result: i64) {
+    if v < 0 {
+        return 0 - v;
+    }
+    return v;
+}
+
+fn norm1_9(m: [i64; 9]) -> (result: MathResult) {
+    iterate i over m carrying ns: NAcc9 = NAcc9 { s0: 0, s1: 0, s2: 0, bad: false, q: 0 } {
+        next ns = norm1_col(m[ns.q], ns, ns.q % 3);
+    }
+    return norm1_max9(ns);
+}
+
+fn norm1_col(v: i64, ns: NAcc9, c: u64) -> (result: NAcc9) {
+    let a: i64 = norm_abs(v);
+    let t0: i64 = ns.s0 +% a;
+    let t1: i64 = ns.s1 +% a;
+    let t2: i64 = ns.s2 +% a;
+    let e: bool = v == i64_min() || (c == 0 && select(add_ok(ns.s0, a), false, true)) || (c == 1 && select(add_ok(ns.s1, a), false, true)) || (c == 2 && select(add_ok(ns.s2, a), false, true));
+    return NAcc9 { s0: select(c == 0, t0, ns.s0), s1: select(c == 1, t1, ns.s1), s2: select(c == 2, t2, ns.s2), bad: ns.bad || e, q: ns.q + 1 };
+}
+
+fn norm1_max9(ns: NAcc9) -> (result: MathResult) {
+    if ns.bad {
+        return MathResult.Err { reason: reason_overflow() };
+    }
+    let m01: i64 = select(ns.s0 > ns.s1, ns.s0, ns.s1);
+    return MathResult.Ok { value: select(m01 > ns.s2, m01, ns.s2) };
+}
+
+fn norm_inf_9(m: [i64; 9]) -> (result: MathResult) {
+    iterate i over m carrying ns: NAcc9 = NAcc9 { s0: 0, s1: 0, s2: 0, bad: false, q: 0 } {
+        next ns = norm1_col(m[ns.q], ns, ns.q / 3);
+    }
+    return norm1_max9(ns);
+}
+
+fn norm_max_9(m: [i64; 9]) -> (result: MathResult) {
+    iterate i over m carrying nm: NMax = NMax { best: 0, bad: false } {
+        let a: i64 = norm_abs(m[i]);
+        next nm = NMax { best: select(a > nm.best, a, nm.best), bad: nm.bad || m[i] == i64_min() };
+    }
+    return norm_max_out(nm);
+}
+
+fn norm_max_out(nm: NMax) -> (result: MathResult) {
+    if nm.bad {
+        return MathResult.Err { reason: reason_overflow() };
+    }
+    return MathResult.Ok { value: nm.best };
+}
+
+fn frob2_9(m: [i64; 9]) -> (result: MathResult) {
+    iterate i over m carrying acc: MathResult = MathResult.Ok { value: 0 } {
+        next acc = frob2_fold(acc, m[i]);
+    }
+    return acc;
+}
+
+fn frob2_fold(acc: MathResult, v: i64) -> (result: MathResult) {
+    return match acc {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: s } => frob2_add(s, v),
+    };
+}
+
+fn frob2_add(s: i64, v: i64) -> (result: MathResult) {
+    let t: MathResult = checked_mul(v, v);
+    return match t {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: sq } => checked_add(s, sq),
+    };
+}
+
+fn norm1_16(m: [i64; 16]) -> (result: MathResult) {
+    iterate i over m carrying ns: NAcc16 = NAcc16 { s0: 0, s1: 0, s2: 0, s3: 0, bad: false, q: 0 } {
+        next ns = norm1_col16(m[ns.q], ns, ns.q % 4);
+    }
+    return norm1_max16(ns);
+}
+
+fn norm1_col16(v: i64, ns: NAcc16, c: u64) -> (result: NAcc16) {
+    let a: i64 = norm_abs(v);
+    let t0: i64 = ns.s0 +% a;
+    let t1: i64 = ns.s1 +% a;
+    let t2: i64 = ns.s2 +% a;
+    let t3: i64 = ns.s3 +% a;
+    let e: bool = v == i64_min() || (c == 0 && select(add_ok(ns.s0, a), false, true)) || (c == 1 && select(add_ok(ns.s1, a), false, true)) || (c == 2 && select(add_ok(ns.s2, a), false, true)) || (c == 3 && select(add_ok(ns.s3, a), false, true));
+    return NAcc16 { s0: select(c == 0, t0, ns.s0), s1: select(c == 1, t1, ns.s1), s2: select(c == 2, t2, ns.s2), s3: select(c == 3, t3, ns.s3), bad: ns.bad || e, q: ns.q + 1 };
+}
+
+fn norm1_max16(ns: NAcc16) -> (result: MathResult) {
+    if ns.bad {
+        return MathResult.Err { reason: reason_overflow() };
+    }
+    let m01: i64 = select(ns.s0 > ns.s1, ns.s0, ns.s1);
+    let m23: i64 = select(ns.s2 > ns.s3, ns.s2, ns.s3);
+    return MathResult.Ok { value: select(m01 > m23, m01, m23) };
+}
+
+fn norm_inf_16(m: [i64; 16]) -> (result: MathResult) {
+    iterate i over m carrying ns: NAcc16 = NAcc16 { s0: 0, s1: 0, s2: 0, s3: 0, bad: false, q: 0 } {
+        next ns = norm1_col16(m[ns.q], ns, ns.q / 4);
+    }
+    return norm1_max16(ns);
+}
+
+fn norm_max_16(m: [i64; 16]) -> (result: MathResult) {
+    iterate i over m carrying nm: NMax = NMax { best: 0, bad: false } {
+        let a: i64 = norm_abs(m[i]);
+        next nm = NMax { best: select(a > nm.best, a, nm.best), bad: nm.bad || m[i] == i64_min() };
+    }
+    return norm_max_out(nm);
+}
+
+fn frob2_16(m: [i64; 16]) -> (result: MathResult) {
+    iterate i over m carrying acc: MathResult = MathResult.Ok { value: 0 } {
+        next acc = frob2_fold(acc, m[i]);
+    }
+    return acc;
+}
+
+// ---- rank4 via Bareiss pivot elimination with row+column swaps ----
+// Reuses the tested bareiss_elim4 kernel by translating records; rank
+// state carries the pivot count and a done flag instead of a sign.
+
+record R4 { m: [i64; 16], prev: i64, piv: u64, ok: bool, done: bool }
+record PivScan { r: u64, c: u64, found: bool, q: u64 }
+record PivPos { r: u64, c: u64, found: bool }
+
+fn rank_pivot_next(v: i64, pp: PivScan, r: u64, c: u64, k: u64) -> (result: PivScan) {
+    let take: bool = r >= k && c >= k && v != 0 && select(pp.found, false, true);
+    return PivScan { r: select(take, r, pp.r), c: select(take, c, pp.c), found: pp.found || take, q: pp.q + 1 };
+}
+
+fn rank_pivot(m: [i64; 16], k: u64) -> (result: PivPos) {
+    iterate i over m carrying pp: PivScan = PivScan { r: 0, c: 0, found: false, q: 0 } {
+        next pp = rank_pivot_next(m[pp.q], pp, pp.q / 4, pp.q % 4, k);
+    }
+    return PivPos { r: pp.r, c: pp.c, found: pp.found };
+}
+
+fn swap_cols4(m: [i64; 16], c1: u64, c2: u64) -> (result: [i64; 16]) {
+    iterate r up_to 4 carrying out: [i64; 16] = m {
+        next out = replace(replace(out, r * 4 + c1, m[r * 4 + c2]), r * 4 + c2, m[r * 4 + c1]);
+    }
+    return out;
+}
+
+fn rank_step(st: R4, k: u64) -> (result: R4) {
+    if st.done {
+        return st;
+    }
+    if select(st.ok, false, true) {
+        return st;
+    }
+    let pp: PivPos = rank_pivot(st.m, k);
+    if select(pp.found, false, true) {
+        return R4 { m: st.m, prev: st.prev, piv: st.piv, ok: st.ok, done: true };
+    }
+    return rank_elim(st, k, pp);
+}
+
+fn rank_elim(st: R4, k: u64, pp: PivPos) -> (result: R4) {
+    let mc: [i64; 16] = swap_cols4(st.m, k, pp.c);
+    let m1: [i64; 16] = swap_rows4(mc, k, pp.r);
+    let piv: i64 = m1[k * 4 + k];
+    let b: BState4 = bareiss_elim4(BState4 { m: m1, prev: st.prev, sign: 1, ok: true, zero: false }, k, piv);
+    return R4 { m: b.m, prev: piv, piv: st.piv + 1, ok: b.ok, done: false };
+}
+
+fn rank4(m: [i64; 16]) -> (result: MathResult) {
+    let s0: R4 = R4 { m: m, prev: 1, piv: 0, ok: true, done: false };
+    let s1: R4 = rank_step(s0, 0);
+    let s2: R4 = rank_step(s1, 1);
+    let s3: R4 = rank_step(s2, 2);
+    return rank4_out(s3);
+}
+
+fn rank4_out(s: R4) -> (result: MathResult) {
+    if select(s.ok, false, true) {
+        return MathResult.Err { reason: reason_overflow() };
+    }
+    if s.done {
+        return MathResult.Ok { value: s.piv as i64 };
+    }
+    let base: i64 = s.piv as i64;
+    let extra: i64 = select(s.m[15] != 0, 1, 0);
+    return rank4_last(base, extra);
+}
+
+// ---- rational LU with first-nonzero-row pivoting at 3x3 ----
+// Every intermediate fraction passes through the reducing rational ops,
+// so factor arrays are canonical by construction. Under a nonzero err
+// code the arrays are documented-invalid residue. Dens stay nonzero by
+// construction (initial 1s, make-normalized updates), so pivot search
+// tests numerators only.
+
+record LUS { ln: [i64; 9], ld: [i64; 9], un: [i64; 9], ud: [i64; 9], p: [i64; 3], err: i64 }
+record LURow { un: [i64; 9], ud: [i64; 9], err: i64 }
+
+fn lu_init(m: [i64; 9]) -> (result: LUS) {
+    return LUS { ln: identity9(), ld: [1, 1, 1, 1, 1, 1, 1, 1, 1], un: m, ud: [1, 1, 1, 1, 1, 1, 1, 1, 1], p: [0, 1, 2], err: 0 };
+}
+
+fn lu_err(s: LUS, code: i64) -> (result: LUS) {
+    return LUS { ln: s.ln, ld: s.ld, un: s.un, ud: s.ud, p: s.p, err: code };
+}
+
+fn lu_pivot(un: [i64; 9], k: u64) -> (result: u64) {
+    iterate r up_to 3 carrying found: u64 = 3 {
+        next found = select(r >= k && un[r * 3 + k] != 0 && found == 3, r, found);
+    }
+    return found;
+}
+
+fn swap9_rows(a: [i64; 9], r1: u64, r2: u64) -> (result: [i64; 9]) {
+    iterate c up_to 3 carrying out: [i64; 9] = a {
+        next out = replace(replace(out, r1 * 3 + c, a[r2 * 3 + c]), r2 * 3 + c, a[r1 * 3 + c]);
+    }
+    return out;
+}
+
+fn swap9_lcols(a: [i64; 9], r1: u64, r2: u64, k: u64) -> (result: [i64; 9]) {
+    iterate c up_to 3 carrying out: [i64; 9] = a {
+        next out = lu_lswap(out, a, r1, r2, k, c);
+    }
+    return out;
+}
+
+fn lu_lswap(out: [i64; 9], a: [i64; 9], r1: u64, r2: u64, k: u64, c: u64) -> (result: [i64; 9]) {
+    let i1: u64 = r1 * 3 + c;
+    let i2: u64 = r2 * 3 + c;
+    let o1: [i64; 9] = replace(out, i1, select(c < k, a[i2], a[i1]));
+    return replace(o1, i2, select(c < k, a[i1], a[i2]));
+}
+
+fn swap_pick(orig: i64, kval: i64, rval: i64, k: u64, r: u64, idx: u64) -> (result: i64) {
+    if idx == k {
+        return kval;
+    }
+    if idx == r {
+        return rval;
+    }
+    return orig;
+}
+
+fn swap3(p: [i64; 3], k: u64, r: u64) -> (result: [i64; 3]) {
+    return [swap_pick(p[0], p[r], p[k], k, r, 0), swap_pick(p[1], p[r], p[k], k, r, 1), swap_pick(p[2], p[r], p[k], k, r, 2)];
+}
+
+fn lu_swap(s: LUS, k: u64, r: u64) -> (result: LUS) {
+    return LUS { ln: swap9_lcols(s.ln, k, r, k), ld: swap9_lcols(s.ld, k, r, k), un: swap9_rows(s.un, k, r), ud: swap9_rows(s.ud, k, r), p: swap3(s.p, k, r), err: s.err };
+}
+
+fn lu_combine(e: i64, tc: i64, nc: i64) -> (result: i64) {
+    if e != 0 {
+        return e;
+    }
+    if tc != 0 {
+        return tc;
+    }
+    return nc;
+}
+
+fn lu_cell(u: LURow, s: LUS, i: u64, j: u64, k: u64, mn: i64, md: i64) -> (result: LURow) {
+    let act: bool = j >= k;
+    let t: FracOutcome = mul(Frac { num: mn, den: md }, Frac { num: s.un[k * 3 + j], den: s.ud[k * 3 + j] });
+    let tn: i64 = frac_num(t);
+    let td: i64 = frac_den(t);
+    let tc: i64 = frac_code(t);
+    let n: FracOutcome = sub(Frac { num: s.un[i * 3 + j], den: s.ud[i * 3 + j] }, Frac { num: tn, den: td });
+    let nn: i64 = frac_num(n);
+    let nd: i64 = frac_den(n);
+    let nc: i64 = frac_code(n);
+    let idx: u64 = i * 3 + j;
+    return LURow { un: replace(u.un, idx, select(act, nn, u.un[idx])), ud: replace(u.ud, idx, select(act, nd, u.ud[idx])), err: lu_combine(u.err, tc, nc) };
+}
+
+fn lu_update_row(s: LUS, i: u64, k: u64, mn: i64, md: i64, mc: i64) -> (result: LURow) {
+    iterate j up_to 3 carrying u: LURow = LURow { un: s.un, ud: s.ud, err: mc } {
+        next u = lu_cell(u, s, i, j, k, mn, md);
+    }
+    return u;
+}
+
+fn lu_row(s: LUS, i: u64, k: u64) -> (result: LUS) {
+    if s.err != 0 {
+        return s;
+    }
+    if i <= k {
+        return s;
+    }
+    let m: FracOutcome = div(Frac { num: s.un[i * 3 + k], den: s.ud[i * 3 + k] }, Frac { num: s.un[k * 3 + k], den: s.ud[k * 3 + k] });
+    let mn: i64 = frac_num(m);
+    let md: i64 = frac_den(m);
+    let mc: i64 = frac_code(m);
+    let u: LURow = lu_update_row(s, i, k, mn, md, mc);
+    return LUS { ln: replace(s.ln, i * 3 + k, mn), ld: replace(s.ld, i * 3 + k, md), un: u.un, ud: u.ud, p: s.p, err: u.err };
+}
+
+fn lu_elim(s: LUS, k: u64) -> (result: LUS) {
+    iterate i up_to 3 carrying t: LUS = s {
+        next t = lu_row(t, i, k);
+    }
+    return t;
+}
+
+fn lu_step(s: LUS, k: u64) -> (result: LUS) {
+    if s.err != 0 {
+        return s;
+    }
+    let r: u64 = lu_pivot(s.un, k);
+    if r == 3 {
+        return lu_err(s, reason_singular());
+    }
+    let sw: LUS = lu_swap(s, k, r);
+    return lu_elim(sw, k);
+}
+
+fn rank4_last(base: i64, extra: i64) -> (result: MathResult) {
+    return MathResult.Ok { value: base + extra };
+}
+
+fn lu3(m: [i64; 9]) -> (result: LUS) {
+    let s0: LUS = lu_init(m);
+    let s1: LUS = lu_step(s0, 0);
+    return lu_step(s1, 1);
+}
+
+// Solve via the LU factors: permute b, forward-substitute in L,
+// backward-substitute in U. Proves the factors actually solve.
+// A caller-supplied permutation outside 0..2 fails with
+// shape_mismatch instead of trapping on the projection.
+fn lu_perm_ok(p: [i64; 3]) -> (result: bool) {
+    let c0: bool = p[0] >= 0 && p[0] < 3;
+    let c1: bool = p[1] >= 0 && p[1] < 3;
+    let c2: bool = p[2] >= 0 && p[2] < 3;
+    return c0 && c1 && c2;
+}
+
+fn lu_solve3(ln: [i64; 9], ld: [i64; 9], un: [i64; 9], ud: [i64; 9], p: [i64; 3], bn: [i64; 3], bd: [i64; 3]) -> (result: SubOut3) {
+    if select(lu_perm_ok(p), false, true) {
+        return SubOut3.Err { reason: reason_shape_mismatch() };
+    }
+    let bp: [i64; 3] = [bn[p[0] as u64], bn[p[1] as u64], bn[p[2] as u64]];
+    let bq: [i64; 3] = [bd[p[0] as u64], bd[p[1] as u64], bd[p[2] as u64]];
+    let y: SubOut3 = sub_fwd3(ln, ld, bp, bq);
+    return match y {
+        SubOut3.Err { reason } => SubOut3.Err { reason: reason },
+        Ok { y0n, y0d, y1n, y1d, y2n, y2d } => sub_bwd3(un, ud, [y0n, y1n, y2n], [y0d, y1d, y2d]),
+    };
+}
+
+// ---- entry wrappers (scalar test surface; corpus calls these) ----
+
+fn entry_det2(a0: i64, a1: i64, a2: i64, a3: i64) -> (result: MathResult) {
+    return det2([a0, a1, a2, a3]);
+}
+
+fn entry_det3(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64) -> (result: MathResult) {
+    return det3([a0, a1, a2, a3, a4, a5, a6, a7, a8]);
+}
+
+fn entry_det4(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, a9: i64, a10: i64, a11: i64, a12: i64, a13: i64, a14: i64, a15: i64) -> (result: MathResult) {
+    return det4([a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15]);
+}
+
+fn entry_rank3(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64) -> (result: MathResult) {
+    return rank3([a0, a1, a2, a3, a4, a5, a6, a7, a8]);
+}
+
+fn entry_rank4(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, a9: i64, a10: i64, a11: i64, a12: i64, a13: i64, a14: i64, a15: i64) -> (result: MathResult) {
+    return rank4([a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15]);
+}
+
+fn entry_lu_status3(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64) -> (result: MathResult) {
+    let s: LUS = lu3([a0, a1, a2, a3, a4, a5, a6, a7, a8]);
+    return lu_status_out(s.err, s.un[8]);
+}
+
+fn lu_status_out(code: i64, last: i64) -> (result: MathResult) {
+    if code != 0 {
+        return MathResult.Err { reason: code };
+    }
+    if last == 0 {
+        return MathResult.Err { reason: reason_singular() };
+    }
+    return MathResult.Ok { value: 0 };
+}
+
+fn entry_lu_Ln3(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64) -> (result: [i64; 9]) {
+    let s: LUS = lu3([a0, a1, a2, a3, a4, a5, a6, a7, a8]);
+    return s.ln;
+}
+
+fn entry_lu_Ld3(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64) -> (result: [i64; 9]) {
+    let s: LUS = lu3([a0, a1, a2, a3, a4, a5, a6, a7, a8]);
+    return s.ld;
+}
+
+fn entry_lu_Un3(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64) -> (result: [i64; 9]) {
+    let s: LUS = lu3([a0, a1, a2, a3, a4, a5, a6, a7, a8]);
+    return s.un;
+}
+
+fn entry_lu_Ud3(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64) -> (result: [i64; 9]) {
+    let s: LUS = lu3([a0, a1, a2, a3, a4, a5, a6, a7, a8]);
+    return s.ud;
+}
+
+fn entry_lu_P3(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64) -> (result: [i64; 3]) {
+    let s: LUS = lu3([a0, a1, a2, a3, a4, a5, a6, a7, a8]);
+    return s.p;
+}
+
+fn entry_lu_solve3(l0: i64, l1: i64, l2: i64, l3: i64, l4: i64, l5: i64, l6: i64, l7: i64, l8: i64, e0: i64, e1: i64, e2: i64, e3: i64, e4: i64, e5: i64, e6: i64, e7: i64, e8: i64, u0: i64, u1: i64, u2: i64, u3: i64, u4: i64, u5: i64, u6: i64, u7: i64, u8: i64, f0: i64, f1: i64, f2: i64, f3: i64, f4: i64, f5: i64, f6: i64, f7: i64, f8: i64, p0: i64, p1: i64, p2: i64, n0: i64, n1: i64, n2: i64, d0: i64, d1: i64, d2: i64) -> (result: SubOut3) {
+    return lu_solve3([l0, l1, l2, l3, l4, l5, l6, l7, l8], [e0, e1, e2, e3, e4, e5, e6, e7, e8], [u0, u1, u2, u3, u4, u5, u6, u7, u8], [f0, f1, f2, f3, f4, f5, f6, f7, f8], [p0, p1, p2], [n0, n1, n2], [d0, d1, d2]);
+}
+
+fn entry_solve2(a0: i64, a1: i64, a2: i64, a3: i64, b0: i64, b1: i64) -> (result: SolveOut2) {
+    return solve2([a0, a1, a2, a3], [b0, b1]);
+}
+
+fn entry_solve3(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, b0: i64, b1: i64, b2: i64) -> (result: SolveOut3) {
+    return solve3([a0, a1, a2, a3, a4, a5, a6, a7, a8], [b0, b1, b2]);
+}
+
+fn entry_solve4(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, a9: i64, a10: i64, a11: i64, a12: i64, a13: i64, a14: i64, a15: i64, b0: i64, b1: i64, b2: i64, b3: i64) -> (result: SolveOut4) {
+    return solve4([a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15], [b0, b1, b2, b3]);
+}
+
+fn entry_inv2(a0: i64, a1: i64, a2: i64, a3: i64) -> (result: InvOut2) {
+    return inv2([a0, a1, a2, a3]);
+}
+
+fn entry_sub_fwd3(l0: i64, l1: i64, l2: i64, l3: i64, l4: i64, l5: i64, l6: i64, l7: i64, l8: i64, d0: i64, d1: i64, d2: i64, d3: i64, d4: i64, d5: i64, d6: i64, d7: i64, d8: i64, n0: i64, n1: i64, n2: i64, e0: i64, e1: i64, e2: i64) -> (result: SubOut3) {
+    return sub_fwd3([l0, l1, l2, l3, l4, l5, l6, l7, l8], [d0, d1, d2, d3, d4, d5, d6, d7, d8], [n0, n1, n2], [e0, e1, e2]);
+}
+
+fn entry_sub_bwd3(l0: i64, l1: i64, l2: i64, l3: i64, l4: i64, l5: i64, l6: i64, l7: i64, l8: i64, d0: i64, d1: i64, d2: i64, d3: i64, d4: i64, d5: i64, d6: i64, d7: i64, d8: i64, n0: i64, n1: i64, n2: i64, e0: i64, e1: i64, e2: i64) -> (result: SubOut3) {
+    return sub_bwd3([l0, l1, l2, l3, l4, l5, l6, l7, l8], [d0, d1, d2, d3, d4, d5, d6, d7, d8], [n0, n1, n2], [e0, e1, e2]);
+}
+
+fn entry_norm1_9(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64) -> (result: MathResult) {
+    return norm1_9([a0, a1, a2, a3, a4, a5, a6, a7, a8]);
+}
+
+fn entry_norm_inf_9(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64) -> (result: MathResult) {
+    return norm_inf_9([a0, a1, a2, a3, a4, a5, a6, a7, a8]);
+}
+
+fn entry_norm_max_9(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64) -> (result: MathResult) {
+    return norm_max_9([a0, a1, a2, a3, a4, a5, a6, a7, a8]);
+}
+
+fn entry_frob2_9(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64) -> (result: MathResult) {
+    return frob2_9([a0, a1, a2, a3, a4, a5, a6, a7, a8]);
+}
+
+fn entry_norm1_16(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, a9: i64, a10: i64, a11: i64, a12: i64, a13: i64, a14: i64, a15: i64) -> (result: MathResult) {
+    return norm1_16([a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15]);
+}
+
+fn entry_norm_inf_16(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, a9: i64, a10: i64, a11: i64, a12: i64, a13: i64, a14: i64, a15: i64) -> (result: MathResult) {
+    return norm_inf_16([a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15]);
+}
+
+fn entry_norm_max_16(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, a9: i64, a10: i64, a11: i64, a12: i64, a13: i64, a14: i64, a15: i64) -> (result: MathResult) {
+    return norm_max_16([a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15]);
+}
+
+fn entry_frob2_16(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, a9: i64, a10: i64, a11: i64, a12: i64, a13: i64, a14: i64, a15: i64) -> (result: MathResult) {
+    return frob2_16([a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15]);
+}

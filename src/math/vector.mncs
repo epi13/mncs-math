@@ -1,0 +1,369 @@
+mncs 0.10;
+
+// mncs.math.vector — fixed-size integer vectors as first-class values.
+//
+// Vectors are exact sequences `[i64; N]`, generic over the dimension.
+// Every kernel here is STATELESS across elements (maps) or a scalar fold:
+// per-element results never depend on other elements, so no record state
+// is needed and everything stays generic. Stateful propagation (carries,
+// elimination) lives in concrete-width modules instead (see bigint,
+// matrix, linalg, and RFC 0004).
+//
+// Checked discipline for array builders is validate-then-compute: a bool
+// fold (dot_overflows, add_overflows, ...) decides fit, and the total
+// wrapping twin computes. There are no array-valued error enums because
+// enum payloads are scalar; the bool IS the structured signal, and maps
+// document their trap-on-violation contract explicitly.
+//
+// Profile 0.10: Nat generics, traversal, replace, imports.
+module mncs.math.vector.v1;
+
+use mncs.math.error.v1;
+use mncs.math.scalar.v1;
+use mncs.math.fixed.v1;
+use mncs.core.ordering.v1;
+
+record DotCheck { sum: i64, ok: bool }
+
+record SumCheck { sum: i64, ok: bool }
+
+// ---- elementwise maps (total, wrapping) ----
+
+fn add_wrap<N: Nat>(a: [i64; N], b: [i64; N]) -> (result: [i64; N]) {
+    iterate i over a carrying out: [i64; N] = a {
+        next out = replace(out, i, a[i] +% b[i]);
+    }
+    return out;
+}
+
+fn sub_wrap<N: Nat>(a: [i64; N], b: [i64; N]) -> (result: [i64; N]) {
+    iterate i over a carrying out: [i64; N] = a {
+        next out = replace(out, i, a[i] -% b[i]);
+    }
+    return out;
+}
+
+fn scale_wrap<N: Nat>(s: i64, v: [i64; N]) -> (result: [i64; N]) {
+    iterate i over v carrying out: [i64; N] = v {
+        next out = replace(out, i, s *% v[i]);
+    }
+    return out;
+}
+
+fn hadamard_wrap<N: Nat>(a: [i64; N], b: [i64; N]) -> (result: [i64; N]) {
+    iterate i over a carrying out: [i64; N] = a {
+        next out = replace(out, i, a[i] *% b[i]);
+    }
+    return out;
+}
+
+fn neg_wrap<N: Nat>(v: [i64; N]) -> (result: [i64; N]) {
+    iterate i over v carrying out: [i64; N] = v {
+        next out = replace(out, i, 0 -% v[i]);
+    }
+    return out;
+}
+
+fn abs_sat_vec<N: Nat>(v: [i64; N]) -> (result: [i64; N]) {
+    iterate i over v carrying out: [i64; N] = v {
+        next out = replace(out, i, abs_sat(v[i]));
+    }
+    return out;
+}
+
+fn clamp_vec<N: Nat>(v: [i64; N], lo: i64, hi: i64) -> (result: [i64; N]) {
+    iterate i over v carrying out: [i64; N] = v {
+        next out = replace(out, i, clamp_i64(v[i], lo, hi));
+    }
+    return out;
+}
+
+// axpy: s * x + y per element (wrapping). Exact over integers; the name
+// matches convention, with no rounding step to fuse.
+fn axpy_wrap<N: Nat>(s: i64, x: [i64; N], y: [i64; N]) -> (result: [i64; N]) {
+    iterate i over x carrying out: [i64; N] = x {
+        next out = replace(out, i, s *% x[i] +% y[i]);
+    }
+    return out;
+}
+
+// ---- validation folds (validate-then-compute) ----
+
+fn add_overflows<N: Nat>(a: [i64; N], b: [i64; N]) -> (result: bool) {
+    iterate i over a carrying bad: bool = false {
+        next bad = select(add_ok(a[i], b[i]), bad, true);
+    }
+    return bad;
+}
+
+fn dot_term_ok(acc: i64, x: i64, y: i64) -> (result: bool) {
+    if mul_ok(x, y) {
+        return add_ok(acc, x * y);
+    }
+    return false;
+}
+
+fn dot_acc<N: Nat>(a: [i64; N], b: [i64; N]) -> (result: DotCheck) {
+    iterate i over a carrying st: DotCheck = DotCheck { sum: 0, ok: true } {
+        next st = DotCheck { sum: st.sum +% a[i] *% b[i], ok: st.ok && dot_term_ok(st.sum, a[i], b[i]) };
+    }
+    return st;
+}
+
+fn dot_overflows<N: Nat>(a: [i64; N], b: [i64; N]) -> (result: bool) {
+    let d: DotCheck = dot_acc<N>(a, b);
+    return select(d.ok, false, true);
+}
+
+// ---- dot / norms (scalar folds) ----
+
+fn dot_wrap<N: Nat>(a: [i64; N], b: [i64; N]) -> (result: i64) {
+    iterate i over a carrying sum: i64 = 0 {
+        next sum = sum +% a[i] *% b[i];
+    }
+    return sum;
+}
+
+fn dot_checked<N: Nat>(a: [i64; N], b: [i64; N]) -> (result: MathResult) {
+    let d: DotCheck = dot_acc<N>(a, b);
+    if d.ok {
+        return MathResult.Ok { value: d.sum };
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+fn norm2_wrap<N: Nat>(v: [i64; N]) -> (result: i64) {
+    return dot_wrap<N>(v, v);
+}
+
+fn norm2_checked<N: Nat>(v: [i64; N]) -> (result: MathResult) {
+    return dot_checked<N>(v, v);
+}
+
+fn dist2_wrap<N: Nat>(a: [i64; N], b: [i64; N]) -> (result: i64) {
+    iterate i over a carrying sum: i64 = 0 {
+        let d: i64 = a[i] -% b[i];
+        next sum = sum +% d *% d;
+    }
+    return sum;
+}
+
+fn sum_wrap<N: Nat>(v: [i64; N]) -> (result: i64) {
+    iterate i over v carrying sum: i64 = 0 {
+        next sum = sum +% v[i];
+    }
+    return sum;
+}
+
+fn sum_checked<N: Nat>(v: [i64; N]) -> (result: MathResult) {
+    iterate i over v carrying st: SumCheck = SumCheck { sum: 0, ok: true } {
+        next st = SumCheck { sum: st.sum +% v[i], ok: st.ok && add_ok(st.sum, v[i]) };
+    }
+    if st.ok {
+        return MathResult.Ok { value: st.sum };
+    }
+    return MathResult.Err { reason: reason_overflow() };
+}
+
+// ---- min / max (N >= 1; N = 0 traps on the seed projection) ----
+
+fn min_vec<N: Nat>(v: [i64; N]) -> (result: i64) {
+    iterate i over v carrying best: i64 = v[0] {
+        next best = min_i64(best, v[i]);
+    }
+    return best;
+}
+
+fn max_vec<N: Nat>(v: [i64; N]) -> (result: i64) {
+    iterate i over v carrying best: i64 = v[0] {
+        next best = max_i64(best, v[i]);
+    }
+    return best;
+}
+
+// ---- dimension-specific (genuinely non-generic) ----
+
+fn cross3(a: [i64; 3], b: [i64; 3]) -> (result: [i64; 3]) {
+    let c0: i64 = a[1] *% b[2] -% a[2] *% b[1];
+    let c1: i64 = a[2] *% b[0] -% a[0] *% b[2];
+    let c2: i64 = a[0] *% b[1] -% a[1] *% b[0];
+    return [c0, c1, c2];
+}
+
+fn cross_ok(a: [i64; 3], b: [i64; 3]) -> (result: bool) {
+    if mul_ok(a[1], b[2]) {
+        if mul_ok(a[2], b[1]) {
+            if mul_ok(a[2], b[0]) {
+                if mul_ok(a[0], b[2]) {
+                    if mul_ok(a[0], b[1]) {
+                        if mul_ok(a[1], b[0]) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
+fn perp2(v: [i64; 2]) -> (result: [i64; 2]) {
+    return [0 -% v[1], v[0]];
+}
+
+// ---- fixed-point geometry (milli) ----
+
+// Euclidean norm in milli: sqrt of the (checked) squared norm.
+fn norm_milli<N: Nat>(v: [i64; N]) -> (result: MathResult) {
+    let n: MathResult = norm2_checked<N>(v);
+    return match n {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => norm_milli_scaled(value),
+    };
+}
+
+fn norm_milli_scaled(n: i64) -> (result: MathResult) {
+    let s: MathResult = from_int_milli(n);
+    return match s {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value } => sqrt_milli(value),
+    };
+}
+
+// Divide a milli vector by a milli norm. The inlined checked operations
+// trap exactly when div_fits_milli fails (n == 0, or the scaled numerator
+// overflows — the quotient itself cannot hit MIN / -1): check
+// normalize_ok first. Trap-on-violation is the documented contract, the
+// same shape as out-of-bounds projection.
+fn normalize_div<N: Nat>(mv: [i64; N], n: i64) -> (result: [i64; N]) {
+    iterate i over mv carrying out: [i64; N] = mv {
+        next out = replace(out, i, mv[i] * 1000 / n);
+    }
+    return out;
+}
+
+fn normalize_ok<N: Nat>(mv: [i64; N], n: i64) -> (result: bool) {
+    iterate i over mv carrying ok: bool = true {
+        next ok = ok && div_fits_milli(mv[i], n);
+    }
+    return ok;
+}
+
+// Projection scale of a onto b in milli: dot(a,b) / dot(b,b).
+fn proj_scale_milli<N: Nat>(a: [i64; N], b: [i64; N]) -> (result: MathResult) {
+    let da: MathResult = dot_checked<N>(a, b);
+    return match da {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: up } => proj_scale_den<N>(a, b, up),
+    };
+}
+
+fn proj_scale_den<N: Nat>(a: [i64; N], b: [i64; N], up: i64) -> (result: MathResult) {
+    let db: MathResult = dot_checked<N>(b, b);
+    return match db {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: dn } => proj_scale_div(up, dn),
+    };
+}
+
+fn proj_scale_div(up: i64, dn: i64) -> (result: MathResult) {
+    let fu: MathResult = from_int_milli(up);
+    return match fu {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: u } => proj_scale_num(u, dn),
+    };
+}
+
+fn proj_scale_num(u: i64, dn: i64) -> (result: MathResult) {
+    let fd: MathResult = from_int_milli(dn);
+    return match fd {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: d } => proj_scale_quo(u, d),
+    };
+}
+
+fn proj_scale_quo(u: i64, d: i64) -> (result: MathResult) {
+    if d == 0 {
+        return MathResult.Err { reason: reason_div_by_zero() };
+    }
+    return div_trunc_milli(u, d);
+}
+
+// ---- corpus entries ----
+
+fn entry_add3(a0: i64, a1: i64, a2: i64, b0: i64, b1: i64, b2: i64) -> (result: [i64; 3]) {
+    return add_wrap<3>([a0, a1, a2], [b0, b1, b2]);
+}
+
+fn entry_dot3(a0: i64, a1: i64, a2: i64, b0: i64, b1: i64, b2: i64) -> (result: i64) {
+    return dot_wrap<3>([a0, a1, a2], [b0, b1, b2]);
+}
+
+fn entry_dot_checked3(a0: i64, a1: i64, a2: i64, b0: i64, b1: i64, b2: i64) -> (result: MathResult) {
+    return dot_checked<3>([a0, a1, a2], [b0, b1, b2]);
+}
+
+fn entry_dot_overflows3(a0: i64, a1: i64, a2: i64, b0: i64, b1: i64, b2: i64) -> (result: bool) {
+    return dot_overflows<3>([a0, a1, a2], [b0, b1, b2]);
+}
+
+fn entry_norm2_4(a0: i64, a1: i64, a2: i64, a3: i64) -> (result: i64) {
+    return norm2_wrap<4>([a0, a1, a2, a3]);
+}
+
+fn entry_dist2_2(a0: i64, a1: i64, b0: i64, b1: i64) -> (result: i64) {
+    return dist2_wrap<2>([a0, a1], [b0, b1]);
+}
+
+fn entry_scale3(s: i64, a0: i64, a1: i64, a2: i64) -> (result: [i64; 3]) {
+    return scale_wrap<3>(s, [a0, a1, a2]);
+}
+
+fn entry_axpy2(s: i64, a0: i64, a1: i64, b0: i64, b1: i64) -> (result: [i64; 2]) {
+    return axpy_wrap<2>(s, [a0, a1], [b0, b1]);
+}
+
+fn entry_cross3(a0: i64, a1: i64, a2: i64, b0: i64, b1: i64, b2: i64) -> (result: [i64; 3]) {
+    return cross3([a0, a1, a2], [b0, b1, b2]);
+}
+
+fn entry_cross_ok(a0: i64, a1: i64, a2: i64, b0: i64, b1: i64, b2: i64) -> (result: bool) {
+    return cross_ok([a0, a1, a2], [b0, b1, b2]);
+}
+
+fn entry_perp2(a0: i64, a1: i64) -> (result: [i64; 2]) {
+    return perp2([a0, a1]);
+}
+
+fn entry_sum4(a0: i64, a1: i64, a2: i64, a3: i64) -> (result: MathResult) {
+    return sum_checked<4>([a0, a1, a2, a3]);
+}
+
+fn entry_min3(a0: i64, a1: i64, a2: i64) -> (result: i64) {
+    return min_vec<3>([a0, a1, a2]);
+}
+
+fn entry_max3(a0: i64, a1: i64, a2: i64) -> (result: i64) {
+    return max_vec<3>([a0, a1, a2]);
+}
+
+fn entry_min0() -> (result: i64) {
+    let xs: [i64; 0] = [];
+    return min_vec<0>(xs);
+}
+
+fn entry_norm_milli3(a0: i64, a1: i64, a2: i64) -> (result: MathResult) {
+    return norm_milli<3>([a0, a1, a2]);
+}
+
+fn entry_normalize_ok2(a0: i64, a1: i64, n: i64) -> (result: bool) {
+    return normalize_ok<2>([a0, a1], n);
+}
+
+fn entry_normalize_div2(a0: i64, a1: i64, n: i64) -> (result: [i64; 2]) {
+    return normalize_div<2>([a0, a1], n);
+}
+
+fn entry_proj_scale2(a0: i64, a1: i64, b0: i64, b1: i64) -> (result: MathResult) {
+    return proj_scale_milli<2>([a0, a1], [b0, b1]);
+}

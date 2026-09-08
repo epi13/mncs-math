@@ -530,6 +530,20 @@ fn entry_div_nearest_milli(a: i64, b: i64) -> (result: MathResult) {
     return div_nearest_milli(a, b);
 }
 
+// True exactly when div_trunc_milli(a, b) succeeds: nonzero divisor and
+// scalable numerator. No MIN / -1 hazard exists: the scaled numerator is
+// a multiple of 1000 and MIN is not, so s == MIN is unreachable.
+fn div_fits_milli(a: i64, b: i64) -> (result: bool) {
+    if b == 0 {
+        return false;
+    }
+    return mul_ok(a, 1000);
+}
+
+fn entry_div_fits_milli(a: i64, b: i64) -> (result: bool) {
+    return div_fits_milli(a, b);
+}
+
 fn entry_mul_trunc_micro(a: i64, b: i64) -> (result: MathResult) {
     return mul_trunc_micro(a, b);
 }

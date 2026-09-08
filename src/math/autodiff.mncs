@@ -1,0 +1,492 @@
+mncs 0.11;
+
+// mncs.math.autodiff — exact forward-mode automatic differentiation.
+//
+// Two dual-number tiers mirror the library's integer/rational split:
+//   DualZ  value and tangent over i64 with checked ops (exact
+//          derivatives of integer polynomials; division is absent
+//          because integer division is not closed — documented, and
+//          the rational tier below is the answer, not a workaround).
+//   DualQ  value and tangent as numerator/denominator pairs with the
+//          reducing rational ops, so division, reciprocals, and Newton
+//          steps stay exact and canonical by construction.
+//
+// Records stay flat (no nested records): DualQ carries four i64 lanes.
+// Tapes, closures, and reverse mode need heap/dynamic dispatch and are
+// specified in docs/autodiff.md as blocked (P005/P006). Transcendentals
+// need a float type (P001).
+module mncs.math.autodiff.v1;
+
+use mncs.math.error.v1;
+use mncs.math.scalar.v1;
+use mncs.math.rational.v1;
+
+record DualZ { x: i64, dx: i64 }
+enum DualZOut { Ok { x: i64, dx: i64 }, Err { reason: i64 } }
+
+fn dualz_err(reason: i64) -> (result: DualZOut) {
+    return DualZOut.Err { reason: reason };
+}
+
+fn dualz_const(c: i64) -> (result: DualZ) {
+    return DualZ { x: c, dx: 0 };
+}
+
+fn dualz_var(v: i64) -> (result: DualZ) {
+    return DualZ { x: v, dx: 1 };
+}
+
+fn dualz_neg(a: DualZ) -> (result: DualZOut) {
+    if a.x == i64_min() {
+        return dualz_err(reason_overflow());
+    }
+    if a.dx == i64_min() {
+        return dualz_err(reason_overflow());
+    }
+    return DualZOut.Ok { x: 0 - a.x, dx: 0 - a.dx };
+}
+
+fn dualz_add(a: DualZ, b: DualZ) -> (result: DualZOut) {
+    let t0: MathResult = checked_add(a.x, b.x);
+    return match t0 {
+        MathResult.Err { reason } => dualz_err(reason),
+        Ok { value: x } => dualz_add_dx(x, a, b),
+    };
+}
+
+fn dualz_add_dx(x: i64, a: DualZ, b: DualZ) -> (result: DualZOut) {
+    let t1: MathResult = checked_add(a.dx, b.dx);
+    return match t1 {
+        MathResult.Err { reason } => dualz_err(reason),
+        Ok { value: dx } => DualZOut.Ok { x: x, dx: dx },
+    };
+}
+
+fn dualz_sub(a: DualZ, b: DualZ) -> (result: DualZOut) {
+    let t0: MathResult = checked_sub(a.x, b.x);
+    return match t0 {
+        MathResult.Err { reason } => dualz_err(reason),
+        Ok { value: x } => dualz_sub_dx(x, a, b),
+    };
+}
+
+fn dualz_sub_dx(x: i64, a: DualZ, b: DualZ) -> (result: DualZOut) {
+    let t1: MathResult = checked_sub(a.dx, b.dx);
+    return match t1 {
+        MathResult.Err { reason } => dualz_err(reason),
+        Ok { value: dx } => DualZOut.Ok { x: x, dx: dx },
+    };
+}
+
+// (a.x*b.x, a.x*b.dx + a.dx*b.x): three products, one sum, all checked.
+fn dualz_mul(a: DualZ, b: DualZ) -> (result: DualZOut) {
+    let t0: MathResult = checked_mul(a.x, b.x);
+    return match t0 {
+        MathResult.Err { reason } => dualz_err(reason),
+        Ok { value: x } => dualz_mul_p1(x, a, b),
+    };
+}
+
+fn dualz_mul_p1(x: i64, a: DualZ, b: DualZ) -> (result: DualZOut) {
+    let t1: MathResult = checked_mul(a.x, b.dx);
+    return match t1 {
+        MathResult.Err { reason } => dualz_err(reason),
+        Ok { value: p1 } => dualz_mul_p2(x, p1, a, b),
+    };
+}
+
+fn dualz_mul_p2(x: i64, p1: i64, a: DualZ, b: DualZ) -> (result: DualZOut) {
+    let t2: MathResult = checked_mul(a.dx, b.x);
+    return match t2 {
+        MathResult.Err { reason } => dualz_err(reason),
+        Ok { value: p2 } => dualz_mul_dx(x, p1, p2),
+    };
+}
+
+fn dualz_mul_dx(x: i64, p1: i64, p2: i64) -> (result: DualZOut) {
+    let t3: MathResult = checked_add(p1, p2);
+    return match t3 {
+        MathResult.Err { reason } => dualz_err(reason),
+        Ok { value: dx } => DualZOut.Ok { x: x, dx: dx },
+    };
+}
+
+// Horner evaluation of coef0 + coef1*t + coef2*t^2 + coef3*t^3 over duals.
+fn dualz_poly3(coef0: i64, coef1: i64, coef2: i64, coef3: i64, t: DualZ) -> (result: DualZOut) {
+    let m2: DualZOut = dualz_mul(t, t);
+    return match m2 {
+        DualZOut.Err { reason } => dualz_err(reason),
+        Ok { x: t2x, dx: t2d } => dualz_poly3_b(coef0, coef1, coef2, coef3, t, t2x, t2d),
+    };
+}
+
+fn dualz_poly3_b(coef0: i64, coef1: i64, coef2: i64, coef3: i64, t: DualZ, t2x: i64, t2d: i64) -> (result: DualZOut) {
+    let m3: DualZOut = dualz_mul(DualZ { x: t2x, dx: t2d }, t);
+    return match m3 {
+        DualZOut.Err { reason } => dualz_err(reason),
+        Ok { x: t3x, dx: t3d } => dualz_poly3_c(coef0, coef1, coef2, coef3, t, t2x, t2d, t3x, t3d),
+    };
+}
+
+fn dualz_poly3_c(coef0: i64, coef1: i64, coef2: i64, coef3: i64, t: DualZ, t2x: i64, t2d: i64, t3x: i64, t3d: i64) -> (result: DualZOut) {
+    let m1: DualZOut = dualz_mul(DualZ { x: coef1, dx: 0 }, t);
+    return match m1 {
+        DualZOut.Err { reason } => dualz_err(reason),
+        Ok { x: u1x, dx: u1d } => dualz_poly3_d(coef0, u1x, u1d, coef2, coef3, t2x, t2d, t3x, t3d),
+    };
+}
+
+fn dualz_poly3_d(coef0: i64, u1x: i64, u1d: i64, coef2: i64, coef3: i64, t2x: i64, t2d: i64, t3x: i64, t3d: i64) -> (result: DualZOut) {
+    let a1: DualZOut = dualz_add(DualZ { x: coef0, dx: 0 }, DualZ { x: u1x, dx: u1d });
+    return match a1 {
+        DualZOut.Err { reason } => dualz_err(reason),
+        Ok { x: s1x, dx: s1d } => dualz_poly3_e(s1x, s1d, coef2, coef3, t2x, t2d, t3x, t3d),
+    };
+}
+
+fn dualz_poly3_e(s1x: i64, s1d: i64, coef2: i64, coef3: i64, t2x: i64, t2d: i64, t3x: i64, t3d: i64) -> (result: DualZOut) {
+    let m2: DualZOut = dualz_mul(DualZ { x: coef2, dx: 0 }, DualZ { x: t2x, dx: t2d });
+    return match m2 {
+        DualZOut.Err { reason } => dualz_err(reason),
+        Ok { x: u2x, dx: u2d } => dualz_poly3_f(s1x, s1d, u2x, u2d, coef3, t3x, t3d),
+    };
+}
+
+fn dualz_poly3_f(s1x: i64, s1d: i64, u2x: i64, u2d: i64, coef3: i64, t3x: i64, t3d: i64) -> (result: DualZOut) {
+    let a2: DualZOut = dualz_add(DualZ { x: s1x, dx: s1d }, DualZ { x: u2x, dx: u2d });
+    return match a2 {
+        DualZOut.Err { reason } => dualz_err(reason),
+        Ok { x: s2x, dx: s2d } => dualz_poly3_g(s2x, s2d, coef3, t3x, t3d),
+    };
+}
+
+fn dualz_poly3_g(s2x: i64, s2d: i64, coef3: i64, t3x: i64, t3d: i64) -> (result: DualZOut) {
+    let m3: DualZOut = dualz_mul(DualZ { x: coef3, dx: 0 }, DualZ { x: t3x, dx: t3d });
+    return match m3 {
+        DualZOut.Err { reason } => dualz_err(reason),
+        Ok { x: u3x, dx: u3d } => dualz_add(DualZ { x: s2x, dx: s2d }, DualZ { x: u3x, dx: u3d }),
+    };
+}
+
+// ---- rational duals (flat four-lane record, canonical by construction) ----
+
+record DualQ { xn: i64, xd: i64, yn: i64, yd: i64 }
+enum DualQOut { Ok { xn: i64, xd: i64, yn: i64, yd: i64 }, Err { reason: i64 } }
+
+fn dualq_err(reason: i64) -> (result: DualQOut) {
+    return DualQOut.Err { reason: reason };
+}
+
+// Total observers for loop-carried dual states (rational frac_ precedent).
+fn dualq_xn(q: DualQOut) -> (result: i64) {
+    return match q {
+        DualQOut.Ok { xn, xd, yn, yd } => xn,
+        Err { .. } => 0,
+    };
+}
+
+fn dualq_xd(q: DualQOut) -> (result: i64) {
+    return match q {
+        DualQOut.Ok { xn, xd, yn, yd } => xd,
+        Err { .. } => 1,
+    };
+}
+
+fn dualq_yn(q: DualQOut) -> (result: i64) {
+    return match q {
+        DualQOut.Ok { xn, xd, yn, yd } => yn,
+        Err { .. } => 0,
+    };
+}
+
+fn dualq_yd(q: DualQOut) -> (result: i64) {
+    return match q {
+        DualQOut.Ok { xn, xd, yn, yd } => yd,
+        Err { .. } => 1,
+    };
+}
+
+fn dualq_code(q: DualQOut) -> (result: i64) {
+    return match q {
+        DualQOut.Ok { .. } => 0,
+        Err { reason } => reason,
+    };
+}
+
+fn dualq_const(cn: i64, cd: i64) -> (result: DualQOut) {
+    let m: FracOutcome = make(cn, cd);
+    return match m {
+        FracOutcome.Err { reason } => dualq_err(reason),
+        Ok { num: xn, den: xd } => DualQOut.Ok { xn: xn, xd: xd, yn: 0, yd: 1 },
+    };
+}
+
+fn dualq_var(vn: i64, vd: i64) -> (result: DualQOut) {
+    let m: FracOutcome = make(vn, vd);
+    return match m {
+        FracOutcome.Err { reason } => dualq_err(reason),
+        Ok { num: xn, den: xd } => DualQOut.Ok { xn: xn, xd: xd, yn: 1, yd: 1 },
+    };
+}
+
+fn dualq_neg(a: DualQ) -> (result: DualQOut) {
+    let t0: FracOutcome = negate(Frac { num: a.xn, den: a.xd });
+    return match t0 {
+        FracOutcome.Err { reason } => dualq_err(reason),
+        Ok { num: xn, den: xd } => dualq_neg_dy(xn, xd, a),
+    };
+}
+
+fn dualq_neg_dy(xn: i64, xd: i64, a: DualQ) -> (result: DualQOut) {
+    let t1: FracOutcome = negate(Frac { num: a.yn, den: a.yd });
+    return match t1 {
+        FracOutcome.Err { reason } => dualq_err(reason),
+        Ok { num: yn, den: yd } => DualQOut.Ok { xn: xn, xd: xd, yn: yn, yd: yd },
+    };
+}
+
+fn dualq_add(a: DualQ, b: DualQ) -> (result: DualQOut) {
+    let t0: FracOutcome = add(Frac { num: a.xn, den: a.xd }, Frac { num: b.xn, den: b.xd });
+    return match t0 {
+        FracOutcome.Err { reason } => dualq_err(reason),
+        Ok { num: xn, den: xd } => dualq_add_dy(xn, xd, a, b),
+    };
+}
+
+fn dualq_add_dy(xn: i64, xd: i64, a: DualQ, b: DualQ) -> (result: DualQOut) {
+    let t1: FracOutcome = add(Frac { num: a.yn, den: a.yd }, Frac { num: b.yn, den: b.yd });
+    return match t1 {
+        FracOutcome.Err { reason } => dualq_err(reason),
+        Ok { num: yn, den: yd } => DualQOut.Ok { xn: xn, xd: xd, yn: yn, yd: yd },
+    };
+}
+
+fn dualq_sub(a: DualQ, b: DualQ) -> (result: DualQOut) {
+    let t0: FracOutcome = sub(Frac { num: a.xn, den: a.xd }, Frac { num: b.xn, den: b.xd });
+    return match t0 {
+        FracOutcome.Err { reason } => dualq_err(reason),
+        Ok { num: xn, den: xd } => dualq_sub_dy(xn, xd, a, b),
+    };
+}
+
+fn dualq_sub_dy(xn: i64, xd: i64, a: DualQ, b: DualQ) -> (result: DualQOut) {
+    let t1: FracOutcome = sub(Frac { num: a.yn, den: a.yd }, Frac { num: b.yn, den: b.yd });
+    return match t1 {
+        FracOutcome.Err { reason } => dualq_err(reason),
+        Ok { num: yn, den: yd } => DualQOut.Ok { xn: xn, xd: xd, yn: yn, yd: yd },
+    };
+}
+
+fn dualq_mul(a: DualQ, b: DualQ) -> (result: DualQOut) {
+    let t0: FracOutcome = mul(Frac { num: a.xn, den: a.xd }, Frac { num: b.xn, den: b.xd });
+    return match t0 {
+        FracOutcome.Err { reason } => dualq_err(reason),
+        Ok { num: xn, den: xd } => dualq_mul_p1(xn, xd, a, b),
+    };
+}
+
+fn dualq_mul_p1(xn: i64, xd: i64, a: DualQ, b: DualQ) -> (result: DualQOut) {
+    let t1: FracOutcome = mul(Frac { num: a.xn, den: a.xd }, Frac { num: b.yn, den: b.yd });
+    return match t1 {
+        FracOutcome.Err { reason } => dualq_err(reason),
+        Ok { num: p1n, den: p1d } => dualq_mul_p2(xn, xd, p1n, p1d, a, b),
+    };
+}
+
+fn dualq_mul_p2(xn: i64, xd: i64, p1n: i64, p1d: i64, a: DualQ, b: DualQ) -> (result: DualQOut) {
+    let t2: FracOutcome = mul(Frac { num: a.yn, den: a.yd }, Frac { num: b.xn, den: b.xd });
+    return match t2 {
+        FracOutcome.Err { reason } => dualq_err(reason),
+        Ok { num: p2n, den: p2d } => dualq_mul_dy(xn, xd, p1n, p1d, p2n, p2d),
+    };
+}
+
+fn dualq_mul_dy(xn: i64, xd: i64, p1n: i64, p1d: i64, p2n: i64, p2d: i64) -> (result: DualQOut) {
+    let t3: FracOutcome = add(Frac { num: p1n, den: p1d }, Frac { num: p2n, den: p2d });
+    return match t3 {
+        FracOutcome.Err { reason } => dualq_err(reason),
+        Ok { num: yn, den: yd } => DualQOut.Ok { xn: xn, xd: xd, yn: yn, yd: yd },
+    };
+}
+
+// Quotient rule: x = a.x/b.x, y = (a.y*b.x - a.x*b.y)/b.x^2.
+fn dualq_div(a: DualQ, b: DualQ) -> (result: DualQOut) {
+    let t0: FracOutcome = div(Frac { num: a.xn, den: a.xd }, Frac { num: b.xn, den: b.xd });
+    return match t0 {
+        FracOutcome.Err { reason } => dualq_err(reason),
+        Ok { num: xn, den: xd } => dualq_div_n1(xn, xd, a, b),
+    };
+}
+
+fn dualq_div_n1(xn: i64, xd: i64, a: DualQ, b: DualQ) -> (result: DualQOut) {
+    let t1: FracOutcome = mul(Frac { num: a.yn, den: a.yd }, Frac { num: b.xn, den: b.xd });
+    return match t1 {
+        FracOutcome.Err { reason } => dualq_err(reason),
+        Ok { num: n1n, den: n1d } => dualq_div_n2(xn, xd, n1n, n1d, a, b),
+    };
+}
+
+fn dualq_div_n2(xn: i64, xd: i64, n1n: i64, n1d: i64, a: DualQ, b: DualQ) -> (result: DualQOut) {
+    let t2: FracOutcome = mul(Frac { num: a.xn, den: a.xd }, Frac { num: b.yn, den: b.yd });
+    return match t2 {
+        FracOutcome.Err { reason } => dualq_err(reason),
+        Ok { num: n2n, den: n2d } => dualq_div_n3(xn, xd, n1n, n1d, n2n, n2d, b),
+    };
+}
+
+fn dualq_div_n3(xn: i64, xd: i64, n1n: i64, n1d: i64, n2n: i64, n2d: i64, b: DualQ) -> (result: DualQOut) {
+    let t3: FracOutcome = sub(Frac { num: n1n, den: n1d }, Frac { num: n2n, den: n2d });
+    return match t3 {
+        FracOutcome.Err { reason } => dualq_err(reason),
+        Ok { num: nn, den: nd } => dualq_div_dy(xn, xd, nn, nd, b),
+    };
+}
+
+fn dualq_div_dy(xn: i64, xd: i64, nn: i64, nd: i64, b: DualQ) -> (result: DualQOut) {
+    let t4: FracOutcome = mul(Frac { num: b.xn, den: b.xd }, Frac { num: b.xn, den: b.xd });
+    return match t4 {
+        FracOutcome.Err { reason } => dualq_err(reason),
+        Ok { num: dn, den: dd } => dualq_div_fin(xn, xd, nn, nd, dn, dd),
+    };
+}
+
+fn dualq_div_fin(xn: i64, xd: i64, nn: i64, nd: i64, dn: i64, dd: i64) -> (result: DualQOut) {
+    let t5: FracOutcome = div(Frac { num: nn, den: nd }, Frac { num: dn, den: dd });
+    return match t5 {
+        FracOutcome.Err { reason } => dualq_err(reason),
+        Ok { num: yn, den: yd } => DualQOut.Ok { xn: xn, xd: xd, yn: yn, yd: yd },
+    };
+}
+
+// ---- entry wrappers ----
+
+fn entry_dualz_add(ax: i64, ad: i64, bx: i64, bd: i64) -> (result: DualZOut) {
+    return dualz_add(DualZ { x: ax, dx: ad }, DualZ { x: bx, dx: bd });
+}
+
+fn entry_dualz_sub(ax: i64, ad: i64, bx: i64, bd: i64) -> (result: DualZOut) {
+    return dualz_sub(DualZ { x: ax, dx: ad }, DualZ { x: bx, dx: bd });
+}
+
+fn entry_dualz_mul(ax: i64, ad: i64, bx: i64, bd: i64) -> (result: DualZOut) {
+    return dualz_mul(DualZ { x: ax, dx: ad }, DualZ { x: bx, dx: bd });
+}
+
+fn entry_dualz_neg(ax: i64, ad: i64) -> (result: DualZOut) {
+    return dualz_neg(DualZ { x: ax, dx: ad });
+}
+
+fn entry_dualz_poly3(coef0: i64, coef1: i64, coef2: i64, coef3: i64, tx: i64) -> (result: DualZOut) {
+    let t: DualZ = dualz_var(tx);
+    return dualz_poly3(coef0, coef1, coef2, coef3, t);
+}
+
+fn entry_dualq_add(axn: i64, axd: i64, ayn: i64, ayd: i64, bxn: i64, bxd: i64, byn: i64, byd: i64) -> (result: DualQOut) {
+    return dualq_add(DualQ { xn: axn, xd: axd, yn: ayn, yd: ayd }, DualQ { xn: bxn, xd: bxd, yn: byn, yd: byd });
+}
+
+fn entry_dualq_sub(axn: i64, axd: i64, ayn: i64, ayd: i64, bxn: i64, bxd: i64, byn: i64, byd: i64) -> (result: DualQOut) {
+    return dualq_sub(DualQ { xn: axn, xd: axd, yn: ayn, yd: ayd }, DualQ { xn: bxn, xd: bxd, yn: byn, yd: byd });
+}
+
+fn entry_dualq_mul(axn: i64, axd: i64, ayn: i64, ayd: i64, bxn: i64, bxd: i64, byn: i64, byd: i64) -> (result: DualQOut) {
+    return dualq_mul(DualQ { xn: axn, xd: axd, yn: ayn, yd: ayd }, DualQ { xn: bxn, xd: bxd, yn: byn, yd: byd });
+}
+
+fn entry_dualq_div(axn: i64, axd: i64, ayn: i64, ayd: i64, bxn: i64, bxd: i64, byn: i64, byd: i64) -> (result: DualQOut) {
+    return dualq_div(DualQ { xn: axn, xd: axd, yn: ayn, yd: ayd }, DualQ { xn: bxn, xd: bxd, yn: byn, yd: byd });
+}
+
+fn entry_dualq_neg(axn: i64, axd: i64, ayn: i64, ayd: i64) -> (result: DualQOut) {
+    return dualq_neg(DualQ { xn: axn, xd: axd, yn: ayn, yd: ayd });
+}
+
+fn entry_dualq_xn(axn: i64, axd: i64, ayn: i64, ayd: i64, bxn: i64, bxd: i64, byn: i64, byd: i64) -> (result: i64) {
+    let q: DualQOut = dualq_add(DualQ { xn: axn, xd: axd, yn: ayn, yd: ayd }, DualQ { xn: bxn, xd: bxd, yn: byn, yd: byd });
+    return dualq_xn(q);
+}
+
+fn entry_dualq_xd(axn: i64, axd: i64, ayn: i64, ayd: i64, bxn: i64, bxd: i64, byn: i64, byd: i64) -> (result: i64) {
+    let q: DualQOut = dualq_add(DualQ { xn: axn, xd: axd, yn: ayn, yd: ayd }, DualQ { xn: bxn, xd: bxd, yn: byn, yd: byd });
+    return dualq_xd(q);
+}
+
+fn entry_dualq_yn(axn: i64, axd: i64, ayn: i64, ayd: i64, bxn: i64, bxd: i64, byn: i64, byd: i64) -> (result: i64) {
+    let q: DualQOut = dualq_add(DualQ { xn: axn, xd: axd, yn: ayn, yd: ayd }, DualQ { xn: bxn, xd: bxd, yn: byn, yd: byd });
+    return dualq_yn(q);
+}
+
+fn entry_dualq_yd(axn: i64, axd: i64, ayn: i64, ayd: i64, bxn: i64, bxd: i64, byn: i64, byd: i64) -> (result: i64) {
+    let q: DualQOut = dualq_add(DualQ { xn: axn, xd: axd, yn: ayn, yd: ayd }, DualQ { xn: bxn, xd: bxd, yn: byn, yd: byd });
+    return dualq_yd(q);
+}
+
+fn entry_dualq_code(axn: i64, axd: i64, ayn: i64, ayd: i64, bxn: i64, bxd: i64, byn: i64, byd: i64) -> (result: i64) {
+    let q: DualQOut = dualq_add(DualQ { xn: axn, xd: axd, yn: ayn, yd: ayd }, DualQ { xn: bxn, xd: bxd, yn: byn, yd: byd });
+    return dualq_code(q);
+}
+
+fn entry_dualq_poly3(coef0: i64, coef1: i64, coef2: i64, coef3: i64, txn: i64, txd: i64) -> (result: DualQOut) {
+    let t: DualQOut = dualq_var(txn, txd);
+    return match t {
+        DualQOut.Err { reason } => dualq_err(reason),
+        Ok { xn, xd, yn, yd } => dualq_poly3_q(coef0, coef1, coef2, coef3, xn, xd, yn, yd),
+    };
+}
+
+fn dualq_poly3_q(coef0: i64, coef1: i64, coef2: i64, coef3: i64, txn: i64, txd: i64, tyn: i64, tyd: i64) -> (result: DualQOut) {
+    let t: DualQ = DualQ { xn: txn, xd: txd, yn: tyn, yd: tyd };
+    let m2: DualQOut = dualq_mul(t, t);
+    return match m2 {
+        DualQOut.Err { reason } => dualq_err(reason),
+        Ok { xn: a2n, xd: a2d, yn: b2n, yd: b2d } => dualq_poly3_c(coef0, coef1, coef2, coef3, t, a2n, a2d, b2n, b2d),
+    };
+}
+
+fn dualq_poly3_c(coef0: i64, coef1: i64, coef2: i64, coef3: i64, t: DualQ, a2n: i64, a2d: i64, b2n: i64, b2d: i64) -> (result: DualQOut) {
+    let m3: DualQOut = dualq_mul(DualQ { xn: a2n, xd: a2d, yn: b2n, yd: b2d }, t);
+    return match m3 {
+        DualQOut.Err { reason } => dualq_err(reason),
+        Ok { xn: a3n, xd: a3d, yn: b3n, yd: b3d } => dualq_poly3_d(coef0, coef1, coef2, coef3, t, a2n, a2d, b2n, b2d, a3n, a3d, b3n, b3d),
+    };
+}
+
+fn dualq_poly3_d(coef0: i64, coef1: i64, coef2: i64, coef3: i64, t: DualQ, a2n: i64, a2d: i64, b2n: i64, b2d: i64, a3n: i64, a3d: i64, b3n: i64, b3d: i64) -> (result: DualQOut) {
+    let m1: DualQOut = dualq_mul(DualQ { xn: coef1, xd: 1, yn: 0, yd: 1 }, t);
+    return match m1 {
+        DualQOut.Err { reason } => dualq_err(reason),
+        Ok { xn: u1n, xd: u1d, yn: v1n, yd: v1d } => dualq_poly3_e(coef0, u1n, u1d, v1n, v1d, coef2, coef3, a2n, a2d, b2n, b2d, a3n, a3d, b3n, b3d),
+    };
+}
+
+fn dualq_poly3_e(coef0: i64, u1n: i64, u1d: i64, v1n: i64, v1d: i64, coef2: i64, coef3: i64, a2n: i64, a2d: i64, b2n: i64, b2d: i64, a3n: i64, a3d: i64, b3n: i64, b3d: i64) -> (result: DualQOut) {
+    let a1: DualQOut = dualq_add(DualQ { xn: coef0, xd: 1, yn: 0, yd: 1 }, DualQ { xn: u1n, xd: u1d, yn: v1n, yd: v1d });
+    return match a1 {
+        DualQOut.Err { reason } => dualq_err(reason),
+        Ok { xn: s1n, xd: s1d, yn: t1n, yd: t1d } => dualq_poly3_f(s1n, s1d, t1n, t1d, coef2, coef3, a2n, a2d, b2n, b2d, a3n, a3d, b3n, b3d),
+    };
+}
+
+fn dualq_poly3_f(s1n: i64, s1d: i64, t1n: i64, t1d: i64, coef2: i64, coef3: i64, a2n: i64, a2d: i64, b2n: i64, b2d: i64, a3n: i64, a3d: i64, b3n: i64, b3d: i64) -> (result: DualQOut) {
+    let m2: DualQOut = dualq_mul(DualQ { xn: coef2, xd: 1, yn: 0, yd: 1 }, DualQ { xn: a2n, xd: a2d, yn: b2n, yd: b2d });
+    return match m2 {
+        DualQOut.Err { reason } => dualq_err(reason),
+        Ok { xn: u2n, xd: u2d, yn: v2n, yd: v2d } => dualq_poly3_g(s1n, s1d, t1n, t1d, u2n, u2d, v2n, v2d, coef3, a3n, a3d, b3n, b3d),
+    };
+}
+
+fn dualq_poly3_g(s1n: i64, s1d: i64, t1n: i64, t1d: i64, u2n: i64, u2d: i64, v2n: i64, v2d: i64, coef3: i64, a3n: i64, a3d: i64, b3n: i64, b3d: i64) -> (result: DualQOut) {
+    let a2: DualQOut = dualq_add(DualQ { xn: s1n, xd: s1d, yn: t1n, yd: t1d }, DualQ { xn: u2n, xd: u2d, yn: v2n, yd: v2d });
+    return match a2 {
+        DualQOut.Err { reason } => dualq_err(reason),
+        Ok { xn: s2n, xd: s2d, yn: t2n, yd: t2d } => dualq_poly3_h(s2n, s2d, t2n, t2d, coef3, a3n, a3d, b3n, b3d),
+    };
+}
+
+fn dualq_poly3_h(s2n: i64, s2d: i64, t2n: i64, t2d: i64, coef3: i64, a3n: i64, a3d: i64, b3n: i64, b3d: i64) -> (result: DualQOut) {
+    let m3: DualQOut = dualq_mul(DualQ { xn: coef3, xd: 1, yn: 0, yd: 1 }, DualQ { xn: a3n, xd: a3d, yn: b3n, yd: b3d });
+    return match m3 {
+        DualQOut.Err { reason } => dualq_err(reason),
+        Ok { xn: u3n, xd: u3d, yn: v3n, yd: v3d } => dualq_add(DualQ { xn: s2n, xd: s2d, yn: t2n, yd: t2d }, DualQ { xn: u3n, xd: u3d, yn: v3n, yd: v3d }),
+    };
+}

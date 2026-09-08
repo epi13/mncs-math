@@ -1,0 +1,58 @@
+{
+ "schema_version": "0.1",
+ "name": "vector-traps",
+ "cases": [
+  {
+   "id": "trap-min-empty",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.vector.v1",
+     "function": "entry_min0"
+    },
+    "arguments": [],
+    "step_budget": 4096
+   }
+  },
+  {
+   "id": "trap-normalize-zero-norm",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.vector.v1",
+     "function": "entry_normalize_div2"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 3000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4000,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   }
+  }
+ ]
+}

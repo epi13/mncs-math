@@ -1,0 +1,1610 @@
+{
+ "module": "mncs.math.tensor.v1",
+ "name": "tensor-index-maps",
+ "cases": [
+  {
+   "id": "shape-ok-4",
+   "fn": "entry_shape_ok",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 5
+    },
+    {
+     "u64": 4
+    }
+   ],
+   "expect": [
+    {
+     "bool": true
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "shape-ok-prefix",
+   "fn": "entry_shape_ok",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 2
+    }
+   ],
+   "expect": [
+    {
+     "bool": true
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "shape-zero-dim",
+   "fn": "entry_shape_ok",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 5
+    },
+    {
+     "u64": 4
+    }
+   ],
+   "expect": [
+    {
+     "bool": false
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "shape-neg-dim",
+   "fn": "entry_shape_ok",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": -3
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 5
+    },
+    {
+     "u64": 2
+    }
+   ],
+   "expect": [
+    {
+     "bool": false
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "shape-rank0",
+   "fn": "entry_shape_ok",
+   "args": [
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 0
+    }
+   ],
+   "expect": [
+    {
+     "bool": true
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "shape-rank-too-big",
+   "fn": "entry_shape_ok",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 5
+    },
+    {
+     "u64": 5
+    }
+   ],
+   "expect": [
+    {
+     "bool": false
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "strides-4",
+   "fn": "entry_strides4",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 5
+    },
+    {
+     "u64": 4
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       60,
+       20,
+       5,
+       1
+      ]
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "strides-2",
+   "fn": "entry_strides4",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 2
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       3,
+       1,
+       0,
+       0
+      ]
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "strides-1",
+   "fn": "entry_strides4",
+   "args": [
+    {
+     "i64": 7
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 1
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       1,
+       0,
+       0,
+       0
+      ]
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "strides-0",
+   "fn": "entry_strides4",
+   "args": [
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 0
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "numel-4",
+   "fn": "entry_numel4",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 5
+    },
+    {
+     "u64": 4
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 120
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "numel-0",
+   "fn": "entry_numel4",
+   "args": [
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "numel-1",
+   "fn": "entry_numel4",
+   "args": [
+    {
+     "i64": 7
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 7
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "numel-zero-dim",
+   "fn": "entry_numel4",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 5
+    },
+    {
+     "u64": 4
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "reason": {
+        "i64": 12
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "numel-neg-dim",
+   "fn": "entry_numel4",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": -3
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 2
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "reason": {
+        "i64": 12
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "numel-overflow",
+   "fn": "entry_numel4",
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 2
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "ravel-basic",
+   "fn": "entry_ravel4",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 60
+    },
+    {
+     "i64": 20
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 1
+    },
+    {
+     "u64": 4
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 119
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "ravel-rank0",
+   "fn": "entry_ravel4",
+   "args": [
+    {
+     "i64": 9
+    },
+    {
+     "i64": 9
+    },
+    {
+     "i64": 9
+    },
+    {
+     "i64": 9
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 0
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "ravel-rank2",
+   "fn": "entry_ravel4",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 9
+    },
+    {
+     "i64": 9
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 2
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 5
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "ravel-overflow",
+   "fn": "entry_ravel4",
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "unravel-4",
+   "fn": "entry_unravel4",
+   "args": [
+    {
+     "i64": 119
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 5
+    },
+    {
+     "u64": 4
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       1,
+       2,
+       3,
+       4
+      ]
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "unravel-2",
+   "fn": "entry_unravel4",
+   "args": [
+    {
+     "i64": 5
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 2
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       1,
+       2,
+       0,
+       0
+      ]
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "unravel-1",
+   "fn": "entry_unravel4",
+   "args": [
+    {
+     "i64": 7
+    },
+    {
+     "i64": 9
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 1
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       7,
+       0,
+       0,
+       0
+      ]
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "unravel-0",
+   "fn": "entry_unravel4",
+   "args": [
+    {
+     "i64": 99
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 0
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "unravel-3",
+   "fn": "entry_unravel4",
+   "args": [
+    {
+     "i64": 23
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 3
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       1,
+       2,
+       3,
+       0
+      ]
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "perm-ok",
+   "fn": "entry_perm_valid",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 3
+    }
+   ],
+   "expect": [
+    {
+     "bool": true
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "perm-dup",
+   "fn": "entry_perm_valid",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 3
+    }
+   ],
+   "expect": [
+    {
+     "bool": false
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "perm-range",
+   "fn": "entry_perm_valid",
+   "args": [
+    {
+     "i64": 3
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 3
+    }
+   ],
+   "expect": [
+    {
+     "bool": false
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "perm-rank0",
+   "fn": "entry_perm_valid",
+   "args": [
+    {
+     "i64": 9
+    },
+    {
+     "i64": 9
+    },
+    {
+     "i64": 9
+    },
+    {
+     "i64": 9
+    },
+    {
+     "u64": 0
+    }
+   ],
+   "expect": [
+    {
+     "bool": true
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "perm-rank-too-big",
+   "fn": "entry_perm_valid",
+   "args": [
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "u64": 5
+    }
+   ],
+   "expect": [
+    {
+     "bool": false
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "perm-neg",
+   "fn": "entry_perm_valid",
+   "args": [
+    {
+     "i64": -1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 3
+    }
+   ],
+   "expect": [
+    {
+     "bool": false
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "permute-basic",
+   "fn": "entry_permute_shape",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 3
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       4,
+       2,
+       3,
+       0
+      ]
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "permute-rev",
+   "fn": "entry_permute_shape",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 4
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       5,
+       4,
+       3,
+       2
+      ]
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "permute-invalid-echo",
+   "fn": "entry_permute_shape",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 3
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       2,
+       3,
+       4,
+       0
+      ]
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "permute-neg-total",
+   "fn": "entry_permute_shape",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": -1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 3
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       2,
+       3,
+       4,
+       0
+      ]
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "axis-equal",
+   "fn": "entry_bcast_axis",
+   "args": [
+    {
+     "i64": 3
+    },
+    {
+     "i64": 3
+    }
+   ],
+   "expect": [
+    {
+     "i64": 3
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "axis-stretch-left",
+   "fn": "entry_bcast_axis",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    }
+   ],
+   "expect": [
+    {
+     "i64": 5
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "axis-stretch-right",
+   "fn": "entry_bcast_axis",
+   "args": [
+    {
+     "i64": 5
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "i64": 5
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "axis-clash",
+   "fn": "entry_bcast_axis",
+   "args": [
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    }
+   ],
+   "expect": [
+    {
+     "i64": -1
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "ok-true",
+   "fn": "entry_bcast_ok4",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 7
+    }
+   ],
+   "expect": [
+    {
+     "bool": true
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "ok-false",
+   "fn": "entry_bcast_ok4",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "bool": false
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "bcast-stretch",
+   "fn": "entry_broadcast4",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 1
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       1,
+       1,
+       2,
+       3
+      ]
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "bcast-scalar",
+   "fn": "entry_broadcast4",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 2
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 0
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       1,
+       1,
+       2,
+       3
+      ]
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "bcast-clash-lane",
+   "fn": "entry_broadcast4",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 2
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 1
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       1,
+       1,
+       2,
+       -1
+      ]
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "bcast-4d",
+   "fn": "entry_broadcast4",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 1
+    },
+    {
+     "u64": 4
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "u64": 4
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       2,
+       3,
+       4,
+       1
+      ]
+     }
+    }
+   ],
+   "budget": 4096
+  }
+ ]
+}

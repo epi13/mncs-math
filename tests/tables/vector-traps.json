@@ -1,0 +1,1 @@
+{"cases": [{"args": [], "fn": "entry_min0", "id": "trap-min-empty"}, {"args": [{"i64": 3000}, {"i64": 4000}, {"i64": 0}], "fn": "entry_normalize_div2", "id": "trap-normalize-zero-norm"}], "module": "mncs.math.vector.v1", "name": "vector-traps"}

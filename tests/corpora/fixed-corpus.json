@@ -2506,6 +2506,120 @@
      }
     }
    ]
+  },
+  {
+   "id": "div-fits-ok",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_div_fits_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-fits-zero-divisor",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_div_fits_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-fits-unscalable",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.fixed.v1",
+     "function": "entry_div_fits_milli"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 9223372036854775807,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
   }
  ]
 }

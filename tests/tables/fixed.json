@@ -1274,6 +1274,57 @@
      }
     }
    ]
+  },
+  {
+   "id": "div-fits-ok",
+   "fn": "entry_div_fits_milli",
+   "args": [
+    {
+     "i64": 7
+    },
+    {
+     "i64": 2
+    }
+   ],
+   "expect": [
+    {
+     "bool": true
+    }
+   ]
+  },
+  {
+   "id": "div-fits-zero-divisor",
+   "fn": "entry_div_fits_milli",
+   "args": [
+    {
+     "i64": 7
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "bool": false
+    }
+   ]
+  },
+  {
+   "id": "div-fits-unscalable",
+   "fn": "entry_div_fits_milli",
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 2
+    }
+   ],
+   "expect": [
+    {
+     "bool": false
+    }
+   ]
   }
  ]
 }

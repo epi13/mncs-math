@@ -1,0 +1,766 @@
+{
+ "module": "mncs.math.autodiff.v1",
+ "name": "autodiff-dual",
+ "cases": [
+  {
+   "id": "z-add",
+   "fn": "entry_dualz_add",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "DualZOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.autodiff.v1",
+      "payload": {
+       "x": {
+        "i64": 4
+       },
+       "dx": {
+        "i64": 6
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "z-sub",
+   "fn": "entry_dualz_sub",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "DualZOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.autodiff.v1",
+      "payload": {
+       "x": {
+        "i64": -2
+       },
+       "dx": {
+        "i64": -2
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "z-mul",
+   "fn": "entry_dualz_mul",
+   "args": [
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "DualZOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.autodiff.v1",
+      "payload": {
+       "x": {
+        "i64": 6
+       },
+       "dx": {
+        "i64": 11
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "z-neg",
+   "fn": "entry_dualz_neg",
+   "args": [
+    {
+     "i64": 5
+    },
+    {
+     "i64": -3
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "DualZOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.autodiff.v1",
+      "payload": {
+       "x": {
+        "i64": -5
+       },
+       "dx": {
+        "i64": 3
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "z-mul-overflow",
+   "fn": "entry_dualz_mul",
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "DualZOut",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.autodiff.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "z-neg-min",
+   "fn": "entry_dualz_neg",
+   "args": [
+    {
+     "i64": -9223372036854775808
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "DualZOut",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.autodiff.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "z-poly3",
+   "fn": "entry_dualz_poly3",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 2
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "DualZOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.autodiff.v1",
+      "payload": {
+       "x": {
+        "i64": 49
+       },
+       "dx": {
+        "i64": 62
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "z-poly3-ident",
+   "fn": "entry_dualz_poly3",
+   "args": [
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 7
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "DualZOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.autodiff.v1",
+      "payload": {
+       "x": {
+        "i64": 7
+       },
+       "dx": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "q-mul",
+   "fn": "entry_dualq_mul",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 4
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "DualQOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.autodiff.v1",
+      "payload": {
+       "xn": {
+        "i64": 1
+       },
+       "xd": {
+        "i64": 1
+       },
+       "yn": {
+        "i64": 25
+       },
+       "yd": {
+        "i64": 24
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "q-div",
+   "fn": "entry_dualq_div",
+   "args": [
+    {
+     "i64": 3
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "DualQOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.autodiff.v1",
+      "payload": {
+       "xn": {
+        "i64": 3
+       },
+       "xd": {
+        "i64": 2
+       },
+       "yn": {
+        "i64": -1
+       },
+       "yd": {
+        "i64": 4
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "q-div-zero",
+   "fn": "entry_dualq_div",
+   "args": [
+    {
+     "i64": 3
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "DualQOut",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.autodiff.v1",
+      "payload": {
+       "reason": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "q-div-const",
+   "fn": "entry_dualq_div",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "DualQOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.autodiff.v1",
+      "payload": {
+       "xn": {
+        "i64": 1
+       },
+       "xd": {
+        "i64": 2
+       },
+       "yn": {
+        "i64": 0
+       },
+       "yd": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "q-poly3",
+   "fn": "entry_dualq_poly3",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "DualQOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.autodiff.v1",
+      "payload": {
+       "xn": {
+        "i64": 9
+       },
+       "xd": {
+        "i64": 4
+       },
+       "yn": {
+        "i64": 3
+       },
+       "yd": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "q-obs-xn",
+   "fn": "entry_dualq_xn",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    }
+   ],
+   "expect": [
+    {
+     "i64": 5
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "q-obs-xd",
+   "fn": "entry_dualq_xd",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    }
+   ],
+   "expect": [
+    {
+     "i64": 6
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "q-obs-yn",
+   "fn": "entry_dualq_yn",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    }
+   ],
+   "expect": [
+    {
+     "i64": 9
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "q-obs-yd",
+   "fn": "entry_dualq_yd",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    }
+   ],
+   "expect": [
+    {
+     "i64": 20
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "q-obs-code",
+   "fn": "entry_dualq_code",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    }
+   ],
+   "expect": [
+    {
+     "i64": 0
+    }
+   ],
+   "budget": 32768
+  },
+  {
+   "id": "q-obs-code-ovf",
+   "fn": "entry_dualq_code",
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "i64": 2
+    }
+   ],
+   "budget": 32768
+  }
+ ]
+}

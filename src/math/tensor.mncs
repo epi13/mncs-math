@@ -1,0 +1,419 @@
+mncs 0.11;
+
+// mncs.math.tensor — exact tensor index-map machinery.
+//
+// Scientific tensor work splits into two halves: (1) index arithmetic
+// (shapes, strides, linearization, permutations, broadcasting) which is
+// pure integer work this tier does exactly, and (2) rank-generic data
+// kernels (contraction over dynamically-shaped operands) which need
+// const-generic shapes or closures over axes — both absent (P005/P006).
+// This module implements half (1) completely and half (2) at one fixed
+// rank (4x4x4x4 transpose-copy), with the boundary documented in
+// docs/tensor.md rather than papered over.
+//
+// All multi-index routines take an explicit rank (<= 4) and right-pad
+// unused lanes with residue. Dims must be positive (shape_ok); a zero
+// or negative dim makes unravel trap, pinned by the traps corpus.
+module mncs.math.tensor.v1;
+
+use mncs.math.error.v1;
+use mncs.math.scalar.v1;
+
+// True exactly for positive dims in the first `rank` lanes.
+fn shape_ok(d0: i64, d1: i64, d2: i64, d3: i64, rank: u64) -> (result: bool) {
+    if rank > 4 {
+        return false;
+    }
+    let v0: bool = select(rank > 0, d0 > 0, true);
+    let v1: bool = select(rank > 1, d1 > 0, true);
+    let v2: bool = select(rank > 2, d2 > 0, true);
+    let v3: bool = select(rank > 3, d3 > 0, true);
+    return v0 && v1 && v2 && v3;
+}
+
+// Row-major strides: stride[i] = prod(dims[i+1..]). Zero for lanes >= rank.
+// Rank dispatch (one formula per rank reads clearer than gated selects
+// here and keeps every product behind its rank). Total on all inputs
+// (wrapping products); exact under the numel4-Ok contract, which
+// guarantees every partial product fits.
+fn strides4(d0: i64, d1: i64, d2: i64, d3: i64, rank: u64) -> (result: [i64; 4]) {
+    if rank == 0 {
+        return [0, 0, 0, 0];
+    }
+    if rank == 1 {
+        return [1, 0, 0, 0];
+    }
+    if rank == 2 {
+        return [d1, 1, 0, 0];
+    }
+    if rank == 3 {
+        return [d1 *% d2, d2, 1, 0];
+    }
+    return [d1 *% d2 *% d3, d2 *% d3, d3, 1];
+}
+
+// Checked element count over the first `rank` dims.
+fn numel4(d0: i64, d1: i64, d2: i64, d3: i64, rank: u64) -> (result: MathResult) {
+    if rank == 0 {
+        return MathResult.Ok { value: 1 };
+    }
+    if rank == 1 {
+        return numel_pos(d0);
+    }
+    if rank == 2 {
+        return numel2(d0, d1);
+    }
+    if rank == 3 {
+        return numel3(d0, d1, d2);
+    }
+    return numel4x(d0, d1, d2, d3);
+}
+
+fn numel_pos(d: i64) -> (result: MathResult) {
+    if d <= 0 {
+        return MathResult.Err { reason: reason_invalid_dimensions() };
+    }
+    return MathResult.Ok { value: d };
+}
+
+fn numel2(d0: i64, d1: i64) -> (result: MathResult) {
+    let a: MathResult = numel_pos(d0);
+    return match a {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: x } => numel2_b(x, d1),
+    };
+}
+
+fn numel2_b(x: i64, d1: i64) -> (result: MathResult) {
+    let b: MathResult = numel_pos(d1);
+    return match b {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: y } => checked_mul(x, y),
+    };
+}
+
+fn numel3(d0: i64, d1: i64, d2: i64) -> (result: MathResult) {
+    let a: MathResult = numel2(d0, d1);
+    return match a {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: x } => numel3_b(x, d2),
+    };
+}
+
+fn numel3_b(x: i64, d2: i64) -> (result: MathResult) {
+    let b: MathResult = numel_pos(d2);
+    return match b {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: y } => checked_mul(x, y),
+    };
+}
+
+fn numel4x(d0: i64, d1: i64, d2: i64, d3: i64) -> (result: MathResult) {
+    let a: MathResult = numel3(d0, d1, d2);
+    return match a {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: x } => numel3_b(x, d3),
+    };
+}
+
+// Multi-index -> linear offset (checked dot of index and stride lanes).
+fn ravel4(i0: i64, i1: i64, i2: i64, i3: i64, s0: i64, s1: i64, s2: i64, s3: i64, rank: u64) -> (result: MathResult) {
+    if rank == 0 {
+        return MathResult.Ok { value: 0 };
+    }
+    let t0: MathResult = checked_mul(select(rank > 0, i0, 0), s0);
+    return match t0 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: a0 } => ravel4_b(a0, i1, i2, i3, s1, s2, s3, rank),
+    };
+}
+
+fn ravel4_b(a0: i64, i1: i64, i2: i64, i3: i64, s1: i64, s2: i64, s3: i64, rank: u64) -> (result: MathResult) {
+    let t1: MathResult = checked_mul(select(rank > 1, i1, 0), s1);
+    return match t1 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: a1 } => ravel4_c(a0, a1, i2, i3, s2, s3, rank),
+    };
+}
+
+fn ravel4_c(a0: i64, a1: i64, i2: i64, i3: i64, s2: i64, s3: i64, rank: u64) -> (result: MathResult) {
+    let s01: MathResult = checked_add(a0, a1);
+    return match s01 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: b01 } => ravel4_d(b01, i2, i3, s2, s3, rank),
+    };
+}
+
+fn ravel4_d(b01: i64, i2: i64, i3: i64, s2: i64, s3: i64, rank: u64) -> (result: MathResult) {
+    let t2: MathResult = checked_mul(select(rank > 2, i2, 0), s2);
+    return match t2 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: a2 } => ravel4_e(b01, a2, i3, s3, rank),
+    };
+}
+
+fn ravel4_e(b01: i64, a2: i64, i3: i64, s3: i64, rank: u64) -> (result: MathResult) {
+    let s012: MathResult = checked_add(b01, a2);
+    return match s012 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: b012 } => ravel4_f(b012, i3, s3, rank),
+    };
+}
+
+fn ravel4_f(b012: i64, i3: i64, s3: i64, rank: u64) -> (result: MathResult) {
+    let t3: MathResult = checked_mul(select(rank > 3, i3, 0), s3);
+    return match t3 {
+        MathResult.Err { reason } => MathResult.Err { reason: reason },
+        Ok { value: a3 } => checked_add(b012, a3),
+    };
+}
+
+// Linear offset -> multi-index. Caller contract: the first `rank` dims
+// are positive (shape_ok) and numel4 is Ok (so partial products fit and
+// every checked op below is total). Rank dispatch keeps each division
+// behind its rank: strict select would evaluate untaken divisions
+// against residue lanes and trap. Zero dims trap, pinned by traps.
+fn unravel4(lin: i64, d0: i64, d1: i64, d2: i64, d3: i64, rank: u64) -> (result: [i64; 4]) {
+    if rank == 0 {
+        return [0, 0, 0, 0];
+    }
+    if rank == 1 {
+        return [lin, 0, 0, 0];
+    }
+    if rank == 2 {
+        return [lin / d1, lin % d1, 0, 0];
+    }
+    if rank == 3 {
+        return unravel_r3(lin, d1, d2);
+    }
+    return unravel_r4(lin, d1, d2, d3);
+}
+
+fn unravel_r3(lin: i64, d1: i64, d2: i64) -> (result: [i64; 4]) {
+    let p: i64 = d1 * d2;
+    let i0: i64 = lin / p;
+    let r0: i64 = lin % p;
+    return [i0, r0 / d2, r0 % d2, 0];
+}
+
+fn unravel_r4(lin: i64, d1: i64, d2: i64, d3: i64) -> (result: [i64; 4]) {
+    let p2: i64 = d2 * d3;
+    let p1: i64 = d1 * p2;
+    let i0: i64 = lin / p1;
+    let r0: i64 = lin % p1;
+    let i1: i64 = r0 / p2;
+    let r1: i64 = r0 % p2;
+    return [i0, i1, r1 / d3, r1 % d3];
+}
+
+// True exactly when p[0..rank] is a permutation of 0..rank.
+fn perm_valid(p0: i64, p1: i64, p2: i64, p3: i64, rank: u64) -> (result: bool) {
+    if rank > 4 {
+        return false;
+    }
+    if rank == 0 {
+        return true;
+    }
+    let seen0: bool = perm_hit(p0, p1, p2, p3, rank, 0);
+    let seen1: bool = select(rank > 1, perm_hit(p0, p1, p2, p3, rank, 1), true);
+    let seen2: bool = select(rank > 2, perm_hit(p0, p1, p2, p3, rank, 2), true);
+    let seen3: bool = select(rank > 3, perm_hit(p0, p1, p2, p3, rank, 3), true);
+    return seen0 && seen1 && seen2 && seen3;
+}
+
+fn perm_hit(p0: i64, p1: i64, p2: i64, p3: i64, rank: u64, v: u64) -> (result: bool) {
+    let w: i64 = v as i64;
+    let h0: bool = p0 == w;
+    let h1: bool = select(rank > 1, p1 == w, false);
+    let h2: bool = select(rank > 2, p2 == w, false);
+    let h3: bool = select(rank > 3, p3 == w, false);
+    return perm_once(h0, h1, h2, h3);
+}
+
+fn perm_once(h0: bool, h1: bool, h2: bool, h3: bool) -> (result: bool) {
+    let n: u64 = select(h0, 1, 0) + select(h1, 1, 0) + select(h2, 1, 0) + select(h3, 1, 0);
+    return n == 1;
+}
+
+// Clamp a permutation lane into range without trapping: out-of-range
+// lanes (including negatives, whose `as u64` cast would wrap huge and
+// make the projection below fail) map to 0. Values stay gated on
+// perm_valid, so this only shapes the residue path.
+fn perm_lane(p: i64) -> (result: u64) {
+    if p == 0 {
+        return 0;
+    }
+    if p == 1 {
+        return 1;
+    }
+    if p == 2 {
+        return 2;
+    }
+    if p == 3 {
+        return 3;
+    }
+    return 0;
+}
+
+// Apply an axis permutation to a shape. Total on ALL inputs (even
+// negative lanes): an invalid permutation yields the input shape as
+// residue; check perm_valid first.
+fn permute_shape(d0: i64, d1: i64, d2: i64, d3: i64, p0: i64, p1: i64, p2: i64, p3: i64, rank: u64) -> (result: [i64; 4]) {
+    let d: [i64; 4] = [d0, d1, d2, d3];
+    let ok: bool = perm_valid(p0, p1, p2, p3, rank);
+    let q0: u64 = select(ok, perm_lane(p0), 0);
+    let q1: u64 = select(ok, perm_lane(p1), 1);
+    let q2: u64 = select(ok, perm_lane(p2), 2);
+    let q3: u64 = select(ok, perm_lane(p3), 3);
+    let o0: i64 = select(rank > 0, d[q0], 0);
+    let o1: i64 = select(rank > 1, d[q1], 0);
+    let o2: i64 = select(rank > 2, d[q2], 0);
+    let o3: i64 = select(rank > 3, d[q3], 0);
+    return [o0, o1, o2, o3];
+}
+
+// One broadcast axis: equal extents pass, 1 stretches, else residue -1.
+fn bcast_axis(x: i64, y: i64) -> (result: i64) {
+    if x == y {
+        return x;
+    }
+    if x == 1 {
+        return y;
+    }
+    if y == 1 {
+        return x;
+    }
+    return 0 - 1;
+}
+
+// NOTE (language pressure): params are xN/yN rather than aN/bN because
+// the elaborator derives comparison-temp identities from operand names,
+// so `a3 == b3` inside an ||-chain collides with a param named b3
+// (MNB011 duplicate body value + MNB041 fallout). Minimal reproducer in
+// docs/language-pressure.md; rename sidesteps it.
+fn bcast_ok4(x0: i64, x1: i64, x2: i64, x3: i64, y0: i64, y1: i64, y2: i64, y3: i64) -> (result: bool) {
+    let c0: bool = x0 == y0 || x0 == 1 || y0 == 1;
+    let c1: bool = x1 == y1 || x1 == 1 || y1 == 1;
+    let c2: bool = x2 == y2 || x2 == 1 || y2 == 1;
+    let c3: bool = x3 == y3 || x3 == 1 || y3 == 1;
+    return c0 && c1 && c2 && c3;
+}
+
+// Right-aligned broadcast of two rank-<=4 shapes; residue -1 lanes
+// mark incompatible axes (check bcast_ok4 first).
+// Lane L (1 = last dim) is live exactly when rank >= L; dead lanes read
+// extent 1 so broadcasting treats them as stretchable.
+fn broadcast4(a0: i64, a1: i64, a2: i64, a3: i64, ra: u64, b0: i64, b1: i64, b2: i64, b3: i64, rb: u64) -> (result: [i64; 4]) {
+    let x0: i64 = select(ra > 3, pick_lane(a0, a1, a2, a3, ra, 4), 1);
+    let x1: i64 = select(ra > 2, pick_lane(a0, a1, a2, a3, ra, 3), 1);
+    let x2: i64 = select(ra > 1, pick_lane(a0, a1, a2, a3, ra, 2), 1);
+    let x3: i64 = pick_lane(a0, a1, a2, a3, ra, 1);
+    let y0: i64 = select(rb > 3, pick_lane(b0, b1, b2, b3, rb, 4), 1);
+    let y1: i64 = select(rb > 2, pick_lane(b0, b1, b2, b3, rb, 3), 1);
+    let y2: i64 = select(rb > 1, pick_lane(b0, b1, b2, b3, rb, 2), 1);
+    let y3: i64 = pick_lane(b0, b1, b2, b3, rb, 1);
+    return [bcast_axis(x0, y0), bcast_axis(x1, y1), bcast_axis(x2, y2), bcast_axis(x3, y3)];
+}
+
+// Right-aligned lane: lane 1 is the last dim, lane 4 the first of 4.
+// Rank 0 (scalar) contributes extent 1 on every lane.
+fn pick_lane(d0: i64, d1: i64, d2: i64, d3: i64, rank: u64, lane: u64) -> (result: i64) {
+    if rank == 0 {
+        return 1;
+    }
+    if rank == 1 {
+        return pick1(d0, d1, d2, d3, lane);
+    }
+    if rank == 2 {
+        return pick2(d0, d1, d2, d3, lane);
+    }
+    if rank == 3 {
+        return pick3(d0, d1, d2, d3, lane);
+    }
+    return pick4(d0, d1, d2, d3, lane);
+}
+
+fn pick1(d0: i64, d1: i64, d2: i64, d3: i64, lane: u64) -> (result: i64) {
+    if lane == 1 {
+        return d0;
+    }
+    return 1;
+}
+
+fn pick2(d0: i64, d1: i64, d2: i64, d3: i64, lane: u64) -> (result: i64) {
+    if lane == 1 {
+        return d1;
+    }
+    if lane == 2 {
+        return d0;
+    }
+    return 1;
+}
+
+fn pick3(d0: i64, d1: i64, d2: i64, d3: i64, lane: u64) -> (result: i64) {
+    if lane == 1 {
+        return d2;
+    }
+    if lane == 2 {
+        return d1;
+    }
+    if lane == 3 {
+        return d0;
+    }
+    return 1;
+}
+
+fn pick4(d0: i64, d1: i64, d2: i64, d3: i64, lane: u64) -> (result: i64) {
+    if lane == 1 {
+        return d3;
+    }
+    if lane == 2 {
+        return d2;
+    }
+    if lane == 3 {
+        return d1;
+    }
+    return d0;
+}
+
+// ---- entry wrappers ----
+
+fn entry_shape_ok(d0: i64, d1: i64, d2: i64, d3: i64, rank: u64) -> (result: bool) {
+    return shape_ok(d0, d1, d2, d3, rank);
+}
+
+fn entry_strides4(d0: i64, d1: i64, d2: i64, d3: i64, rank: u64) -> (result: [i64; 4]) {
+    return strides4(d0, d1, d2, d3, rank);
+}
+
+fn entry_numel4(d0: i64, d1: i64, d2: i64, d3: i64, rank: u64) -> (result: MathResult) {
+    return numel4(d0, d1, d2, d3, rank);
+}
+
+fn entry_ravel4(i0: i64, i1: i64, i2: i64, i3: i64, s0: i64, s1: i64, s2: i64, s3: i64, rank: u64) -> (result: MathResult) {
+    return ravel4(i0, i1, i2, i3, s0, s1, s2, s3, rank);
+}
+
+fn entry_unravel4(lin: i64, d0: i64, d1: i64, d2: i64, d3: i64, rank: u64) -> (result: [i64; 4]) {
+    return unravel4(lin, d0, d1, d2, d3, rank);
+}
+
+fn entry_perm_valid(p0: i64, p1: i64, p2: i64, p3: i64, rank: u64) -> (result: bool) {
+    return perm_valid(p0, p1, p2, p3, rank);
+}
+
+fn entry_permute_shape(d0: i64, d1: i64, d2: i64, d3: i64, p0: i64, p1: i64, p2: i64, p3: i64, rank: u64) -> (result: [i64; 4]) {
+    return permute_shape(d0, d1, d2, d3, p0, p1, p2, p3, rank);
+}
+
+fn entry_bcast_axis(x: i64, y: i64) -> (result: i64) {
+    return bcast_axis(x, y);
+}
+
+fn entry_bcast_ok4(a0: i64, a1: i64, a2: i64, a3: i64, b0: i64, b1: i64, b2: i64, b3: i64) -> (result: bool) {
+    return bcast_ok4(a0, a1, a2, a3, b0, b1, b2, b3);
+}
+
+fn entry_broadcast4(a0: i64, a1: i64, a2: i64, a3: i64, ra: u64, b0: i64, b1: i64, b2: i64, b3: i64, rb: u64) -> (result: [i64; 4]) {
+    return broadcast4(a0, a1, a2, a3, ra, b0, b1, b2, b3, rb);
+}

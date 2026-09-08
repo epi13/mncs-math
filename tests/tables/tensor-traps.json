@@ -1,0 +1,54 @@
+{
+ "module": "mncs.math.tensor.v1",
+ "name": "tensor-traps",
+ "cases": [
+  {
+   "id": "unravel-zero-dim",
+   "fn": "entry_unravel4",
+   "args": [
+    {
+     "i64": 5
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 4
+    },
+    {
+     "u64": 4
+    }
+   ]
+  },
+  {
+   "id": "unravel-zero-dim-rank2",
+   "fn": "entry_unravel4",
+   "args": [
+    {
+     "i64": 5
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "u64": 2
+    }
+   ]
+  }
+ ]
+}

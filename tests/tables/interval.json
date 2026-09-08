@@ -1,0 +1,1071 @@
+{
+ "module": "mncs.math.interval.v1",
+ "name": "interval-exact",
+ "cases": [
+  {
+   "id": "ok-true",
+   "fn": "entry_iv_ok",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    }
+   ],
+   "expect": [
+    {
+     "bool": true
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "ok-point",
+   "fn": "entry_iv_ok",
+   "args": [
+    {
+     "i64": 3
+    },
+    {
+     "i64": 3
+    }
+   ],
+   "expect": [
+    {
+     "bool": true
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "ok-empty",
+   "fn": "entry_iv_ok",
+   "args": [
+    {
+     "i64": 5
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "bool": false
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "width-basic",
+   "fn": "entry_iv_width",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 4
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "width-overflow",
+   "fn": "entry_iv_width",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 9223372036854775807
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "value": {
+        "i64": 9223372036854775806
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "width-min",
+   "fn": "entry_iv_width",
+   "args": [
+    {
+     "i64": -9223372036854775808
+    },
+    {
+     "i64": 9223372036854775807
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "MathResult",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.error.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "contains-in",
+   "fn": "entry_iv_contains",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 3
+    }
+   ],
+   "expect": [
+    {
+     "bool": true
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "contains-edge",
+   "fn": "entry_iv_contains",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 5
+    }
+   ],
+   "expect": [
+    {
+     "bool": true
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "contains-out",
+   "fn": "entry_iv_contains",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 6
+    }
+   ],
+   "expect": [
+    {
+     "bool": false
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "neg-basic",
+   "fn": "entry_iv_neg",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "lo": {
+        "i64": -5
+       },
+       "hi": {
+        "i64": -1
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "neg-cross",
+   "fn": "entry_iv_neg",
+   "args": [
+    {
+     "i64": -2
+    },
+    {
+     "i64": 7
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "lo": {
+        "i64": -7
+       },
+       "hi": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "neg-min-lo",
+   "fn": "entry_iv_neg",
+   "args": [
+    {
+     "i64": -9223372036854775808
+    },
+    {
+     "i64": 5
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "neg-min-hi",
+   "fn": "entry_iv_neg",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": -9223372036854775808
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "add-basic",
+   "fn": "entry_iv_add",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 10
+    },
+    {
+     "i64": 20
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "lo": {
+        "i64": 11
+       },
+       "hi": {
+        "i64": 22
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "add-neg",
+   "fn": "entry_iv_add",
+   "args": [
+    {
+     "i64": -5
+    },
+    {
+     "i64": -1
+    },
+    {
+     "i64": -3
+    },
+    {
+     "i64": 4
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "lo": {
+        "i64": -8
+       },
+       "hi": {
+        "i64": 3
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "add-overflow",
+   "fn": "entry_iv_add",
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 1
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "sub-basic",
+   "fn": "entry_iv_sub",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 10
+    },
+    {
+     "i64": 20
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "lo": {
+        "i64": -19
+       },
+       "hi": {
+        "i64": -8
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "sub-overflow",
+   "fn": "entry_iv_sub",
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": -1
+    },
+    {
+     "i64": -1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "mul-pos",
+   "fn": "entry_iv_mul",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 10
+    },
+    {
+     "i64": 20
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "lo": {
+        "i64": 10
+       },
+       "hi": {
+        "i64": 40
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "mul-cross",
+   "fn": "entry_iv_mul",
+   "args": [
+    {
+     "i64": -2
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": -4
+    },
+    {
+     "i64": 5
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "lo": {
+        "i64": -12
+       },
+       "hi": {
+        "i64": 15
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "mul-neg-neg",
+   "fn": "entry_iv_mul",
+   "args": [
+    {
+     "i64": -5
+    },
+    {
+     "i64": -2
+    },
+    {
+     "i64": -7
+    },
+    {
+     "i64": -3
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "lo": {
+        "i64": 6
+       },
+       "hi": {
+        "i64": 35
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "mul-zero",
+   "fn": "entry_iv_mul",
+   "args": [
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": -7
+    },
+    {
+     "i64": 9
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "lo": {
+        "i64": 0
+       },
+       "hi": {
+        "i64": 0
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "mul-overflow",
+   "fn": "entry_iv_mul",
+   "args": [
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 9223372036854775807
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 2
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "mul-min-times-neg1",
+   "fn": "entry_iv_mul",
+   "args": [
+    {
+     "i64": -9223372036854775808
+    },
+    {
+     "i64": -9223372036854775808
+    },
+    {
+     "i64": -1
+    },
+    {
+     "i64": -1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "div-pos",
+   "fn": "entry_iv_div",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 10
+    },
+    {
+     "i64": 20
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "lo": {
+        "i64": 0
+       },
+       "hi": {
+        "i64": 0
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "div-exact",
+   "fn": "entry_iv_div",
+   "args": [
+    {
+     "i64": 10
+    },
+    {
+     "i64": 20
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 2
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "lo": {
+        "i64": 5
+       },
+       "hi": {
+        "i64": 10
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "div-neg-divisor",
+   "fn": "entry_iv_div",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 4
+    },
+    {
+     "i64": -2
+    },
+    {
+     "i64": -1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Ok",
+      "discriminant": 0,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "lo": {
+        "i64": -4
+       },
+       "hi": {
+        "i64": 0
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "div-zero-point",
+   "fn": "entry_iv_div",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 0
+    },
+    {
+     "i64": 0
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "reason": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "div-zero-straddle",
+   "fn": "entry_iv_div",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": -1
+    },
+    {
+     "i64": 1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "reason": {
+        "i64": 1
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "div-min-by-neg1",
+   "fn": "entry_iv_div",
+   "args": [
+    {
+     "i64": -9223372036854775808
+    },
+    {
+     "i64": -9223372036854775808
+    },
+    {
+     "i64": -1
+    },
+    {
+     "i64": -1
+    }
+   ],
+   "expect": [
+    {
+     "finite": {
+      "enum": "IvOut",
+      "variant": "Err",
+      "discriminant": 1,
+      "home": "mncs.math.interval.v1",
+      "payload": {
+       "reason": {
+        "i64": 2
+       }
+      }
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "intersect-overlap",
+   "fn": "entry_iv_intersect",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 7
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       3,
+       5
+      ]
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "disjoint-false",
+   "fn": "entry_iv_disjoint",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 7
+    }
+   ],
+   "expect": [
+    {
+     "bool": false
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "disjoint-true",
+   "fn": "entry_iv_disjoint",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 6
+    },
+    {
+     "i64": 7
+    }
+   ],
+   "expect": [
+    {
+     "bool": true
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "hull-basic",
+   "fn": "entry_iv_hull",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 3
+    },
+    {
+     "i64": 7
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       1,
+       7
+      ]
+     }
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "hull-disjoint",
+   "fn": "entry_iv_hull",
+   "args": [
+    {
+     "i64": 1
+    },
+    {
+     "i64": 2
+    },
+    {
+     "i64": 5
+    },
+    {
+     "i64": 6
+    }
+   ],
+   "expect": [
+    {
+     "seq": {
+      "of": "i64",
+      "values": [
+       1,
+       6
+      ]
+     }
+    }
+   ],
+   "budget": 4096
+  }
+ ]
+}
