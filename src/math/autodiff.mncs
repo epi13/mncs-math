@@ -13,8 +13,11 @@ mncs 0.11;
 //
 // Records stay flat (no nested records): DualQ carries four i64 lanes.
 // Tapes, closures, and reverse mode need heap/dynamic dispatch and are
-// specified in docs/autodiff.md as blocked (P005/P006). Transcendentals
-// need a float type (P001).
+// specified in docs/autodiff.md as blocked (P005/P006). Second-order
+// steps compose two first-order evaluations (see the Halley section);
+// dual-of-dual composition needs nested records (P005). Sin/cos dual
+// rules are expressible now that float.mncs ships them; exp/log/sqrt
+// dual rules wait on the float tier (P001).
 module mncs.math.autodiff.v1;
 
 use mncs.math.error.v1;
@@ -488,5 +491,153 @@ fn dualq_poly3_h(s2n: i64, s2d: i64, t2n: i64, t2d: i64, coef3: i64, a3n: i64, a
     return match m3 {
         DualQOut.Err { reason } => dualq_err(reason),
         Ok { xn: u3n, xd: u3d, yn: v3n, yd: v3d } => dualq_add(DualQ { xn: s2n, xd: s2d, yn: t2n, yd: t2d }, DualQ { xn: u3n, xd: u3d, yn: v3n, yd: v3d }),
+    };
+}
+
+// ---- second derivatives and Halley's method ----
+//
+// One Halley step for the fixed cubic c(x) = x^3 - 2x - 5 at a
+// rational start, kept fully exact. f and f' come from dualq_poly3
+// over c (coefs -5, -2, 0, 1); f'' is the tangent of dualq_poly3 over
+// c' = 3x^2 - 2 (coefs -2, 0, 3, 0) evaluated at the same dual point,
+// so no nested-dual type is needed — the second derivative is a
+// second first-order evaluation. The step is
+// x1 = t - 2*f*fp / (2*fp^2 - f*fpp); a zero denominator (stationary
+// Halley point) surfaces as a div-by-zero Err, never a trap. The
+// residual f(x1) rides along, so one corpus case checks the step and
+// the cubic-convergence contraction together.
+
+enum HalleyOut { Ok { xn: i64, xd: i64, fvn: i64, fvd: i64 }, Err { reason: i64 } }
+
+fn halley_err(reason: i64) -> (result: HalleyOut) {
+    return HalleyOut.Err { reason: reason };
+}
+
+fn entry_halley(txn: i64, txd: i64) -> (result: HalleyOut) {
+    let t: DualQOut = dualq_var(txn, txd);
+    return match t {
+        DualQOut.Err { reason } => halley_err(reason),
+        Ok { xn, xd, yn, yd } => halley_ff(Frac { num: xn, den: xd }, DualQ { xn: xn, xd: xd, yn: yn, yd: yd }),
+    };
+}
+
+fn halley_ff(t: Frac, td: DualQ) -> (result: HalleyOut) {
+    let f: DualQOut = dualq_poly3_q((0 - 5), (0 - 2), 0, 1, td.xn, td.xd, td.yn, td.yd);
+    return match f {
+        DualQOut.Err { reason } => halley_err(reason),
+        Ok { xn: fxn, xd: fxd, yn: fyn, yd: fyd } => halley_fp(t, Frac { num: fxn, den: fxd }, Frac { num: fyn, den: fyd }),
+    };
+}
+
+fn halley_fp(t: Frac, f: Frac, fp_check: Frac) -> (result: HalleyOut) {
+    let d: DualQOut = dualq_poly3_q((0 - 2), 0, 3, 0, t.num, t.den, 1, 1);
+    return match d {
+        DualQOut.Err { reason } => halley_err(reason),
+        Ok { xn: fpxn, xd: fpxd, yn: fppn, yd: fppd } => halley_fp_eq(t, f, fp_check, Frac { num: fpxn, den: fpxd }, Frac { num: fppn, den: fppd }),
+    };
+}
+
+// The c-eval tangent must equal the c'-eval value (both are f'): the
+// cross-check is structural — both lanes feed the step, so any
+// divergence between the two evaluations changes the observation.
+fn halley_fp_eq(t: Frac, f: Frac, fp_check: Frac, fp: Frac, fpp: Frac) -> (result: HalleyOut) {
+    let e: FracOutcome = sub(fp, fp_check);
+    return match e {
+        FracOutcome.Err { reason } => halley_err(reason),
+        Ok { num, den } => halley_fp_eq0(t, f, fp, fpp, Frac { num: num, den: den }),
+    };
+}
+
+fn halley_fp_eq0(t: Frac, f: Frac, fp: Frac, fpp: Frac, diff: Frac) -> (result: HalleyOut) {
+    if diff.num == 0 {
+        return halley_combine(t, f, fp, fpp);
+    }
+    return halley_err(reason_unsupported());
+}
+
+fn halley_combine(t: Frac, f: Frac, fp: Frac, fpp: Frac) -> (result: HalleyOut) {
+    return match mul(f, fp) {
+        Ok { num: n1n, den: n1d } => halley_num(t, f, fp, fpp, Frac { num: n1n, den: n1d }),
+        FracOutcome.Err { reason } => halley_err(reason),
+    };
+}
+
+fn halley_num(t: Frac, f: Frac, fp: Frac, fpp: Frac, n1: Frac) -> (result: HalleyOut) {
+    return match add(n1, n1) {
+        Ok { num: nn, den: nd } => halley_den2(t, f, fp, fpp, Frac { num: nn, den: nd }),
+        FracOutcome.Err { reason } => halley_err(reason),
+    };
+}
+
+fn halley_den2(t: Frac, f: Frac, fp: Frac, fpp: Frac, num: Frac) -> (result: HalleyOut) {
+    return match mul(fp, fp) {
+        Ok { num: p2n, den: p2d } => halley_den1(t, f, fp, fpp, num, Frac { num: p2n, den: p2d }),
+        FracOutcome.Err { reason } => halley_err(reason),
+    };
+}
+
+fn halley_den1(t: Frac, f: Frac, fp: Frac, fpp: Frac, num: Frac, p2: Frac) -> (result: HalleyOut) {
+    return match add(p2, p2) {
+        Ok { num: d1n, den: d1d } => halley_den0(t, f, fpp, num, Frac { num: d1n, den: d1d }),
+        FracOutcome.Err { reason } => halley_err(reason),
+    };
+}
+
+fn halley_den0(t: Frac, f: Frac, fpp: Frac, num: Frac, d1: Frac) -> (result: HalleyOut) {
+    return match mul(f, fpp) {
+        Ok { num: q1n, den: q1d } => halley_den(t, num, d1, Frac { num: q1n, den: q1d }),
+        FracOutcome.Err { reason } => halley_err(reason),
+    };
+}
+
+fn halley_den(t: Frac, num: Frac, d1: Frac, q1: Frac) -> (result: HalleyOut) {
+    return match sub(d1, q1) {
+        Ok { num: dn, den: dd } => halley_step(t, num, Frac { num: dn, den: dd }),
+        FracOutcome.Err { reason } => halley_err(reason),
+    };
+}
+
+fn halley_step(t: Frac, num: Frac, den: Frac) -> (result: HalleyOut) {
+    return match div(num, den) {
+        Ok { num: stn, den: std } => halley_next(t, Frac { num: stn, den: std }),
+        FracOutcome.Err { reason } => halley_err(reason),
+    };
+}
+
+fn halley_next(t: Frac, step: Frac) -> (result: HalleyOut) {
+    return match sub(t, step) {
+        Ok { num: x1n, den: x1d } => halley_resid(Frac { num: x1n, den: x1d }),
+        FracOutcome.Err { reason } => halley_err(reason),
+    };
+}
+
+fn halley_resid(x1: Frac) -> (result: HalleyOut) {
+    let r: DualQOut = dualq_poly3_q((0 - 5), (0 - 2), 0, 1, x1.num, x1.den, 1, 1);
+    return match r {
+        DualQOut.Err { reason } => halley_err(reason),
+        Ok { xn: rxn, xd: rxd, yn: ryn, yd: ryd } => halley_resid_ok(x1, Frac { num: rxn, den: rxd }, Frac { num: ryn, den: ryd }),
+    };
+}
+
+fn halley_resid_ok(x1: Frac, fres: Frac, fres_check: Frac) -> (result: HalleyOut) {
+    return HalleyOut.Ok { xn: x1.num, xd: x1.den, fvn: fres.num, fvd: fres.den };
+}
+
+// Second derivative of the fixed cubic at a rational point, via the
+// tangent of the c' evaluation. Spot-checks the f'' lane the Halley
+// step consumes.
+fn entry_d2cubic(txn: i64, txd: i64) -> (result: FracOutcome) {
+    let t: DualQOut = dualq_var(txn, txd);
+    return match t {
+        DualQOut.Err { reason } => err_frac(reason),
+        Ok { xn, xd, yn, yd } => d2cubic_eval(xn, xd, yn, yd),
+    };
+}
+
+fn d2cubic_eval(xn: i64, xd: i64, yn: i64, yd: i64) -> (result: FracOutcome) {
+    let d: DualQOut = dualq_poly3_q((0 - 2), 0, 3, 0, xn, xd, yn, yd);
+    return match d {
+        DualQOut.Err { reason } => err_frac(reason),
+        Ok { xn: fpxn, xd: fpxd, yn: fppn, yd: fppd } => ok_frac(fppn, fppd),
     };
 }

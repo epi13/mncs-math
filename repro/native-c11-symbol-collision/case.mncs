@@ -1,0 +1,5 @@
+mncs 0.10;
+module bprobe.truncname;
+fn trunc(x: i64) -> (result: i64) {
+    return x;
+}

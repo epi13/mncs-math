@@ -1,0 +1,2177 @@
+{
+ "schema_version": "0.1",
+ "name": "float-binary64",
+ "cases": [
+  {
+   "id": "add",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fadd"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4609434218613702656,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4612248968380809216,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4615626668101337088,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "add-cancel",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fadd"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4846369599423283200,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4846369599423283200,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sub",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fsub"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4617878467915022336,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4620693217682128896,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 13836183955189006336,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "mul",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fmul"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4591870180066957722,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4613937818241073152,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4599075939470750516,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "div",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fdiv"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4619567317775286272,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4615063718147915776,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "div-recur",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fdiv"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4613937818241073152,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4599676419421066581,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "neg",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fneg"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4612811918334230528,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 13836183955189006336,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "neg-zero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fneg"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 0,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 0,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "neg-negzero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fneg"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 9223372036854775808,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 0,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "lt-true",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_flt"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "lt-false",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_flt"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "ge-true",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fge"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "ge-false",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fge"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4609434218613702656,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4612811918334230528,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "eq-negzero",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_feq"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 0,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 9223372036854775808,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "i2f-exact",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_i2f"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 42,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4631107791820423168,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "i2f-neg",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_i2f"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": -7,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 13842939354630062080,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "i2f-round",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_i2f"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 9007199254740993,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4845873199050653696,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "f2i-trunc",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_f2i"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4620580627691444634,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 7,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "f2i-neg-trunc",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_f2i"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 13843952664546220442,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": -7,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "dot2",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fdot2"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4612811918334230528,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 13832806255468478464,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4616189618054758400,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4619567317775286272,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "dot3",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fdot3"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4613937818241073152,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4616189618054758400,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 13840687554816376832,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4618441417868443648,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4622945017495814144,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "dot4-generic",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "entry_fdot4"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4609434218613702656,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4612811918334230528,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 13838435755002691584,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4616752568008179712,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 13830554455654793216,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4602678819172646912,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4613937818241073152,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4623085754984169472,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "horner",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fhorn3"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4617315517961601024,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 13835058055282163712,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4613937818241073152,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4627167142146473984,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "newton-step",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fnewton_step"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4611911198408756429,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sin-0.0",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fsin"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 0,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 0,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "cos-0.0",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fcos"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 0,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4607182418800017408,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "pythag-0.0",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fpythag"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 0,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4607182418800017408,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sin-0.5",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fsin"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4602678819172646912,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4602308182625945072,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "cos-0.5",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fcos"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4602678819172646912,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4606079780542709072,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "pythag-0.5",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fpythag"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4602678819172646912,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4607182418800017408,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sin-1.0",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fsin"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4605754516372524270,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "cos-1.0",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fcos"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4603041830072026764,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "pythag-1.0",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fpythag"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4607182418800017408,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sin--1.0",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fsin"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 13830554455654793216,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 13829126553227300078,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "cos--1.0",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fcos"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 13830554455654793216,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4603041830072026764,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "pythag--1.0",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fpythag"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 13830554455654793216,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4607182418800017408,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sin-3.0",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fsin"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4613937818241073152,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4594252404416238939,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "cos-3.0",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fcos"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4613937818241073152,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 13830464316077630930,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "pythag-3.0",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fpythag"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4613937818241073152,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4607182418800017407,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sum-gap",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fsum_gap"
+    },
+    "arguments": [],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 13830554455654793216,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sum6-left",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fsum_left"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4846369599423283200,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4846369599423283200,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 14069741636278059008,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 14069741636278059008,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4613937818241073152,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sum6-right",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fsum_right"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4846369599423283200,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4846369599423283200,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 14069741636278059008,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 14069741636278059008,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 0,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sum6-pair",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fsum_pair"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4846369599423283200,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4846369599423283200,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 14069741636278059008,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 14069741636278059008,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4611686018427387904,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sum6-evenodd",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fsum_evenodd"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4846369599423283200,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4846369599423283200,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 14069741636278059008,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 14069741636278059008,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4616189618054758400,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sum6-loop",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fsum_loop"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4846369599423283200,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4846369599423283200,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 14069741636278059008,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 14069741636278059008,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4613937818241073152,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sum6-ctl-left",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fsum_left"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4613937818241073152,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4616189618054758400,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4617315517961601024,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4618441417868443648,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4626604192193052672,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sum6-ctl-right",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fsum_right"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4613937818241073152,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4616189618054758400,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4617315517961601024,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4618441417868443648,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4626604192193052672,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sum6-ctl-pair",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fsum_pair"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4613937818241073152,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4616189618054758400,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4617315517961601024,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4618441417868443648,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4626604192193052672,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sum6-ctl-evenodd",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fsum_evenodd"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4613937818241073152,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4616189618054758400,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4617315517961601024,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4618441417868443648,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4626604192193052672,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sum6-ctl-loop",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.float.v1",
+     "function": "candidate_fsum_loop"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4611686018427387904,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4613937818241073152,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4616189618054758400,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4617315517961601024,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4618441417868443648,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   },
+   "expected": [
+    {
+     "float": {
+      "bits": 4626604192193052672,
+      "type": {
+       "bits": 64
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

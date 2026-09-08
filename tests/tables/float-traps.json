@@ -1,0 +1,28 @@
+{
+ "module": "mncs.math.float.v1",
+ "name": "float-traps",
+ "cases": [
+  {
+   "id": "trap-div-zero",
+   "fn": "candidate_fdiv_zero",
+   "args": [
+    {
+     "f64": 1.0
+    }
+   ],
+   "budget": 4096
+  },
+  {
+   "id": "trap-overflow",
+   "fn": "candidate_foverflow",
+   "args": [],
+   "budget": 4096
+  },
+  {
+   "id": "trap-f2i-huge",
+   "fn": "candidate_f2i_huge",
+   "args": [],
+   "budget": 4096
+  }
+ ]
+}

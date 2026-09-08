@@ -1,0 +1,167 @@
+mncs 0.10;
+
+// mncs.math.modular — prime-field and modular matrix kernels.
+//
+// Builds on the overflow-free `mul_mod`/`pow_mod`/`add_mod`/`dbl_mod`
+// in `mncs.math.scalar.v1` (cross-module reuse, never copied):
+// field inversion via Fermat, 2x2 modular matrices, and modular
+// polynomial evaluation. All moduli here are u64; every intermediate
+// stays below 2^64 by reducing at each step, so plain wrapping ops
+// never appear and every result is exact.
+//
+// Profile 0.10: Nat generics, traversal, imports.
+module mncs.math.modular.v1;
+
+use mncs.math.scalar.v1;
+
+// ---- field inverse via Fermat (p prime, a % p != 0) ----
+
+fn candidate_minv(a: u64, p: u64) -> (result: u64) {
+    return pow_mod(a, p - 2, p);
+}
+
+fn candidate_mdiv(a: u64, b: u64, p: u64) -> (result: u64) {
+    return mul_mod(a, pow_mod(b, p - 2, p), p);
+}
+
+// ---- 2x2 matrices as row-major lanes, reduced mod m ----
+
+fn mmat2mul(a0: u64, a1: u64, a2: u64, a3: u64, b0: u64, b1: u64, b2: u64, b3: u64, m: u64) -> (result: [u64; 4]) {
+    let c0: u64 = add_mod(mul_mod(a0, b0, m), mul_mod(a1, b2, m), m);
+    let c1: u64 = add_mod(mul_mod(a0, b1, m), mul_mod(a1, b3, m), m);
+    let c2: u64 = add_mod(mul_mod(a2, b0, m), mul_mod(a3, b2, m), m);
+    let c3: u64 = add_mod(mul_mod(a2, b1, m), mul_mod(a3, b3, m), m);
+    return [c0, c1, c2, c3];
+}
+
+fn candidate_mmat2mul(a0: u64, a1: u64, a2: u64, a3: u64, b0: u64, b1: u64, b2: u64, b3: u64, m: u64) -> (result: [u64; 4]) {
+    return mmat2mul(a0, a1, a2, a3, b0, b1, b2, b3, m);
+}
+
+// det reduced mod m without negatives: (a*d + m - (b*c % m)) % m.
+fn candidate_mdet2(a: u64, b: u64, c: u64, d: u64, m: u64) -> (result: u64) {
+    let ad: u64 = mul_mod(a, d, m);
+    let bc: u64 = mul_mod(b, c, m);
+    return add_mod(ad, m - bc, m);
+}
+
+// ---- modular polynomial evaluation (Horner, reducing each step) ----
+
+// The `idx` parameter is a phantom index domain: a record carry over a
+// `[u64; N]` domain is rejected (MNB101), and `up_to N` needs a literal
+// bound (MNP094), so callers thread an explicit `[i64; N]` ladder for
+// the traversal to run on. Entries pass literals (see entry below).
+fn mpoly_eval<N: Nat>(c: [u64; N], idx: [i64; N], x: u64, m: u64) -> (result: u64) {
+    iterate k over idx carrying st: MEvSt = MEvSt { acc: 0, pw: 1 } {
+        let term: u64 = mul_mod(c[k], st.pw, m);
+        let acc: u64 = add_mod(st.acc, term, m);
+        let pw: u64 = mul_mod(st.pw, x, m);
+        next st = MEvSt { acc: acc, pw: pw };
+    }
+    return st.acc;
+}
+
+record MEvSt { acc: u64, pw: u64 }
+
+// Lane params use multi-character names: single-letter+digit (`c1`)
+// collides with elaborator temp identities (MNB011).
+fn entry_mpoly_eval3(coef0: u64, coef1: u64, coef2: u64, coef3: u64, x: u64, m: u64) -> (result: u64) {
+    return mpoly_eval<4>([coef0, coef1, coef2, coef3], [0, 1, 2, 3], x, m);
+}
+
+// ---- Stein binary gcd (proper common-shift form, counted loops) ----
+
+// Trailing-zero count by counted scan; x == 0 reports 64. Early
+// `return` inside the loop body is allowed (only the exit count is
+// fixed), so the first set bit stops the scan.
+fn ctz64(x: u64) -> (result: u64) {
+    let table: [i64; 64] = steps64_digits();
+    iterate i over table carrying st: CtzSt = CtzSt { tz: 0, y: x } {
+        if st.y % 2 == 1 {
+            return st.tz;
+        }
+        next st = CtzSt { tz: st.tz + 1, y: st.y / 2 };
+    }
+    return st.tz;
+}
+
+record CtzSt { tz: u64, y: u64 }
+
+fn steps64_digits() -> (result: [i64; 64]) {
+    return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63];
+}
+
+fn ctz_min(a: u64, b: u64) -> (result: u64) {
+    let sa: u64 = ctz64(a);
+    let sb: u64 = ctz64(b);
+    return select(sa < sb, sa, sb);
+}
+
+record GcdSt { u: u64, v: u64, shift: u64 }
+
+fn candidate_bgcd(a: u64, b: u64) -> (result: u64) {
+    if a == 0 {
+        return b;
+    }
+    if b == 0 {
+        return a;
+    }
+    let shift: u64 = ctz_min(a, b);
+    let ua: u64 = shr_ctz(a);
+    let va: u64 = shr_ctz(b);
+    let table: [i64; 64] = steps64_digits();
+    iterate i over table carrying st: GcdSt = GcdSt { u: ua, v: va, shift: shift } {
+        if st.v == 0 {
+            return st.u * pow2(st.shift);
+        }
+        let nx: GcdSt = bgcd_round(st);
+        next st = GcdSt { u: nx.u, v: nx.v, shift: nx.shift };
+    }
+    return st.u * pow2(st.shift);
+}
+
+fn shr_ctz(x: u64) -> (result: u64) {
+    return shr_by(x, ctz64(x));
+}
+
+fn shr_by(x: u64, k: u64) -> (result: u64) {
+    let table: [i64; 64] = steps64_digits();
+    iterate i over table carrying st: ShrSt = ShrSt { y: x, n: 0 } {
+        if st.n >= k {
+            return st.y;
+        }
+        next st = ShrSt { y: st.y / 2, n: st.n + 1 };
+    }
+    return st.y;
+}
+
+record ShrSt { y: u64, n: u64 }
+
+fn pow2(k: u64) -> (result: u64) {
+    let table: [i64; 64] = steps64_digits();
+    iterate i over table carrying st: P2St = P2St { acc: 1, n: 0 } {
+        if st.n >= k {
+            return st.acc;
+        }
+        next st = P2St { acc: st.acc +% st.acc, n: st.n + 1 };
+    }
+    return st.acc;
+}
+
+record P2St { acc: u64, n: u64 }
+
+// One odd-loop round: u, v odd on entry; v == 0 handled by the caller.
+fn bgcd_round(st: GcdSt) -> (result: GcdSt) {
+    if st.u > st.v {
+        return bgcd_swap_sub(st);
+    }
+    return bgcd_sub_only(st);
+}
+
+fn bgcd_swap_sub(st: GcdSt) -> (result: GcdSt) {
+    return GcdSt { u: st.v, v: shr_ctz(st.u - st.v), shift: st.shift };
+}
+
+fn bgcd_sub_only(st: GcdSt) -> (result: GcdSt) {
+    return GcdSt { u: st.u, v: shr_ctz(st.v - st.u), shift: st.shift };
+}

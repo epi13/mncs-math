@@ -1,0 +1,6 @@
+mncs 0.10;
+module p10_generic_enum;
+enum Maybe<T> { Nothing, Just { v: T } }
+fn f(x: Maybe<i64>) -> (result: i64) {
+    return 0;
+}

@@ -41,6 +41,10 @@ def encode(spec, module):
         return {"integer": {"value": val, "type": {"bits": bits, "signed": signed}}}
     if kind == "bool":
         return {"boolean": {"value": bool(val)}}
+    if kind == "f64":
+        import struct
+        bits = struct.unpack("<Q", struct.pack("<d", float(val)))[0]
+        return {"float": {"bits": bits, "type": {"bits": 64}}}
     if kind == "byte":
         return {"byte": {"value": val}}
     if kind == "seq":

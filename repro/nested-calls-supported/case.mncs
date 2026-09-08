@@ -1,0 +1,18 @@
+mncs 0.10;
+module p37_nestpos;
+record St { a: i64, b: i64 }
+fn mul2(a: i64, b: i64) -> (result: i64) {
+    return a * b;
+}
+fn sub2(a: i64, b: i64) -> (result: i64) {
+    return a - b;
+}
+fn in_select(c: bool, x: i64, a: i64, b: i64) -> (result: i64) {
+    return select(c, sub2(x, mul2(a, b)), x);
+}
+fn in_record(x: i64, a: i64, b: i64) -> (result: St) {
+    return St { a: sub2(x, mul2(a, b)), b: x };
+}
+fn in_array(x: i64, a: i64, b: i64) -> (result: [i64; 2]) {
+    return [sub2(x, mul2(a, b)), x];
+}

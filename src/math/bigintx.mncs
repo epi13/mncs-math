@@ -1,0 +1,444 @@
+mncs 0.10;
+
+// mncs.math.bigintx — 1024-bit (16-limb) and 2048-bit (32-limb)
+// fixed-width integer kernels.
+//
+// A width step above `bigint.mncs` (2/8 limbs): full add/sub/mul/
+// shifts/cmp at 16 limbs, add/sub/mul/shifts at 32 limbs, single-limb
+// divisor division at 16 limbs (enough for small-modulus powmod),
+// and a 16 = 2x8 halve/split record as Karatsuba groundwork. Full
+// 16-limb division and Karatsuba recombination are NOT here: both
+// need wider intermediate width families (9/17-limb adders), i.e.
+// the same per-width duplication one more time — that wall is
+// documented in docs/performance.md rather than paid again.
+//
+// Shared limb primitives (`adc`, `mul_wide`) are imported from
+// `bigint.mncs`, never copied. Row-unrolled schoolbook multiply
+// mirrors the house style; the row count IS the scaling datum.
+//
+// Profile 0.10: Nat generics where shapes preserve width, traversal,
+// replace, imports.
+module mncs.math.bigintx.v1;
+
+use mncs.math.error.v1;
+use mncs.math.scalar.v1;
+use mncs.math.bigint.v1;
+
+record AddOut16 { r: [i64; 16], cy: u64 }
+record SubOut16 { d: [i64; 16], bw: u64 }
+record ShState16 { out: [i64; 16], cy: u64 }
+record ShrState16 { out: [i64; 16], k: u64, cy: u64 }
+record RowState16 { lo: [i64; 16], hi: [i64; 16], carry: u64 }
+record MulFull16 { lo: [i64; 16], hi: [i64; 16] }
+record ColPair16 { lo: [i64; 16], hi: [i64; 16] }
+record Half16 { lo: [i64; 8], hi: [i64; 8] }
+
+fn zeros16() -> (result: [i64; 16]) {
+    return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+}
+
+fn from_u64_16(x: u64) -> (result: [i64; 16]) {
+    return [x as i64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+}
+
+fn is_zero16(a: [i64; 16]) -> (result: bool) {
+    iterate i over a carrying acc: bool = true {
+        next acc = acc && a[i] == 0;
+    }
+    return acc;
+}
+
+fn eq16(a: [i64; 16], b: [i64; 16]) -> (result: bool) {
+    iterate i over a carrying acc: bool = true {
+        next acc = acc && a[i] == b[i];
+    }
+    return acc;
+}
+
+fn add16rec(a: [i64; 16], b: [i64; 16]) -> (result: AddOut16) {
+    iterate i over a carrying st: AddOut16 = AddOut16 { r: zeros16(), cy: 0 } {
+        let s: CyOut = adc(a[i] as u64, b[i] as u64, st.cy);
+        next st = AddOut16 { r: replace(st.r, i, s.w as i64), cy: s.cy };
+    }
+    return st;
+}
+
+fn sub16rec(a: [i64; 16], b: [i64; 16]) -> (result: SubOut16) {
+    iterate i over a carrying st: SubOut16 = SubOut16 { d: zeros16(), bw: 0 } {
+        let m1: u64 = (a[i] as u64) -% (b[i] as u64);
+        let w1: u64 = select(m1 > (a[i] as u64), 1, 0);
+        let m2: u64 = m1 -% st.bw;
+        let w2: u64 = select(m2 > m1, 1, 0);
+        let bw: u64 = select(w1 == 1 || w2 == 1, 1, 0);
+        next st = SubOut16 { d: replace(st.d, i, m2 as i64), bw: bw };
+    }
+    return st;
+}
+
+fn shl1_16(a: [i64; 16], carry_in: u64) -> (result: [i64; 16]) {
+    iterate i over a carrying st: ShState16 = ShState16 { out: zeros16(), cy: carry_in } {
+        let w: u64 = (a[i] as u64) *% 2 +% st.cy;
+        next st = ShState16 { out: replace(st.out, i, w as i64), cy: topbit_i64(a[i]) };
+    }
+    return st.out;
+}
+
+fn shr1_16(a: [i64; 16], carry_in: u64) -> (result: [i64; 16]) {
+    iterate i over a carrying st: ShrState16 = ShrState16 { out: zeros16(), k: 15, cy: carry_in } {
+        let limb: u64 = a[st.k] as u64;
+        let w: u64 = limb / 2 +% st.cy *% 9223372036854775808;
+        let next_k: u64 = st.k -% 1;
+        next st = ShrState16 { out: replace(st.out, st.k, w as i64), k: next_k, cy: limb % 2 };
+    }
+    return st.out;
+}
+
+fn col_get16(lo: [i64; 16], hi: [i64; 16], k: u64) -> (result: u64) {
+    if k < 16 {
+        return lo[k] as u64;
+    }
+    return hi[k - 16] as u64;
+}
+
+fn col_set16(lo: [i64; 16], hi: [i64; 16], k: u64, v: u64) -> (result: ColPair16) {
+    if k < 16 {
+        return ColPair16 { lo: replace(lo, k, v as i64), hi: hi };
+    }
+    return ColPair16 { lo: lo, hi: replace(hi, k - 16, v as i64) };
+}
+
+fn mul_row16(st: RowState16, ai: u64, ictr: u64, b: [i64; 16]) -> (result: RowState16) {
+    iterate j over b carrying rs: RowState16 = st {
+        let k: u64 = ictr + j;
+        let w: Wide = mul_wide(ai, b[j] as u64);
+        let col: u64 = col_get16(rs.lo, rs.hi, k);
+        let m1: u64 = col +% rs.carry;
+        let c1: u64 = select(m1 < col, 1, 0);
+        let m2: u64 = m1 +% w.lo;
+        let c2: u64 = select(m2 < m1, 1, 0);
+        let cp: ColPair16 = col_set16(rs.lo, rs.hi, k, m2);
+        next rs = RowState16 { lo: cp.lo, hi: cp.hi, carry: w.hi +% c1 +% c2 };
+    }
+    return rs;
+}
+
+fn mul_full16(a: [i64; 16], b: [i64; 16]) -> (result: MulFull16) {
+    let s0: RowState16 = RowState16 { lo: zeros16(), hi: zeros16(), carry: 0 };
+    let r0: RowState16 = mul_row16(s0, a[0] as u64, 0, b);
+    let h0: [i64; 16] = replace(r0.hi, 0, (r0.hi[0] as u64 +% r0.carry) as i64);
+    let r1: RowState16 = mul_row16(RowState16 { lo: r0.lo, hi: h0, carry: 0 }, a[1] as u64, 1, b);
+    let h1: [i64; 16] = replace(r1.hi, 1, (r1.hi[1] as u64 +% r1.carry) as i64);
+    let r2: RowState16 = mul_row16(RowState16 { lo: r1.lo, hi: h1, carry: 0 }, a[2] as u64, 2, b);
+    let h2: [i64; 16] = replace(r2.hi, 2, (r2.hi[2] as u64 +% r2.carry) as i64);
+    let r3: RowState16 = mul_row16(RowState16 { lo: r2.lo, hi: h2, carry: 0 }, a[3] as u64, 3, b);
+    let h3: [i64; 16] = replace(r3.hi, 3, (r3.hi[3] as u64 +% r3.carry) as i64);
+    let r4: RowState16 = mul_row16(RowState16 { lo: r3.lo, hi: h3, carry: 0 }, a[4] as u64, 4, b);
+    let h4: [i64; 16] = replace(r4.hi, 4, (r4.hi[4] as u64 +% r4.carry) as i64);
+    let r5: RowState16 = mul_row16(RowState16 { lo: r4.lo, hi: h4, carry: 0 }, a[5] as u64, 5, b);
+    let h5: [i64; 16] = replace(r5.hi, 5, (r5.hi[5] as u64 +% r5.carry) as i64);
+    let r6: RowState16 = mul_row16(RowState16 { lo: r5.lo, hi: h5, carry: 0 }, a[6] as u64, 6, b);
+    let h6: [i64; 16] = replace(r6.hi, 6, (r6.hi[6] as u64 +% r6.carry) as i64);
+    let r7: RowState16 = mul_row16(RowState16 { lo: r6.lo, hi: h6, carry: 0 }, a[7] as u64, 7, b);
+    let h7: [i64; 16] = replace(r7.hi, 7, (r7.hi[7] as u64 +% r7.carry) as i64);
+    let r8: RowState16 = mul_row16(RowState16 { lo: r7.lo, hi: h7, carry: 0 }, a[8] as u64, 8, b);
+    let h8: [i64; 16] = replace(r8.hi, 8, (r8.hi[8] as u64 +% r8.carry) as i64);
+    let r9: RowState16 = mul_row16(RowState16 { lo: r8.lo, hi: h8, carry: 0 }, a[9] as u64, 9, b);
+    let h9: [i64; 16] = replace(r9.hi, 9, (r9.hi[9] as u64 +% r9.carry) as i64);
+    let r10: RowState16 = mul_row16(RowState16 { lo: r9.lo, hi: h9, carry: 0 }, a[10] as u64, 10, b);
+    let h10: [i64; 16] = replace(r10.hi, 10, (r10.hi[10] as u64 +% r10.carry) as i64);
+    let r11: RowState16 = mul_row16(RowState16 { lo: r10.lo, hi: h10, carry: 0 }, a[11] as u64, 11, b);
+    let h11: [i64; 16] = replace(r11.hi, 11, (r11.hi[11] as u64 +% r11.carry) as i64);
+    let r12: RowState16 = mul_row16(RowState16 { lo: r11.lo, hi: h11, carry: 0 }, a[12] as u64, 12, b);
+    let h12: [i64; 16] = replace(r12.hi, 12, (r12.hi[12] as u64 +% r12.carry) as i64);
+    let r13: RowState16 = mul_row16(RowState16 { lo: r12.lo, hi: h12, carry: 0 }, a[13] as u64, 13, b);
+    let h13: [i64; 16] = replace(r13.hi, 13, (r13.hi[13] as u64 +% r13.carry) as i64);
+    let r14: RowState16 = mul_row16(RowState16 { lo: r13.lo, hi: h13, carry: 0 }, a[14] as u64, 14, b);
+    let h14: [i64; 16] = replace(r14.hi, 14, (r14.hi[14] as u64 +% r14.carry) as i64);
+    let r15: RowState16 = mul_row16(RowState16 { lo: r14.lo, hi: h14, carry: 0 }, a[15] as u64, 15, b);
+    let h15: [i64; 16] = replace(r15.hi, 15, (r15.hi[15] as u64 +% r15.carry) as i64);
+    return MulFull16 { lo: r15.lo, hi: h15 };
+}
+
+fn mul_lo16(a: [i64; 16], b: [i64; 16]) -> (result: [i64; 16]) {
+    let m: MulFull16 = mul_full16(a, b);
+    return m.lo;
+}
+
+// ---- 16-limb divide by a single limb (restores powmod) ----
+
+record RedSt { rem: u64, k: u64 }
+
+fn red_c(d: u64) -> (result: u64) {
+    let z: u64 = 0;
+    return (z -% d) % d;
+}
+
+fn red_step(rem: u64, limb: u64, c: u64, d: u64) -> (result: u64) {
+    return add_mod(mul_mod(rem, c, d), limb % d, d);
+}
+
+fn red_half(lanes: [i64; 16], c: u64, d: u64, rem0: u64) -> (result: u64) {
+    iterate i over lanes carrying st: RedSt = RedSt { rem: rem0, k: 15 } {
+        let limb: u64 = lanes[st.k] as u64;
+        next st = RedSt { rem: red_step(st.rem, limb, c, d), k: st.k -% 1 };
+    }
+    return st.rem;
+}
+
+fn reduce32_u64(hi: [i64; 16], lo: [i64; 16], d: u64) -> (result: u64) {
+    let c: u64 = red_c(d);
+    let r1: u64 = red_half(hi, c, d, 0);
+    return red_half(lo, c, d, r1);
+}
+
+fn rem16_u64(a: [i64; 16], d: u64) -> (result: u64) {
+    // Remainder only. A quotient would need a 1024-round restoring
+    // bit loop (expressible, unbuilt); nothing here pretends to be
+    // full divmod16. The remainder is what powmod16 needs.
+    return reduce32_u64(zeros16(), a, d);
+}
+
+record PowSt16 { acc: [i64; 16], base: [i64; 16], exp: u64, mod: u64 }
+
+fn powmod16(a: [i64; 16], e: u64, m: u64) -> (result: [i64; 16]) {
+    if m == 0 {
+        return zeros16();
+    }
+    if m == 1 {
+        return zeros16();
+    }
+    let table: [i64; 64] = steps64_digits16();
+    iterate i over table carrying st: PowSt16 = PowSt16 { acc: from_u64_16(1), base: red_base16(a, m), exp: e, mod: m } {
+        if st.exp == 0 {
+            return st.acc;
+        }
+        let nx: PowSt16 = powmod16_round(st);
+        next st = PowSt16 { acc: nx.acc, base: nx.base, exp: nx.exp, mod: nx.mod };
+    }
+    return st.acc;
+}
+
+fn steps64_digits16() -> (result: [i64; 64]) {
+    return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63];
+}
+
+fn red_base16(a: [i64; 16], m: u64) -> (result: [i64; 16]) {
+    return from_u64_16(reduce32_u64(zeros16(), a, m));
+}
+
+fn powmod16_round(st: PowSt16) -> (result: PowSt16) {
+    let full_a: MulFull16 = mul_full16(st.acc, st.base);
+    let ra: u64 = reduce32_u64(full_a.hi, full_a.lo, st.mod);
+    let full_b: MulFull16 = mul_full16(st.base, st.base);
+    let rb: u64 = reduce32_u64(full_b.hi, full_b.lo, st.mod);
+    let use_base: bool = st.exp % 2 == 1;
+    return PowSt16 { acc: select(use_base, from_u64_16(ra), st.acc), base: from_u64_16(rb), exp: st.exp / 2, mod: st.mod };
+}
+
+// ---- Karatsuba groundwork: halve only (recombination wall noted) ----
+
+fn split16(a: [i64; 16]) -> (result: Half16) {
+    return Half16 { lo: [a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]], hi: [a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15]] };
+}
+
+fn entry_split16_lo(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, a9: i64, a10: i64, a11: i64, a12: i64, a13: i64, a14: i64, a15: i64) -> (result: [i64; 8]) {
+    let h: Half16 = split16([a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15]);
+    return h.lo;
+}
+
+fn entry_split16_hi(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, a9: i64, a10: i64, a11: i64, a12: i64, a13: i64, a14: i64, a15: i64) -> (result: [i64; 8]) {
+    let h: Half16 = split16([a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15]);
+    return h.hi;
+}
+
+
+// ---- 2048-bit (32-limb) tier: add/sub/mul/shifts ----
+
+record AddOut32 { r: [i64; 32], cy: u64 }
+record SubOut32 { d: [i64; 32], bw: u64 }
+record ShState32 { out: [i64; 32], cy: u64 }
+record ShrState32 { out: [i64; 32], k: u64, cy: u64 }
+record RowState32 { lo: [i64; 32], hi: [i64; 32], carry: u64 }
+record MulFull32 { lo: [i64; 32], hi: [i64; 32] }
+record ColPair32 { lo: [i64; 32], hi: [i64; 32] }
+
+fn zeros32() -> (result: [i64; 32]) {
+    return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+}
+
+fn add32rec(a: [i64; 32], b: [i64; 32]) -> (result: AddOut32) {
+    iterate i over a carrying st: AddOut32 = AddOut32 { r: zeros32(), cy: 0 } {
+        let s: CyOut = adc(a[i] as u64, b[i] as u64, st.cy);
+        next st = AddOut32 { r: replace(st.r, i, s.w as i64), cy: s.cy };
+    }
+    return st;
+}
+fn sub32rec(a: [i64; 32], b: [i64; 32]) -> (result: SubOut32) {
+    iterate i over a carrying st: SubOut32 = SubOut32 { d: zeros32(), bw: 0 } {
+        let m1: u64 = (a[i] as u64) -% (b[i] as u64);
+        let w1: u64 = select(m1 > (a[i] as u64), 1, 0);
+        let m2: u64 = m1 -% st.bw;
+        let w2: u64 = select(m2 > m1, 1, 0);
+        let bw: u64 = select(w1 == 1 || w2 == 1, 1, 0);
+        next st = SubOut32 { d: replace(st.d, i, m2 as i64), bw: bw };
+    }
+    return st;
+}
+fn shl1_32(a: [i64; 32], carry_in: u64) -> (result: [i64; 32]) {
+    iterate i over a carrying st: ShState32 = ShState32 { out: zeros32(), cy: carry_in } {
+        let w: u64 = (a[i] as u64) *% 2 +% st.cy;
+        next st = ShState32 { out: replace(st.out, i, w as i64), cy: topbit_i64(a[i]) };
+    }
+    return st.out;
+}
+fn shr1_32(a: [i64; 32], carry_in: u64) -> (result: [i64; 32]) {
+    iterate i over a carrying st: ShrState32 = ShrState32 { out: zeros32(), k: 31, cy: carry_in } {
+        let limb: u64 = a[st.k] as u64;
+        let w: u64 = limb / 2 +% st.cy *% 9223372036854775808;
+        let next_k: u64 = st.k -% 1;
+        next st = ShrState32 { out: replace(st.out, st.k, w as i64), k: next_k, cy: limb % 2 };
+    }
+    return st.out;
+}
+fn col_get32(lo: [i64; 32], hi: [i64; 32], k: u64) -> (result: u64) {
+    if k < 32 {
+        return lo[k] as u64;
+    }
+    return hi[k - 32] as u64;
+}
+
+fn col_set32(lo: [i64; 32], hi: [i64; 32], k: u64, v: u64) -> (result: ColPair32) {
+    if k < 32 {
+        return ColPair32 { lo: replace(lo, k, v as i64), hi: hi };
+    }
+    return ColPair32 { lo: lo, hi: replace(hi, k - 32, v as i64) };
+}
+fn mul_row32(st: RowState32, ai: u64, ictr: u64, b: [i64; 32]) -> (result: RowState32) {
+    iterate j over b carrying rs: RowState32 = st {
+        let k: u64 = ictr + j;
+        let w: Wide = mul_wide(ai, b[j] as u64);
+        let col: u64 = col_get32(rs.lo, rs.hi, k);
+        let m1: u64 = col +% rs.carry;
+        let c1: u64 = select(m1 < col, 1, 0);
+        let m2: u64 = m1 +% w.lo;
+        let c2: u64 = select(m2 < m1, 1, 0);
+        let cp: ColPair32 = col_set32(rs.lo, rs.hi, k, m2);
+        next rs = RowState32 { lo: cp.lo, hi: cp.hi, carry: w.hi +% c1 +% c2 };
+    }
+    return rs;
+}
+fn mul_full32(a: [i64; 32], b: [i64; 32]) -> (result: MulFull32) {
+    let s0: RowState32 = RowState32 { lo: zeros32(), hi: zeros32(), carry: 0 };
+    let r0: RowState32 = mul_row32(s0, a[0] as u64, 0, b);
+    let h0: [i64; 32] = replace(r0.hi, 0, (r0.hi[0] as u64 +% r0.carry) as i64);
+    let r1: RowState32 = mul_row32(RowState32 { lo: r0.lo, hi: h0, carry: 0 }, a[1] as u64, 1, b);
+    let h1: [i64; 32] = replace(r1.hi, 1, (r1.hi[1] as u64 +% r1.carry) as i64);
+    let r2: RowState32 = mul_row32(RowState32 { lo: r1.lo, hi: h1, carry: 0 }, a[2] as u64, 2, b);
+    let h2: [i64; 32] = replace(r2.hi, 2, (r2.hi[2] as u64 +% r2.carry) as i64);
+    let r3: RowState32 = mul_row32(RowState32 { lo: r2.lo, hi: h2, carry: 0 }, a[3] as u64, 3, b);
+    let h3: [i64; 32] = replace(r3.hi, 3, (r3.hi[3] as u64 +% r3.carry) as i64);
+    let r4: RowState32 = mul_row32(RowState32 { lo: r3.lo, hi: h3, carry: 0 }, a[4] as u64, 4, b);
+    let h4: [i64; 32] = replace(r4.hi, 4, (r4.hi[4] as u64 +% r4.carry) as i64);
+    let r5: RowState32 = mul_row32(RowState32 { lo: r4.lo, hi: h4, carry: 0 }, a[5] as u64, 5, b);
+    let h5: [i64; 32] = replace(r5.hi, 5, (r5.hi[5] as u64 +% r5.carry) as i64);
+    let r6: RowState32 = mul_row32(RowState32 { lo: r5.lo, hi: h5, carry: 0 }, a[6] as u64, 6, b);
+    let h6: [i64; 32] = replace(r6.hi, 6, (r6.hi[6] as u64 +% r6.carry) as i64);
+    let r7: RowState32 = mul_row32(RowState32 { lo: r6.lo, hi: h6, carry: 0 }, a[7] as u64, 7, b);
+    let h7: [i64; 32] = replace(r7.hi, 7, (r7.hi[7] as u64 +% r7.carry) as i64);
+    let r8: RowState32 = mul_row32(RowState32 { lo: r7.lo, hi: h7, carry: 0 }, a[8] as u64, 8, b);
+    let h8: [i64; 32] = replace(r8.hi, 8, (r8.hi[8] as u64 +% r8.carry) as i64);
+    let r9: RowState32 = mul_row32(RowState32 { lo: r8.lo, hi: h8, carry: 0 }, a[9] as u64, 9, b);
+    let h9: [i64; 32] = replace(r9.hi, 9, (r9.hi[9] as u64 +% r9.carry) as i64);
+    let r10: RowState32 = mul_row32(RowState32 { lo: r9.lo, hi: h9, carry: 0 }, a[10] as u64, 10, b);
+    let h10: [i64; 32] = replace(r10.hi, 10, (r10.hi[10] as u64 +% r10.carry) as i64);
+    let r11: RowState32 = mul_row32(RowState32 { lo: r10.lo, hi: h10, carry: 0 }, a[11] as u64, 11, b);
+    let h11: [i64; 32] = replace(r11.hi, 11, (r11.hi[11] as u64 +% r11.carry) as i64);
+    let r12: RowState32 = mul_row32(RowState32 { lo: r11.lo, hi: h11, carry: 0 }, a[12] as u64, 12, b);
+    let h12: [i64; 32] = replace(r12.hi, 12, (r12.hi[12] as u64 +% r12.carry) as i64);
+    let r13: RowState32 = mul_row32(RowState32 { lo: r12.lo, hi: h12, carry: 0 }, a[13] as u64, 13, b);
+    let h13: [i64; 32] = replace(r13.hi, 13, (r13.hi[13] as u64 +% r13.carry) as i64);
+    let r14: RowState32 = mul_row32(RowState32 { lo: r13.lo, hi: h13, carry: 0 }, a[14] as u64, 14, b);
+    let h14: [i64; 32] = replace(r14.hi, 14, (r14.hi[14] as u64 +% r14.carry) as i64);
+    let r15: RowState32 = mul_row32(RowState32 { lo: r14.lo, hi: h14, carry: 0 }, a[15] as u64, 15, b);
+    let h15: [i64; 32] = replace(r15.hi, 15, (r15.hi[15] as u64 +% r15.carry) as i64);
+    let r16: RowState32 = mul_row32(RowState32 { lo: r15.lo, hi: h15, carry: 0 }, a[16] as u64, 16, b);
+    let h16: [i64; 32] = replace(r16.hi, 16, (r16.hi[16] as u64 +% r16.carry) as i64);
+    let r17: RowState32 = mul_row32(RowState32 { lo: r16.lo, hi: h16, carry: 0 }, a[17] as u64, 17, b);
+    let h17: [i64; 32] = replace(r17.hi, 17, (r17.hi[17] as u64 +% r17.carry) as i64);
+    let r18: RowState32 = mul_row32(RowState32 { lo: r17.lo, hi: h17, carry: 0 }, a[18] as u64, 18, b);
+    let h18: [i64; 32] = replace(r18.hi, 18, (r18.hi[18] as u64 +% r18.carry) as i64);
+    let r19: RowState32 = mul_row32(RowState32 { lo: r18.lo, hi: h18, carry: 0 }, a[19] as u64, 19, b);
+    let h19: [i64; 32] = replace(r19.hi, 19, (r19.hi[19] as u64 +% r19.carry) as i64);
+    let r20: RowState32 = mul_row32(RowState32 { lo: r19.lo, hi: h19, carry: 0 }, a[20] as u64, 20, b);
+    let h20: [i64; 32] = replace(r20.hi, 20, (r20.hi[20] as u64 +% r20.carry) as i64);
+    let r21: RowState32 = mul_row32(RowState32 { lo: r20.lo, hi: h20, carry: 0 }, a[21] as u64, 21, b);
+    let h21: [i64; 32] = replace(r21.hi, 21, (r21.hi[21] as u64 +% r21.carry) as i64);
+    let r22: RowState32 = mul_row32(RowState32 { lo: r21.lo, hi: h21, carry: 0 }, a[22] as u64, 22, b);
+    let h22: [i64; 32] = replace(r22.hi, 22, (r22.hi[22] as u64 +% r22.carry) as i64);
+    let r23: RowState32 = mul_row32(RowState32 { lo: r22.lo, hi: h22, carry: 0 }, a[23] as u64, 23, b);
+    let h23: [i64; 32] = replace(r23.hi, 23, (r23.hi[23] as u64 +% r23.carry) as i64);
+    let r24: RowState32 = mul_row32(RowState32 { lo: r23.lo, hi: h23, carry: 0 }, a[24] as u64, 24, b);
+    let h24: [i64; 32] = replace(r24.hi, 24, (r24.hi[24] as u64 +% r24.carry) as i64);
+    let r25: RowState32 = mul_row32(RowState32 { lo: r24.lo, hi: h24, carry: 0 }, a[25] as u64, 25, b);
+    let h25: [i64; 32] = replace(r25.hi, 25, (r25.hi[25] as u64 +% r25.carry) as i64);
+    let r26: RowState32 = mul_row32(RowState32 { lo: r25.lo, hi: h25, carry: 0 }, a[26] as u64, 26, b);
+    let h26: [i64; 32] = replace(r26.hi, 26, (r26.hi[26] as u64 +% r26.carry) as i64);
+    let r27: RowState32 = mul_row32(RowState32 { lo: r26.lo, hi: h26, carry: 0 }, a[27] as u64, 27, b);
+    let h27: [i64; 32] = replace(r27.hi, 27, (r27.hi[27] as u64 +% r27.carry) as i64);
+    let r28: RowState32 = mul_row32(RowState32 { lo: r27.lo, hi: h27, carry: 0 }, a[28] as u64, 28, b);
+    let h28: [i64; 32] = replace(r28.hi, 28, (r28.hi[28] as u64 +% r28.carry) as i64);
+    let r29: RowState32 = mul_row32(RowState32 { lo: r28.lo, hi: h28, carry: 0 }, a[29] as u64, 29, b);
+    let h29: [i64; 32] = replace(r29.hi, 29, (r29.hi[29] as u64 +% r29.carry) as i64);
+    let r30: RowState32 = mul_row32(RowState32 { lo: r29.lo, hi: h29, carry: 0 }, a[30] as u64, 30, b);
+    let h30: [i64; 32] = replace(r30.hi, 30, (r30.hi[30] as u64 +% r30.carry) as i64);
+    let r31: RowState32 = mul_row32(RowState32 { lo: r30.lo, hi: h30, carry: 0 }, a[31] as u64, 31, b);
+    let h31: [i64; 32] = replace(r31.hi, 31, (r31.hi[31] as u64 +% r31.carry) as i64);
+    return MulFull32 { lo: r31.lo, hi: h31 };
+}
+
+fn mul_lo32(a: [i64; 32], b: [i64; 32]) -> (result: [i64; 32]) {
+    let m: MulFull32 = mul_full32(a, b);
+    return m.lo;
+}
+// ---- corpus entries: 16-limb ----
+
+fn entry_add16(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64, x8: i64, x9: i64, x10: i64, x11: i64, x12: i64, x13: i64, x14: i64, x15: i64, y0: i64, y1: i64, y2: i64, y3: i64, y4: i64, y5: i64, y6: i64, y7: i64, y8: i64, y9: i64, y10: i64, y11: i64, y12: i64, y13: i64, y14: i64, y15: i64) -> (result: [i64; 16]) {
+    let s: AddOut16 = add16rec([x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15], [y0, y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12, y13, y14, y15]);
+    return s.r;
+}
+
+fn entry_add16_cy(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64, x8: i64, x9: i64, x10: i64, x11: i64, x12: i64, x13: i64, x14: i64, x15: i64, y0: i64, y1: i64, y2: i64, y3: i64, y4: i64, y5: i64, y6: i64, y7: i64, y8: i64, y9: i64, y10: i64, y11: i64, y12: i64, y13: i64, y14: i64, y15: i64) -> (result: u64) {
+    let s: AddOut16 = add16rec([x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15], [y0, y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12, y13, y14, y15]);
+    return s.cy;
+}
+
+fn entry_mul_lo16(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64, x8: i64, x9: i64, x10: i64, x11: i64, x12: i64, x13: i64, x14: i64, x15: i64, y0: i64, y1: i64, y2: i64, y3: i64, y4: i64, y5: i64, y6: i64, y7: i64, y8: i64, y9: i64, y10: i64, y11: i64, y12: i64, y13: i64, y14: i64, y15: i64) -> (result: [i64; 16]) {
+    return mul_lo16([x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15], [y0, y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12, y13, y14, y15]);
+}
+
+fn entry_shl1_16(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64, x8: i64, x9: i64, x10: i64, x11: i64, x12: i64, x13: i64, x14: i64, x15: i64) -> (result: [i64; 16]) {
+    return shl1_16([x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15], 0);
+}
+
+fn entry_rem16(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64, x8: i64, x9: i64, x10: i64, x11: i64, x12: i64, x13: i64, x14: i64, x15: i64, d: u64) -> (result: u64) {
+    return rem16_u64([x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15], d);
+}
+
+fn entry_powmod16(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64, x8: i64, x9: i64, x10: i64, x11: i64, x12: i64, x13: i64, x14: i64, x15: i64, e: u64, m: u64) -> (result: [i64; 16]) {
+    return powmod16([x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15], e, m);
+}
+
+// ---- corpus entries: 32-limb ----
+
+fn entry_add32(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64, x8: i64, x9: i64, x10: i64, x11: i64, x12: i64, x13: i64, x14: i64, x15: i64, x16: i64, x17: i64, x18: i64, x19: i64, x20: i64, x21: i64, x22: i64, x23: i64, x24: i64, x25: i64, x26: i64, x27: i64, x28: i64, x29: i64, x30: i64, x31: i64, y0: i64, y1: i64, y2: i64, y3: i64, y4: i64, y5: i64, y6: i64, y7: i64, y8: i64, y9: i64, y10: i64, y11: i64, y12: i64, y13: i64, y14: i64, y15: i64, y16: i64, y17: i64, y18: i64, y19: i64, y20: i64, y21: i64, y22: i64, y23: i64, y24: i64, y25: i64, y26: i64, y27: i64, y28: i64, y29: i64, y30: i64, y31: i64) -> (result: [i64; 32]) {
+    let s: AddOut32 = add32rec([x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31], [y0, y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12, y13, y14, y15, y16, y17, y18, y19, y20, y21, y22, y23, y24, y25, y26, y27, y28, y29, y30, y31]);
+    return s.r;
+}
+
+fn entry_mul_lo32(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64, x8: i64, x9: i64, x10: i64, x11: i64, x12: i64, x13: i64, x14: i64, x15: i64, x16: i64, x17: i64, x18: i64, x19: i64, x20: i64, x21: i64, x22: i64, x23: i64, x24: i64, x25: i64, x26: i64, x27: i64, x28: i64, x29: i64, x30: i64, x31: i64, y0: i64, y1: i64, y2: i64, y3: i64, y4: i64, y5: i64, y6: i64, y7: i64, y8: i64, y9: i64, y10: i64, y11: i64, y12: i64, y13: i64, y14: i64, y15: i64, y16: i64, y17: i64, y18: i64, y19: i64, y20: i64, y21: i64, y22: i64, y23: i64, y24: i64, y25: i64, y26: i64, y27: i64, y28: i64, y29: i64, y30: i64, y31: i64) -> (result: [i64; 32]) {
+    return mul_lo32([x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31], [y0, y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12, y13, y14, y15, y16, y17, y18, y19, y20, y21, y22, y23, y24, y25, y26, y27, y28, y29, y30, y31]);
+}
+
+fn entry_shl1_32(x0: i64, x1: i64, x2: i64, x3: i64, x4: i64, x5: i64, x6: i64, x7: i64, x8: i64, x9: i64, x10: i64, x11: i64, x12: i64, x13: i64, x14: i64, x15: i64, x16: i64, x17: i64, x18: i64, x19: i64, x20: i64, x21: i64, x22: i64, x23: i64, x24: i64, x25: i64, x26: i64, x27: i64, x28: i64, x29: i64, x30: i64, x31: i64) -> (result: [i64; 32]) {
+    return shl1_32([x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31], 0);
+}

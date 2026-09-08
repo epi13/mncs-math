@@ -1,0 +1,6 @@
+mncs 0.10;
+module p04_array_enum;
+enum ArrOut { Ok { v: [i64; 2] }, Err { reason: i64 } }
+fn f(x: i64) -> (result: ArrOut) {
+    return ArrOut.Ok { v: [x, x] };
+}

@@ -1,0 +1,10 @@
+mncs 0.10;
+module p06g_two_proj;
+record Inner { x: i64 }
+record Outer { inner: Inner, y: i64 }
+fn mk(a: i64, b: i64) -> (result: Outer) {
+    return Outer { inner: Inner { x: a }, y: b };
+}
+fn get(o: Outer) -> (result: i64) {
+    return o.inner.x +% o.y;
+}

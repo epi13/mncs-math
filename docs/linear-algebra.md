@@ -2,6 +2,10 @@
 
 `src/math/linalg.mncs` implements exact linear algebra over integers
 (determinants, ranks, norms) and rationals (solvers, substitution, LU).
+`src/math/linalg5.mncs` extends the same Bareiss architecture to 5x5
+(determinants, full-pivot rank, Cramer solve with integer-residual
+check) and 6x6 (determinants, full-pivot rank); per-size copy costs
+are measured in `docs/generics.md`.
 
 ## Provided
 
@@ -25,8 +29,10 @@
 
 - Float LU/QR/Cholesky/eigen and condition estimation need a float
   type with division/sqrt semantics (**P001**).
-- 5x5+ elimination needs either longer unrolled step chains (feasible
-  but quadratic in code size) or const-generic dimensions (**P005**);
-  each new size today is a new hand-written kernel.
+- 5x5/6x6 elimination shipped as longer unrolled step chains,
+  confirming the predicted quadratic copy cost (**P005**,
+  `docs/generics.md`); 7x7+ and NxN need const-generic dimensions,
+  and 6x6 ships no Cramer solve (seven 6x6 determinants against the
+  8M step-budget ceiling).
 - Iterative refinement and Krylov methods need tolerance-driven loops
   with data-dependent exit plus float arithmetic (**P001**, **P007**).

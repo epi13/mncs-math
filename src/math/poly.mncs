@@ -1,0 +1,216 @@
+mncs 0.10;
+
+// mncs.math.poly — exact univariate polynomial kernels.
+//
+// Coefficients are ascending lanes: c[0] is the constant term.
+// Two tiers by necessity, not taste (dimension arithmetic `[i64; N]`
+// -> `[i64; N - 1]` is rejected at parse, MNP149):
+//   generic-N  evaluation, addition, scaling, degree query — shapes
+//              that preserve N elaborate once for all N.
+//   fixed-degree  derivatives, products, synthetic division — every
+//              degree pair is a hand-written kernel. The LOC growth
+//              across pmul22/pmul33 is the measured cost of missing
+//              const-expression bounds (see docs/performance.md).
+// All i64 arithmetic here is WRAPPING (`+%`/`*%`); the oracle wraps
+// Python exact integers identically, so expectations are independent.
+//
+// Profile 0.10: Nat generics, traversal, replace, imports.
+module mncs.math.poly.v1;
+
+use mncs.math.rational.v1;
+
+// ---- degree-generic kernels (shape-preserving) ----
+
+record PwSt { acc: i64, pw: i64 }
+
+record DegSt { best: i64, pos: i64 }
+
+// Horner by ascending powers: carry (acc, pow) upward.
+fn peval_wrap<N: Nat>(c: [i64; N], x: i64) -> (result: i64) {
+    iterate i over c carrying st: PwSt = PwSt { acc: 0, pw: 1 } {
+        next st = PwSt { acc: st.acc +% c[i] *% st.pw, pw: st.pw *% x };
+    }
+    return st.acc;
+}
+
+fn padd_wrap<N: Nat>(a: [i64; N], b: [i64; N]) -> (result: [i64; N]) {
+    iterate i over a carrying out: [i64; N] = a {
+        next out = replace(out, i, a[i] +% b[i]);
+    }
+    return out;
+}
+
+fn pscale_wrap<N: Nat>(s: i64, c: [i64; N]) -> (result: [i64; N]) {
+    iterate i over c carrying out: [i64; N] = c {
+        next out = replace(out, i, s *% c[i]);
+    }
+    return out;
+}
+
+// Highest nonzero lane index, -1 for the zero polynomial.
+// An over-domain loop index inside a `next`-position call argument is
+// ungrammatical (MNP064), so indexed values are let-bound above the
+// call. Unary minus is ungrammatical in the carry initializer, so the
+// -1 sentinel is spelled `0 - 1`.
+fn pdegree<N: Nat>(c: [i64; N]) -> (result: i64) {
+    iterate i over c carrying st: DegSt = DegSt { best: 0 - 1, pos: 0 } {
+        let is_nz: bool = c[i] != 0;
+        let best: i64 = select(is_nz, st.pos, st.best);
+        let pos: i64 = st.pos + 1;
+        next st = DegSt { best: best, pos: pos };
+    }
+    return st.best;
+}
+
+// ---- corpus entries for the generic tier ----
+
+fn entry_peval3(c0: i64, c1: i64, c2: i64, c3: i64, x: i64) -> (result: i64) {
+    return peval_wrap<4>([c0, c1, c2, c3], x);
+}
+
+fn entry_peval5(c0: i64, c1: i64, c2: i64, c3: i64, c4: i64, c5: i64, x: i64) -> (result: i64) {
+    return peval_wrap<6>([c0, c1, c2, c3, c4, c5], x);
+}
+
+fn entry_padd3(a0: i64, a1: i64, a2: i64, b0: i64, b1: i64, b2: i64) -> (result: [i64; 3]) {
+    return padd_wrap<3>([a0, a1, a2], [b0, b1, b2]);
+}
+
+fn entry_pdegree4(c0: i64, c1: i64, c2: i64, c3: i64) -> (result: i64) {
+    return pdegree<4>([c0, c1, c2, c3]);
+}
+
+// ---- fixed-degree derivatives (dim-change needs concrete bounds) ----
+
+fn pderiv3(c: [i64; 4]) -> (result: [i64; 3]) {
+    return [c[1], c[2] *% 2, c[3] *% 3];
+}
+
+fn pderiv4(c: [i64; 5]) -> (result: [i64; 4]) {
+    return [c[1], c[2] *% 2, c[3] *% 3, c[4] *% 4];
+}
+
+fn entry_pderiv3(c0: i64, c1: i64, c2: i64, c3: i64) -> (result: [i64; 3]) {
+    return pderiv3([c0, c1, c2, c3]);
+}
+
+fn entry_pderiv4(c0: i64, c1: i64, c2: i64, c3: i64, c4: i64) -> (result: [i64; 4]) {
+    return pderiv4([c0, c1, c2, c3, c4]);
+}
+
+// ---- fixed-degree products (convolution, wrapping) ----
+
+fn pmul22(a: [i64; 3], b: [i64; 3]) -> (result: [i64; 5]) {
+    let r0: i64 = a[0] *% b[0];
+    let r1: i64 = a[0] *% b[1] +% a[1] *% b[0];
+    let r2: i64 = a[0] *% b[2] +% a[1] *% b[1] +% a[2] *% b[0];
+    let r3: i64 = a[1] *% b[2] +% a[2] *% b[1];
+    let r4: i64 = a[2] *% b[2];
+    return [r0, r1, r2, r3, r4];
+}
+
+fn pmul33(a: [i64; 4], b: [i64; 4]) -> (result: [i64; 7]) {
+    let r0: i64 = a[0] *% b[0];
+    let r1: i64 = a[0] *% b[1] +% a[1] *% b[0];
+    let r2: i64 = a[0] *% b[2] +% a[1] *% b[1] +% a[2] *% b[0];
+    let r3: i64 = a[0] *% b[3] +% a[1] *% b[2] +% a[2] *% b[1] +% a[3] *% b[0];
+    let r4: i64 = a[1] *% b[3] +% a[2] *% b[2] +% a[3] *% b[1];
+    let r5: i64 = a[2] *% b[3] +% a[3] *% b[2];
+    let r6: i64 = a[3] *% b[3];
+    return [r0, r1, r2, r3, r4, r5, r6];
+}
+
+fn entry_pmul22(a0: i64, a1: i64, a2: i64, b0: i64, b1: i64, b2: i64) -> (result: [i64; 5]) {
+    return pmul22([a0, a1, a2], [b0, b1, b2]);
+}
+
+fn entry_pmul33(a0: i64, a1: i64, a2: i64, a3: i64, b0: i64, b1: i64, b2: i64, b3: i64) -> (result: [i64; 7]) {
+    return pmul33([a0, a1, a2, a3], [b0, b1, b2, b3]);
+}
+
+// ---- synthetic division of a cubic by (x - r) ----
+
+fn psynth3(c: [i64; 4], r: i64) -> (result: [i64; 3]) {
+    let b2: i64 = c[3];
+    let b1: i64 = c[2] +% r *% b2;
+    let b0: i64 = c[1] +% r *% b1;
+    return [b0, b1, b2];
+}
+
+fn psynth3r(c: [i64; 4], r: i64) -> (result: i64) {
+    let b2: i64 = c[3];
+    let b1: i64 = c[2] +% r *% b2;
+    let b0: i64 = c[1] +% r *% b1;
+    return c[0] +% r *% b0;
+}
+
+fn entry_psynth3(c0: i64, c1: i64, c2: i64, c3: i64, r: i64) -> (result: [i64; 3]) {
+    return psynth3([c0, c1, c2, c3], r);
+}
+
+fn entry_psynth3r(c0: i64, c1: i64, c2: i64, c3: i64, r: i64) -> (result: i64) {
+    return psynth3r([c0, c1, c2, c3], r);
+}
+
+// ---- rational-coefficient quadratic eval (cross-module Frac) ----
+
+fn qeval2_step(acc: FracOutcome, coef: Frac, x: Frac) -> (result: FracOutcome) {
+    return qeval2_combine(acc, coef, x);
+}
+
+fn qeval2_combine(acc: FracOutcome, coef: Frac, x: Frac) -> (result: FracOutcome) {
+    return acc_out(acc, coef, x);
+}
+
+fn acc_out(acc: FracOutcome, coef: Frac, x: Frac) -> (result: FracOutcome) {
+    return match acc {
+        Ok { num: an, den: ad } => qeval2_ok(Frac { num: an, den: ad }, coef, x),
+        FracOutcome.Err { reason: e } => err_frac(e),
+    };
+}
+
+fn qeval2_ok(acc: Frac, coef: Frac, x: Frac) -> (result: FracOutcome) {
+    return qeval2_mul(acc, coef, x);
+}
+
+fn qeval2_mul(acc: Frac, coef: Frac, x: Frac) -> (result: FracOutcome) {
+    return match mul(acc, x) {
+        Ok { num: mn, den: md } => add(Frac { num: mn, den: md }, coef),
+        FracOutcome.Err { reason: e } => err_frac(e),
+    };
+}
+
+fn entry_qeval2(n0: i64, d0: i64, n1: i64, d1: i64, n2: i64, d2: i64, xn: i64, xd: i64) -> (result: FracOutcome) {
+    return match make(n2, d2) {
+        Ok { num: a2n, den: a2d } => qeval2_c1(Frac { num: a2n, den: a2d }, n1, d1, n0, d0, xn, xd),
+        FracOutcome.Err { reason: e } => err_frac(e),
+    };
+}
+
+fn qeval2_c1(a2: Frac, n1: i64, d1: i64, n0: i64, d0: i64, xn: i64, xd: i64) -> (result: FracOutcome) {
+    return match make(n1, d1) {
+        Ok { num: a1n, den: a1d } => qeval2_c0(a2, Frac { num: a1n, den: a1d }, n0, d0, xn, xd),
+        FracOutcome.Err { reason: e } => err_frac(e),
+    };
+}
+
+fn qeval2_c0(a2: Frac, a1: Frac, n0: i64, d0: i64, xn: i64, xd: i64) -> (result: FracOutcome) {
+    return match make(n0, d0) {
+        Ok { num: a0n, den: a0d } => qeval2_x(a2, a1, Frac { num: a0n, den: a0d }, xn, xd),
+        FracOutcome.Err { reason: e } => err_frac(e),
+    };
+}
+
+fn qeval2_x(a2: Frac, a1: Frac, a0: Frac, xn: i64, xd: i64) -> (result: FracOutcome) {
+    return match make(xn, xd) {
+        Ok { num: xn2, den: xd2 } => qeval2_run(a2, a1, a0, Frac { num: xn2, den: xd2 }),
+        FracOutcome.Err { reason: e } => err_frac(e),
+    };
+}
+
+fn qeval2_run(a2: Frac, a1: Frac, a0: Frac, x: Frac) -> (result: FracOutcome) {
+    return match qeval2_step(ok_frac(a2.num, a2.den), a1, x) {
+        Ok { num: s1n, den: s1d } => qeval2_step(ok_frac(s1n, s1d), a0, x),
+        FracOutcome.Err { reason: e } => err_frac(e),
+    };
+}

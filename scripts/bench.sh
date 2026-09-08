@@ -14,7 +14,7 @@ MODS=("$@")
 if [ "${#MODS[@]}" -eq 0 ]; then
   MODS=(error scalar rational internal bigint fixed complex vector matrix
         linalg tensor interval autodiff deterministic statistics numerical
-        optimize)
+        optimize float poly modular ntt sparse linalg5 tdata bigintx ode)
 fi
 BACKENDS=(mncs-research-bytecode mncs-portable-wasm-mvp)
 

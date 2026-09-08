@@ -1,0 +1,1140 @@
+{
+ "schema_version": "0.1",
+ "name": "ntt-shapes",
+ "cases": [
+  {
+   "id": "ntt8",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.ntt.v1",
+     "function": "candidate_ntt8"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 6,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 8,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 1048576
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": 36,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 894301004,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 346334868,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 201631260,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 998244349,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 796613085,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 651909477,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 103943341,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "intt8-back",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.ntt.v1",
+     "function": "candidate_intt8"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 36,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 894301004,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 346334868,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 201631260,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 998244349,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 796613085,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 651909477,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 103943341,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 1048576
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": 1,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 2,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 3,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 4,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 5,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 6,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 7,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 8,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "intt8-ntt8-id",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.ntt.v1",
+     "function": "candidate_intt8"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 101233,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 298045620,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 698906487,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 798224002,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 98995,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 725585089,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 299137698,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 174634015,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 1048576
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": 10,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 0,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 99,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 1000,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 5,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 77,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 100000,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 42,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "ntt16",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.ntt.v1",
+     "function": "candidate_ntt16"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 1,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 4,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 6,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 8,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 9,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 10,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 11,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 12,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 13,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 14,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 15,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 16,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 1048576
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": 136,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 16886715,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 790357655,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 115058691,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 692669736,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 306777988,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 403262520,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 432660095,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 998244345,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 565584242,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 594981817,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 691466349,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 305574601,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 883185646,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 207886682,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 981357622,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "conv4",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.ntt.v1",
+     "function": "candidate_conv4"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 11,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 13,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 1048576
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": 21,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 91,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 15,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 112,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 143,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 10,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 22,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 0,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "conv8-ntt",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.ntt.v1",
+     "function": "candidate_conv8_ntt"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 7,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 5,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 11,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 3,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 13,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 2,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 1048576
+   },
+   "expected": [
+    {
+     "sequence": {
+      "values": [
+       {
+        "integer": {
+         "value": 21,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 91,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 15,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 112,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 143,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 10,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 22,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       },
+       {
+        "integer": {
+         "value": 0,
+         "type": {
+          "bits": 64,
+          "signed": false
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

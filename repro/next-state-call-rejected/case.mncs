@@ -1,0 +1,12 @@
+mncs 0.10;
+module p23_nextcall;
+record DegSt { best: i64, pos: i64 }
+fn bump(st: DegSt, lane: i64) -> (result: DegSt) {
+    return DegSt { best: st.best, pos: st.pos + 1 };
+}
+fn deg<N: Nat>(c: [i64; N]) -> (result: i64) {
+    iterate i over c carrying st: DegSt = DegSt { best: -1, pos: 0 } {
+        next st = bump(st, c[i]);
+    }
+    return st.best;
+}

@@ -1,0 +1,153 @@
+mncs 0.11;
+
+// mncs.math.tdata — real tensor DATA kernels over flattened lanes.
+//
+// The `tensor.mncs` index mathematics (shapes, strides, ravel,
+// permutations, broadcast rules) deliberately stops at metadata.
+// These kernels cross into movement: transpose-copy, contraction,
+// batched matmul, axis reduction, broadcast elementwise add. Shapes
+// are explicit u64 lanes; rank is fixed per kernel because
+// rank-generic arrays do not exist (P005). The representation is
+// honest flattened row-major plus lane arithmetic, and every kernel
+// documents the rank it serves.
+//
+// Transpose involution (transpose twice) is a metamorphic corpus
+// property: both applications share one expectation.
+//
+// Profile 0.11: `up_to` indices as values, imports.
+module mncs.math.tdata.v1;
+
+use mncs.math.tensor.v1;
+
+// ---- 4x4 transpose-copy ----
+
+fn transpose4(a: [i64; 16]) -> (result: [i64; 16]) {
+    iterate j up_to 16 carrying out: [i64; 16] = a {
+        let lane: u64 = j;
+        let r: u64 = lane / 4;
+        let c: u64 = lane % 4;
+        next out = transpose4_write(out, a, lane, r, c);
+    }
+    return out;
+}
+
+fn transpose4_write(out: [i64; 16], a: [i64; 16], lane: u64, r: u64, c: u64) -> (result: [i64; 16]) {
+    return replace(out, c * 4 + r, a[lane]);
+}
+
+fn entry_transpose4(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, a8: i64, a9: i64, a10: i64, a11: i64, a12: i64, a13: i64, a14: i64, a15: i64) -> (result: [i64; 16]) {
+    return transpose4([a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15]);
+}
+
+// ---- 2x3 * 3x2 contraction through lane arithmetic ----
+
+fn contract232(a: [i64; 6], b: [i64; 6]) -> (result: [i64; 4]) {
+    iterate j up_to 4 carrying out: [i64; 4] = [0, 0, 0, 0] {
+        let lane: u64 = j;
+        next out = contract232_write(out, a, b, lane);
+    }
+    return out;
+}
+
+fn contract232_write(out: [i64; 4], a: [i64; 6], b: [i64; 6], lane: u64) -> (result: [i64; 4]) {
+    let r: u64 = lane / 2;
+    let c: u64 = lane % 2;
+    let v: i64 = a[r * 3] * b[c] + a[r * 3 + 1] * b[2 + c] + a[r * 3 + 2] * b[4 + c];
+    return replace(out, lane, v);
+}
+
+fn entry_contract232(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, b0: i64, b1: i64, b2: i64, b3: i64, b4: i64, b5: i64) -> (result: [i64; 4]) {
+    return contract232([a0, a1, a2, a3, a4, a5], [b0, b1, b2, b3, b4, b5]);
+}
+
+// ---- batched 2x2 matmul (batch 2): 8-lane tensors ----
+
+fn bmm2(a: [i64; 8], b: [i64; 8]) -> (result: [i64; 8]) {
+    iterate j up_to 8 carrying out: [i64; 8] = a {
+        let lane: u64 = j;
+        next out = bmm2_write(out, a, b, lane);
+    }
+    return out;
+}
+
+fn bmm2_write(out: [i64; 8], a: [i64; 8], b: [i64; 8], lane: u64) -> (result: [i64; 8]) {
+    let base: u64 = lane / 4 * 4;
+    let r: u64 = lane % 4 / 2;
+    let c: u64 = lane % 2;
+    let v: i64 = a[base + r * 2] * b[base + c] + a[base + r * 2 + 1] * b[base + 2 + c];
+    return replace(out, lane, v);
+}
+
+fn entry_bmm2(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64, a6: i64, a7: i64, b0: i64, b1: i64, b2: i64, b3: i64, b4: i64, b5: i64, b6: i64, b7: i64) -> (result: [i64; 8]) {
+    return bmm2([a0, a1, a2, a3, a4, a5, a6, a7], [b0, b1, b2, b3, b4, b5, b6, b7]);
+}
+
+// ---- reduction over axis 0 of a 2x3 (column sums) ----
+
+fn reduce0_2x3(a: [i64; 6]) -> (result: [i64; 3]) {
+    return [a[0] + a[3], a[1] + a[4], a[2] + a[5]];
+}
+
+fn entry_reduce0_2x3(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64, a5: i64) -> (result: [i64; 3]) {
+    return reduce0_2x3([a0, a1, a2, a3, a4, a5]);
+}
+
+// ---- broadcast scalar-plus-vector ----
+
+fn bcast_add4(v: [i64; 4], s: i64) -> (result: [i64; 4]) {
+    iterate j up_to 4 carrying out: [i64; 4] = v {
+        let lane: u64 = j;
+        next out = bcast_add4_write(out, v, s, lane);
+    }
+    return out;
+}
+
+fn bcast_add4_write(out: [i64; 4], v: [i64; 4], s: i64, lane: u64) -> (result: [i64; 4]) {
+    return replace(out, lane, v[lane] + s);
+}
+
+fn entry_bcast_add4(v0: i64, v1: i64, v2: i64, v3: i64, s: i64) -> (result: [i64; 4]) {
+    return bcast_add4([v0, v1, v2, v3], s);
+}
+
+// ---- valid 1-D convolution: signal 8 x kernel 3 -> 6 lanes ----
+
+fn conv_valid83(s: [i64; 8], k: [i64; 3]) -> (result: [i64; 6]) {
+    iterate j up_to 6 carrying out: [i64; 6] = [0, 0, 0, 0, 0, 0] {
+        let lane: u64 = j;
+        next out = conv_valid83_write(out, s, k, lane);
+    }
+    return out;
+}
+
+fn conv_valid83_write(out: [i64; 6], s: [i64; 8], k: [i64; 3], lane: u64) -> (result: [i64; 6]) {
+    let v: i64 = s[lane] * k[0] + s[lane + 1] * k[1] + s[lane + 2] * k[2];
+    return replace(out, lane, v);
+}
+
+fn entry_conv_valid83(s0: i64, s1: i64, s2: i64, s3: i64, s4: i64, s5: i64, s6: i64, s7: i64, k0: i64, k1: i64, k2: i64) -> (result: [i64; 6]) {
+    return conv_valid83([s0, s1, s2, s3, s4, s5, s6, s7], [k0, k1, k2]);
+}
+
+// ---- strided gather: 4 lanes from an 8-lane signal ----
+//
+// out[j] = s[start + j * stride]. Valid-domain precondition (as with
+// the contraction kernels above): start + 3 * stride < 8. Stride 1 is
+// a window copy; stride 2 with start 0/1 is even/odd decimation. (No
+// stride-3 quad fits 8 lanes, so stride 3 has no corpus case.)
+
+fn gather_stride4(s: [i64; 8], start: u64, stride: u64) -> (result: [i64; 4]) {
+    iterate j up_to 4 carrying out: [i64; 4] = [0, 0, 0, 0] {
+        let lane: u64 = j;
+        next out = gather_stride4_write(out, s, start, stride, lane);
+    }
+    return out;
+}
+
+fn gather_stride4_write(out: [i64; 4], s: [i64; 8], start: u64, stride: u64, lane: u64) -> (result: [i64; 4]) {
+    return replace(out, lane, s[start + lane * stride]);
+}
+
+fn entry_gather_stride4(s0: i64, s1: i64, s2: i64, s3: i64, s4: i64, s5: i64, s6: i64, s7: i64, start: u64, stride: u64) -> (result: [i64; 4]) {
+    return gather_stride4([s0, s1, s2, s3, s4, s5, s6, s7], start, stride);
+}
