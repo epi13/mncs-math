@@ -1,0 +1,29 @@
+mncs 0.11;
+
+// Example: reproducible sampling composed with exact statistics.
+//
+// A splitmix64 seed shuffles [1..8]; the shuffled deck feeds the exact
+// median and mean/variance directly. The median (9/2) and moments are
+// shuffle-invariant for a full deck, which the corpus pins across
+// seeds; the argmin index is seed-dependent and pins the stream.
+module ex.sample.v1;
+
+use mncs.math.rational.v1;
+use mncs.math.deterministic.v1;
+use mncs.math.statistics.v1;
+use mncs.math.optimize.v1;
+
+fn entry_ex_median(seed: u64) -> (result: FracOutcome) {
+    let s: Shuf8 = shuffle8([1, 2, 3, 4, 5, 6, 7, 8], seed);
+    return median8(s.arr);
+}
+
+fn entry_ex_mean_var(seed: u64) -> (result: StatOut) {
+    let s: Shuf8 = shuffle8([1, 2, 3, 4, 5, 6, 7, 8], seed);
+    return mean_var8(s.arr);
+}
+
+fn entry_ex_argmin(seed: u64) -> (result: u64) {
+    let s: Shuf8 = shuffle8([1, 2, 3, 4, 5, 6, 7, 8], seed);
+    return argmin8(s.arr);
+}

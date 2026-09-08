@@ -41,3 +41,17 @@ the same derivative must agree within the frozen tolerance).
 Float duals are the same struct with float fields; every rule transfers
 unchanged. The integer/fixed tranche proves the propagation machinery so
 the float tranche is a widening, not a redesign.
+
+## As-built note (2026-09-08)
+
+The implemented tranche (`src/math/autodiff.mncs`) ships `DualZ` over
+checked `i64` and `DualQ` over canonical numerator/denominator pairs
+instead of the `DualFx` fixed tier: exact rational tangents subsume
+the fixed tier's role with no rounding discipline to document, and the
+quotient rule stays exact. Taylor-series elementaries (`exp_taylor8`,
+`ln_pade`, `sin_taylor7`) and the `grad` multivariate convention are
+not implemented — they need a float type (→ P001) and are specified in
+`docs/autodiff.md`. The `DualQ` observers (`dualq_xn/xd/yn/yd/code`)
+are the loop-carry interface Newton consumes; pullback-form
+documentation of each rule is deferred to the reverse-mode tranche.
+Decision record above otherwise stands.

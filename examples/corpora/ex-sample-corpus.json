@@ -1,0 +1,177 @@
+{
+ "schema_version": "0.1",
+ "name": "ex-sample",
+ "cases": [
+  {
+   "id": "median-invariant",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "ex.sample.v1",
+     "function": "entry_ex_median"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2026,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 131072
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.rational.v1::FracOutcome",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.rational.v1::FracOutcome::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "den",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "num",
+        {
+         "integer": {
+          "value": 9,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "mean-var-invariant",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "ex.sample.v1",
+     "function": "entry_ex_mean_var"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2026,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 131072
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.math.statistics.v1::StatOut",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.math.statistics.v1::StatOut::Ok",
+      "discriminant": 0,
+      "payload": [
+       [
+        "mean_d",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "mean_n",
+        {
+         "integer": {
+          "value": 9,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "var_d",
+        {
+         "integer": {
+          "value": 4,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ],
+       [
+        "var_n",
+        {
+         "integer": {
+          "value": 21,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "argmin-pins-stream",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "ex.sample.v1",
+     "function": "entry_ex_argmin"
+    },
+    "arguments": [
+     {
+      "integer": {
+       "value": 2026,
+       "type": {
+        "bits": 64,
+        "signed": false
+       }
+      }
+     }
+    ],
+    "step_budget": 131072
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 2,
+      "type": {
+       "bits": 64,
+       "signed": false
+      }
+     }
+    }
+   ]
+  }
+ ]
+}
