@@ -73,6 +73,16 @@ that binary and record its version in any evidence you keep.
   `expectation_met == true`, every trap case `runtime_failure`, overall
   `PASS` or `UNKNOWN` (UNKNOWN = unresolved obligations, normal).
 - Corpus case budgets: `step_budget >= 4096` for loop kernels.
+- Native property suites live in `tests/native/` (profile 0.18 `test`
+  declarations; 0.6–0.12 library imports are normal). They pin laws and
+  properties (identities, commutativity, inverses, boundary reasons,
+  float discipline, determinism, fixed-seed generative sweeps via
+  `mncs.test.generative.replay`); expected traps stay in
+  `*-traps-corpus.json` because native tests cannot assert traps.
+  Run: `mncs test tests/native/<suite>.mncs` with `MNCS_LIBRARY_PATH`
+  covering `<mncs-test>/native`, `src`, and the language library.
+- Approximate equality is math-owned (`mncs.math.approx.v1`); generic
+  assertions stay in `mncs-test`. See `docs/native-testing.md`.
 
 ## What "done" means for a module
 

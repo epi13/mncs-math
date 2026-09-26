@@ -1,0 +1,104 @@
+mncs 0.18;
+
+// Native property suite for mncs.math.float.v1 + mncs.math.approx.v1.
+//
+// Float discipline observed throughout: exact bit-pinned behavior goes
+// through `feq` (IEEE equality, where -0.0 == +0.0), order-dependence is
+// asserted as INequality between reduction orders (never as associativity),
+// and "close enough" goes through the math-owned approx policy — never
+// through exact assertions on rounded values. The classic witness lives
+// here: `0.1 + 0.2` is exactly 0.30000000000000004, so `feq(..., 0.3)`
+// is false while `approx_eq` is true. Trapping behavior (division by
+// zero, overflow, non-finite inputs) stays in
+// tests/corpora/float-traps-corpus.json: native tests cannot express an
+// expected trap. See docs/native-testing.md.
+module tests.float_properties;
+
+use mncs.test.assertions;
+use mncs.test.suite;
+use mncs.test.generative;
+use mncs.math.float.v1 as flt;
+use mncs.math.approx.v1 as approx;
+
+// ---- exact behavior (bit-pinned by corpora, re-asserted natively) ----
+
+test fadd_exact() -> (result: TestResult) {
+    return from_assertion(equals_bool(true, flt.candidate_feq(flt.candidate_fadd(1.5, 2.25), 3.75), 7101));
+}
+
+test fneg_negzero_eq() -> (result: TestResult) {
+    return from_assertion(equals_bool(true, flt.candidate_feq(flt.candidate_fneg(0.0), 0.0), 7102));
+}
+
+test i2f_f2i_roundtrip() -> (result: TestResult) {
+    return from_assertion(equals_i64(42, flt.candidate_f2i(flt.candidate_i2f(42)), 7103));
+}
+
+test pythag_zero() -> (result: TestResult) {
+    return from_assertion(equals_bool(true, flt.candidate_feq(flt.candidate_fpythag(0.0), 1.0), 7104));
+}
+
+// ---- the non-associativity witness: orders DISAGREE, deterministically ----
+
+test reduction_orders_differ() -> (result: TestResult) {
+    let left: f64 = flt.candidate_fsum_left(10000000000000000.0, 10000000000000000.0, -10000000000000000.0, 2.0, -10000000000000000.0, 1.0);
+    let right: f64 = flt.candidate_fsum_right(10000000000000000.0, 10000000000000000.0, -10000000000000000.0, 2.0, -10000000000000000.0, 1.0);
+    return from_assertion(equals_bool(false, flt.candidate_feq(left, right), 7105));
+}
+
+test benign_control_agrees() -> (result: TestResult) {
+    let pair: f64 = flt.candidate_fsum_pair(1.0, 2.0, 3.0, 4.0, 5.0, 6.0);
+    let looped: f64 = flt.candidate_fsum_loop(1.0, 2.0, 3.0, 4.0, 5.0, 6.0);
+    return from_assertion(equals_bool(true, flt.candidate_feq(pair, looped), 7106));
+}
+
+test gap_nonzero() -> (result: TestResult) {
+    return from_assertion(equals_bool(false, flt.candidate_feq(flt.candidate_fsum_gap(), 0.0), 7107));
+}
+
+test loop_matches_left_fold() -> (result: TestResult) {
+    let left: f64 = flt.candidate_fsum_left(10000000000000000.0, 10000000000000000.0, -10000000000000000.0, 2.0, -10000000000000000.0, 1.0);
+    let looped: f64 = flt.candidate_fsum_loop(10000000000000000.0, 10000000000000000.0, -10000000000000000.0, 2.0, -10000000000000000.0, 1.0);
+    return from_assertion(equals_bool(true, flt.candidate_feq(left, looped), 7108));
+}
+
+// ---- approx policy: the math-owned tolerance predicate ----
+
+test tenth_plus_fifth() -> (result: TestResult) {
+    let s: f64 = flt.candidate_fadd(0.1, 0.2);
+    let exact: bool = flt.candidate_feq(s, 0.3);
+    let close: bool = approx.approx_eq(s, 0.3, 0.000000001, 0.000000001);
+    return from_assertion(equals_bool(true, !exact && close, 7109));
+}
+
+test approx_abs_spot() -> (result: TestResult) {
+    return from_assertion(equals_bool(true, approx.approx_abs(1.0, 1.000000000001, 0.000000001), 7110));
+}
+
+test approx_abs_rejects() -> (result: TestResult) {
+    return from_assertion(equals_bool(false, approx.approx_abs(1.0, 2.0, 0.5), 7111));
+}
+
+test approx_rel_spot() -> (result: TestResult) {
+    return from_assertion(equals_bool(true, approx.approx_rel(100.0, 101.0, 0.05), 7112));
+}
+
+test pythag_half_approx() -> (result: TestResult) {
+    return from_assertion(equals_bool(true, approx.approx_eq(flt.candidate_fpythag(0.5), 1.0, 0.000000000001, 0.000000000001), 7113));
+}
+
+// ---- float addition IS commutative: bounded generative sweep ----
+
+test fadd_comm_sweep() -> (result: TestResult) {
+    let acc: bool = sweep_fadd_comm();
+    return from_assertion(equals_bool(true, acc, 7114));
+}
+
+fn sweep_fadd_comm() -> (result: bool) {
+    iterate i up_to 16 carrying acc: bool = true {
+        let a: f64 = flt.candidate_i2f(replay(21, i, 200) as i64);
+        let b: f64 = flt.candidate_i2f(replay(22, i, 200) as i64);
+        next acc = acc && flt.candidate_feq(flt.candidate_fadd(a, b), flt.candidate_fadd(b, a));
+    }
+    return acc;
+}

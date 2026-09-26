@@ -367,3 +367,29 @@ overflow starts instead.
    u64 `-%` parity, `!` sugar.
 9. **Traits**: generic numeric kernels over Z/Q/fixed without
    copy-paste tiers.
+
+## 2026-09-26 native-testing campaign note
+
+This catalog was not rewritten, but three items changed state during the
+native-testing campaign (evidence in `tests/native/`, `src/math/approx.mncs`,
+`docs/native-testing.md`):
+
+- P001 (float tier partial): the transcendental remainder (exp/log/sqrt/pow,
+  rounding control, float linalg) is now canonical
+  `MNCS-LANG-35EF41F1B6E5` with a math observation. The 50+3 float corpora
+  stand; `approx` tolerance policy is new math-owned coverage.
+- New test-system pressure: native tests cannot assert expected traps, so
+  all trapping behavior stays in `*-traps` corpora. Canonical
+  `MNCS-TOOLING-06EB8DF14CC3` (non-blocking).
+- `select` strictness (P002) is intended language semantics (pinned in the
+  Source Profile 0.8 documentation); the lazy conditional expression now
+  exists as uniform lazy `match` at profile 0.13.
+
+Staleness warning: item 8's compiler list (u64 iterate domains MNB101,
+negative literal arguments MNP064, nested call arguments MNE133/135, i64
+`>>`) predates Source Profiles 0.12–0.13, which admit u64 domains, repeat
+literals, shadowing, generic inference, and cross-module nested sequences
+(sibling-engine re-verification 2026-09-26 confirms several no longer
+reproduce). The catalog needs its own re-verification pass before the next
+language run treats item 8 as current; until then, prefer the profile docs
+plus fresh reproducers over these entries.

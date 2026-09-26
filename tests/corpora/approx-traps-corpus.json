@@ -1,0 +1,125 @@
+{
+ "schema_version": "0.1",
+ "name": "approx-traps",
+ "cases": [
+  {
+   "id": "abs-inf-input",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.approx.v1",
+     "function": "approx_abs"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 9218868437227405312,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   }
+  },
+  {
+   "id": "rel-nan-input",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.approx.v1",
+     "function": "approx_rel"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 9221120237041090560,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4607182418800017408,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4591870180066957722,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   }
+  },
+  {
+   "id": "eq-overflow-diff",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.math.approx.v1",
+     "function": "approx_eq"
+    },
+    "arguments": [
+     {
+      "float": {
+       "bits": 9214871658872686752,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 18438243695727462560,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4472406533629990549,
+       "type": {
+        "bits": 64
+       }
+      }
+     },
+     {
+      "float": {
+       "bits": 4472406533629990549,
+       "type": {
+        "bits": 64
+       }
+      }
+     }
+    ],
+    "step_budget": 4096
+   }
+  }
+ ]
+}

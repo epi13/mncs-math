@@ -4,12 +4,12 @@ version = 1
 name = "mncs-math"
 identity = "mncs-math-0.1-development"
 root = "."
-language_profile = "0.11"
+language_profile = "0.12"
 toolchain = "mncs-language (external, read-only)"
 
 [paths]
 sources = ["src/math"]
-tests = ["tests/corpora", "tests/tables"]
+tests = ["tests/corpora", "tests/tables", "tests/native"]
 examples = ["examples"]
 benchmarks = ["benchmarks"]
 docs = ["docs"]

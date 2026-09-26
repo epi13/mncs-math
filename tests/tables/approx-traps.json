@@ -1,0 +1,12 @@
+{
+ "module": "mncs.math.approx.v1",
+ "name": "approx-traps",
+ "cases": [
+  {"id": "abs-inf-input", "fn": "approx_abs",
+   "args": [{"f64": Infinity}, {"f64": 1.0}, {"f64": 1.0}], "budget": 4096},
+  {"id": "rel-nan-input", "fn": "approx_rel",
+   "args": [{"f64": NaN}, {"f64": 1.0}, {"f64": 0.1}], "budget": 4096},
+  {"id": "eq-overflow-diff", "fn": "approx_eq",
+   "args": [{"f64": 1e308}, {"f64": -1e308}, {"f64": 1e-9}, {"f64": 1e-9}], "budget": 4096}
+ ]
+}

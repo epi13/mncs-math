@@ -1,0 +1,56 @@
+mncs 0.12;
+
+// mncs.math.approx — domain tolerance policy for binary64 verification.
+//
+// Exact assertions (e.g. `mncs.test.assertions.equals_*`) cannot express
+// "close enough". That policy is mathematical, not testing-generic, so it
+// lives here: three total predicates over finite inputs with explicit
+// edge contracts. Non-finite inputs trap through the arithmetic itself,
+// per the float trap rule shared with `mncs.math.float.v1` (division by
+// zero, overflow to infinity, and NaN-producing operations trap; there
+// is no NaN value to compare, so approximate equality never silently
+// passes one).
+//
+// Corpus entry points use plain names. (Older modules prefix theirs with
+// `candidate_`; that is a naming habit, not a requirement.)
+//
+// Profile 0.12: f64 arithmetic/comparisons, `neg(x)`, statement `if`.
+module mncs.math.approx.v1;
+
+// Absolute tolerance: |a - b| <= tol, decided without an abs helper
+// (|d| <= tol holds exactly when d <= tol and -d <= tol). A negative
+// tolerance matches nothing, including identical inputs. Signed zeros
+// compare equal: 0.0 - -0.0 is +0.0, which is <= 0.0.
+fn approx_abs(a: f64, b: f64, tol: f64) -> (result: bool) {
+    if tol < 0.0 {
+        return false;
+    }
+    let d: f64 = a - b;
+    return d <= tol && neg(d) <= tol;
+}
+
+// Relative tolerance: |a - b| <= rtol * max(|a|, |b|). Both zeros match
+// at any non-negative rtol (0 <= 0); a negative rtol matches nothing.
+fn approx_rel(a: f64, b: f64, rtol: f64) -> (result: bool) {
+    if rtol < 0.0 {
+        return false;
+    }
+    let d: f64 = a - b;
+    let scale: f64 = rtol * max_abs(a, b);
+    return d <= scale && neg(d) <= scale;
+}
+
+// Combined tolerance: absolute or relative. This is the default
+// "approximately equal" for consumers: tight absolute agreement near
+// zero, tight relative agreement at magnitude.
+fn approx_eq(a: f64, b: f64, atol: f64, rtol: f64) -> (result: bool) {
+    return approx_abs(a, b, atol) || approx_rel(a, b, rtol);
+}
+
+// Magnitude helper: max(|a|, |b|) via exact negation. Both arms of the
+// selects are total, so strict evaluation is harmless.
+fn max_abs(a: f64, b: f64) -> (result: f64) {
+    let aa: f64 = select(a < 0.0, neg(a), a);
+    let ab: f64 = select(b < 0.0, neg(b), b);
+    return select(aa < ab, ab, aa);
+}

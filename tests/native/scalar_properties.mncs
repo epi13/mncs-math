@@ -1,0 +1,117 @@
+mncs 0.18;
+
+// Native property suite for mncs.math.scalar.v1 (exact integer laws).
+//
+// Corpora pin hand-picked values; these tests pin the LAWS: identity,
+// commutativity, inverses, boundary/overflow behavior, checked-error
+// reasons, determinism, and a bounded generative sweep (fixed seeds via
+// mncs.test.generative.replay). Trapping behavior (overflow of the bare
+// checked ops, MIN / -1, division by zero) is NOT assertable here — the
+// native runner has no expected-trap assertion — and stays covered by
+// tests/corpora/scalar-traps-corpus.json. See docs/native-testing.md.
+module tests.scalar_properties;
+
+use mncs.test.assertions;
+use mncs.test.suite;
+use mncs.test.generative;
+use mncs.math.scalar.v1 as scalar;
+use mncs.math.error.v1 as err;
+
+// ---- identity laws (wrapping ops, exact) ----
+
+test add_zero() -> (result: TestResult) {
+    return from_assertion(equals_i64(7, 7 +% 0, 7001));
+}
+
+test mul_one() -> (result: TestResult) {
+    return from_assertion(equals_i64(-7, -7 *% 1, 7002));
+}
+
+test sub_self() -> (result: TestResult) {
+    return from_assertion(equals_i64(0, 9 -% 9, 7003));
+}
+
+// ---- commutativity (exact for integer add/mul) ----
+
+test add_comm() -> (result: TestResult) {
+    return from_assertion(equals_bool(true, (3 +% 5) == (5 +% 3), 7004));
+}
+
+test mul_comm() -> (result: TestResult) {
+    return from_assertion(equals_bool(true, (3 *% 5) == (5 *% 3), 7005));
+}
+
+// ---- inverse laws ----
+
+test add_sub_inverse() -> (result: TestResult) {
+    return from_assertion(equals_i64(10, (10 +% 4) -% 4, 7006));
+}
+
+test checked_div_inverse() -> (result: TestResult) {
+    return from_assertion(equals_i64(42, err.value_or(scalar.checked_div(42, 6), -1) *% 6, 7007));
+}
+
+// ---- checked wrappers: ok paths carry exact values ----
+
+test checked_add_ok() -> (result: TestResult) {
+    return from_assertion(equals_i64(8, err.value_or(scalar.checked_add(3, 5), -1), 7008));
+}
+
+// ---- boundaries: overflow and domain edges report reasons, not values ----
+
+test checked_add_overflow() -> (result: TestResult) {
+    let r: err.MathResult = scalar.checked_add(scalar.i64_max(), 1);
+    return from_assertion(equals_i64(err.reason_overflow(), err.reason_of(r), 7009));
+}
+
+test checked_div_by_zero() -> (result: TestResult) {
+    let r: err.MathResult = scalar.checked_div(7, 0);
+    return from_assertion(equals_i64(err.reason_div_by_zero(), err.reason_of(r), 7010));
+}
+
+test checked_div_min_neg_one() -> (result: TestResult) {
+    let r: err.MathResult = scalar.checked_div(scalar.i64_min(), -1);
+    return from_assertion(equals_i64(err.reason_overflow(), err.reason_of(r), 7011));
+}
+
+test abs_min_checked_err() -> (result: TestResult) {
+    return from_assertion(equals_bool(true, !err.is_ok(scalar.abs_checked(scalar.i64_min())), 7012));
+}
+
+test abs_sat_min() -> (result: TestResult) {
+    return from_assertion(equals_i64(scalar.i64_max(), scalar.abs_sat(scalar.i64_min()), 7013));
+}
+
+// ---- spot values through exact helpers ----
+
+test gcd_spot() -> (result: TestResult) {
+    return from_assertion(equals_i64(4, scalar.gcd(12, 8) as i64, 7014));
+}
+
+test pow_spot() -> (result: TestResult) {
+    return from_assertion(equals_i64(1024, err.value_or(scalar.pow_checked(2, 10), -1), 7015));
+}
+
+// ---- determinism: same inputs, same outputs ----
+
+test replay_deterministic() -> (result: TestResult) {
+    let a: u64 = replay(7, 3, 200);
+    let b: u64 = replay(7, 3, 200);
+    return from_assertion(equals_bool(true, a == b, 7016));
+}
+
+// ---- bounded generative sweep: add-commutativity over 16 drawn pairs ----
+
+test add_comm_sweep() -> (result: TestResult) {
+    let acc: bool = sweep_add_comm();
+    return from_assertion(equals_bool(true, acc, 7017));
+}
+
+fn sweep_add_comm() -> (result: bool) {
+    iterate i up_to 16 carrying acc: bool = true {
+        let a: i64 = replay(7, i, 200) as i64;
+        let b: i64 = replay(99, i, 200) as i64;
+        next acc = acc && ((a +% b) == (b +% a));
+    }
+    return acc;
+}
