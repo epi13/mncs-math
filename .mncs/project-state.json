@@ -1,0 +1,17 @@
+{
+  "schema_version": "mncs.project-intent/1",
+  "purpose": "Machine-native scientific mathematics for MNCS in MNCS Language: exact tiers, concrete-shape linear algebra, tensors, intervals, autodiff, numerical methods, optimization, statistics, reproducible randomness, and binary64 floats -- every expectation oracle-derived and frozen into corpora.",
+  "entry": [
+    "bash scripts/conformance.sh --out target/conformance"
+  ],
+  "milestones": [
+    {
+      "id": "mncs-math:projection-conformance",
+      "title": "Declared ambient projection surfaces satisfy their contract",
+      "subject_slot": "declarations",
+      "evidence": "projection-conformance",
+      "dependencies": [],
+      "blockers": []
+    }
+  ]
+}

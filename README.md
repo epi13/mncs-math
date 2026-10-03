@@ -1,5 +1,8 @@
 # mncs-math
 
+<!-- MNCS:generated:begin -->
+<!-- MNCS:generated:end -->
+
 Machine-native scientific mathematics for MNCS, written in MNCS
 Language: exact integer/rational/fixed-point tiers, concrete-shape
 linear algebra (through 6x6), index-map tensors plus data kernels,
