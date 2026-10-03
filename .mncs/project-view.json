@@ -1,0 +1,22 @@
+{
+  "capabilities": [
+    {
+      "contract": "math-library",
+      "fingerprint_sources": [
+        "src/math/"
+      ],
+      "kind": "mncs-library",
+      "stability": "experimental",
+      "version": "0.1"
+    }
+  ],
+  "dependencies": [],
+  "entry": [
+    "bash scripts/conformance.sh --out target/conformance"
+  ],
+  "purpose": "Machine-native scientific mathematics for MNCS in MNCS Language: exact tiers, concrete-shape linear algebra, tensors, intervals, autodiff, numerical methods, optimization, statistics, reproducible randomness, and binary64 floats -- every expectation oracle-derived and frozen into corpora.",
+  "repository": "mncs-math",
+  "schema_version": "mncs.project-view/1",
+  "source_identity": "sha256:8fc72fd0ca0c269ca8a70536827a2796c7977a4ec920514a5793e68e7d8b3ac0",
+  "structure": {}
+}

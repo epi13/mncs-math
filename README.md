@@ -1,6 +1,19 @@
 # mncs-math
 
 <!-- MNCS:generated:begin -->
+## Project entry
+
+Machine-native scientific mathematics for MNCS in MNCS Language: exact tiers, concrete-shape linear algebra, tensors, intervals, autodiff, numerical methods, optimization, statistics, reproducible randomness, and binary64 floats -- every expectation oracle-derived and frozen into corpora.
+
+```bash
+bash scripts/conformance.sh --out target/conformance
+```
+
+Declared capabilities (declarations do not establish execution health):
+
+- `math-library/0.1` — mncs-library (experimental)
+
+Semantic sources and ownership: `.mncs/projections.json`.
 <!-- MNCS:generated:end -->
 
 Machine-native scientific mathematics for MNCS, written in MNCS
